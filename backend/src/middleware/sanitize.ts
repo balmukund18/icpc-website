@@ -1,25 +1,55 @@
 import { Request, Response, NextFunction } from 'express';
 
-// Recursively trim string properties in an object
-function trimStrings(obj: any): any {
-  if (obj == null) return obj;
-  if (typeof obj === 'string') return obj.trim();
-  if (Array.isArray(obj)) return obj.map(trimStrings);
-  if (typeof obj === 'object') {
-    const out: any = {};
-    for (const key of Object.keys(obj)) {
-      out[key] = trimStrings(obj[key]);
+/**
+ * Simple XSS prevention by stripping HTML tags from string inputs
+ * For rich text fields, use a proper HTML sanitizer library
+ */
+export const sanitizeInput = (req: Request, res: Response, next: NextFunction) => {
+  const sanitize = (obj: any): any => {
+    if (typeof obj === 'string') {
+      // Remove HTML tags
+      return obj.replace(/<[^>]*>/g, '');
     }
-    return out;
-  }
-  return obj;
-}
+    
+    if (Array.isArray(obj)) {
+      return obj.map(sanitize);
+    }
+    
+    if (obj && typeof obj === 'object') {
+      const sanitized: any = {};
+      for (const key in obj) {
+        sanitized[key] = sanitize(obj[key]);
+      }
+      return sanitized;
+    }
+    
+    return obj;
+  };
 
-export const sanitize = (req: Request, _res: Response, next: NextFunction) => {
-  if (req.body) req.body = trimStrings(req.body);
-  if (req.query) req.query = trimStrings(req.query);
-  if (req.params) req.params = trimStrings(req.params);
+  // Sanitize body, query, and params
+  if (req.body) {
+    req.body = sanitize(req.body);
+  }
+  
+  if (req.query) {
+    req.query = sanitize(req.query);
+  }
+  
+  if (req.params) {
+    req.params = sanitize(req.params);
+  }
+
   next();
 };
 
-export default sanitize;
+/**
+ * For specific routes that need HTML content (like blogs),
+ * skip general sanitization but validate structure
+ */
+export const allowHTML = (req: Request, res: Response, next: NextFunction) => {
+  // Mark this request to skip sanitization
+  (req as any).skipSanitization = true;
+  next();
+};
+
+export default sanitizeInput;

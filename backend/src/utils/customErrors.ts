@@ -1,24 +1,47 @@
-import {
-  AppError,
-  ValidationError,
-  NotFoundError,
-  UnauthorizedError,
-  ForbiddenError
-} from './AppError';
+export class AppError extends Error {
+  statusCode: number;
+  isOperational: boolean;
 
-export { AppError, ValidationError, NotFoundError, UnauthorizedError, ForbiddenError };
-
-export class BadRequestError extends AppError {
-  constructor(message = 'Bad request') {
-    super(message, 400);
+  constructor(message: string, statusCode: number = 500) {
+    super(message);
+    this.statusCode = statusCode;
+    this.isOperational = true;
+    Error.captureStackTrace(this, this.constructor);
   }
 }
 
-export default {
-  AppError,
-  ValidationError,
-  NotFoundError,
-  UnauthorizedError,
-  ForbiddenError,
-  BadRequestError
-};
+export class ValidationError extends AppError {
+  constructor(message: string) {
+    super(message, 422);
+  }
+}
+
+export class NotFoundError extends AppError {
+  constructor(message: string = 'Resource not found') {
+    super(message, 404);
+  }
+}
+
+export class UnauthorizedError extends AppError {
+  constructor(message: string = 'Unauthorized') {
+    super(message, 401);
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message: string = 'Forbidden') {
+    super(message, 403);
+  }
+}
+
+export class ConflictError extends AppError {
+  constructor(message: string = 'Conflict') {
+    super(message, 409);
+  }
+}
+
+export class ServiceUnavailableError extends AppError {
+  constructor(message: string = 'Service temporarily unavailable') {
+    super(message, 503);
+  }
+}

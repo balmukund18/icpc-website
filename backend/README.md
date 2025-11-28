@@ -51,7 +51,7 @@ See `.env.example` for the full list.
 1. Install dependencies
 
 ```powershell
-cd "c:\Users\utkyd\Documents\WEB DEVELOPMENT\ICPC-website\backend"
+cd backend
 npm install
 ```
 

@@ -1,0 +1,36 @@
+version: "3.8"
+services:
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-icpc_website}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - icpc-network
+
+  backend:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      PORT: ${PORT:-5000}
+      JUDGE0_URL: ${JUDGE0_URL}
+      JUDGE0_KEY: ${JUDGE0_KEY}
+      JUDGE0_KEY_HEADER: ${JUDGE0_KEY_HEADER}
+    ports:
+      - "${PORT:-5000}:5000"
+    depends_on:
+      - postgres
+    networks:
+      - icpc-network
+
+volumes:
+  pgdata:
+
+networks:
+  icpc-network:
+    driver: bridge

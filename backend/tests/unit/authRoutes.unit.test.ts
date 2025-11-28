@@ -23,10 +23,11 @@ describe("Auth Routes (unit)", () => {
   test("POST /api/auth/register returns 201", async () => {
     const res = await request(app)
       .post("/api/auth/register")
-      .send({ email: "x@local", password: "password" })
+      .send({ email: "x@local.com", password: "password" })
       .set("Accept", "application/json");
     expect([201, 200]).toContain(res.status);
     expect(res.body).toBeDefined();
+    expect(res.body).toHaveProperty("data");
   });
 
   test("POST /api/auth/login returns token", async () => {
@@ -35,12 +36,12 @@ describe("Auth Routes (unit)", () => {
       .send({ email: "x@local", password: "password" })
       .set("Accept", "application/json");
     expect([200]).toContain(res.status);
-    expect(res.body).toHaveProperty("token");
+    expect(res.body).toHaveProperty("data.token");
   });
 
   test("POST /api/auth/approve/:id allowed for admin", async () => {
     const res = await request(app).post("/api/auth/approve/u-1");
     expect([200]).toContain(res.status);
-    expect(res.body).toHaveProperty("id");
+    expect(res.body).toHaveProperty("data.id");
   });
 });

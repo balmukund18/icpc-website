@@ -46,6 +46,34 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/icpc_website
         working-directory: backend
 
-      - name: Run tests
-        run: npm test --silent
+      - name: Seed database
+        run: npm run seed
+        working-directory: backend
+
+      - name: Build server
+        run: |
+          npm run build
+        working-directory: backend
+
+      - name: Start server (background)
+        run: |
+          nohup node dist/index.js &
+          # wait for port
+          for i in `seq 1 30`; do
+            nc -z localhost 5000 && break || sleep 1
+          done
+        working-directory: backend
+
+      - name: Run unit tests
+        run: npm run test:unit --silent
+        working-directory: backend
+
+      - name: Run integration tests
+        if: always()
+        run: npm run test:integration --silent
+        working-directory: backend
+
+      - name: Run Judge0 E2E (only when secrets set)
+        if: ${{ secrets.JUDGE0_URL != '' && secrets.JUDGE0_KEY != '' }}
+        run: npx jest --config=jest.config.cjs --runInBand tests/integration/judge0.e2e.test.ts
         working-directory: backend

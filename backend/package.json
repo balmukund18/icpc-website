@@ -10,9 +10,11 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "seed": "ts-node-dev --respawn --transpile-only seed.ts",
-    "test": "jest --config=jest.config.cjs --runInBand",
+    "test": "npm run test:unit",
     "test:unit": "jest --config=jest.config.cjs --runInBand tests/unit",
     "test:integration": "jest --config=jest.config.cjs --runInBand tests/integration",
+    "test:integration:judge0": "jest --config=jest.config.cjs --runInBand tests/integration/judge0.e2e.test.ts",
+    "integration:local": "powershell -ExecutionPolicy Bypass -File scripts\\integration-run.ps1",
     "demo": "ts-node-dev --respawn --transpile-only scripts/demoSubmission.ts"
   },
   "engines": {
@@ -38,7 +40,12 @@
     "openai": "^4.9.0",
     "pg": "^8.11.0",
     "pg-hstore": "^2.3.4",
-    "swagger-ui-express": "^4.6.3"
+    "swagger-ui-express": "^4.6.3",
+    "pino": "^8.13.0",
+    "pino-http": "^8.0.0"
+  },
+  "optionalDependencies": {
+    "rotating-file-stream": "^3.0.4"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",

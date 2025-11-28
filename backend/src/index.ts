@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import { reqLogger, logger } from "./utils/logger";
 import authRoutes from "./routes/authRoutes";
 import profileRoutes from "./routes/profileRoutes";
 import taskRoutes from "./routes/taskRoutes";
@@ -30,6 +31,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// request logging
+app.use(reqLogger as any);
+
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -43,6 +47,18 @@ app.get("/", (req, res) =>
 app.get("/api/health", (req, res) =>
   res.json({ status: "OK", timestamp: new Date().toISOString() })
 );
+
+// Readiness endpoint used by orchestrators (checks DB connectivity)
+import prisma from "./models/prismaClient";
+app.get("/api/ready", async (req, res) => {
+  try {
+    // simple query to verify DB connection
+    await prisma.$queryRaw`SELECT 1`;
+    return res.status(200).json({ ready: true });
+  } catch (err) {
+    return res.status(503).json({ ready: false, error: "db_unavailable" });
+  }
+});
 
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
@@ -71,5 +87,5 @@ app.use(errorHandler as any);
 startJobs();
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  logger.info({ port: PORT }, "Server is running");
 });

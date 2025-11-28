@@ -25,7 +25,7 @@ describe("Contest Routes (unit)", () => {
   test("POST /api/contests (admin) creates contest", async () => {
     const res = await request(app).post("/api/contests").send({ title: "T" });
     expect([201]).toContain(res.status);
-    expect(res.body).toHaveProperty("id");
+    expect(res.body).toHaveProperty("data.id");
   });
 
   test("POST /api/contests/:id/problems adds problem", async () => {
@@ -38,6 +38,6 @@ describe("Contest Routes (unit)", () => {
   test("GET /api/contests/submissions/:submissionId returns submission for owner/admin", async () => {
     const res = await request(app).get("/api/contests/submissions/s-1");
     expect([200]).toContain(res.status);
-    expect(res.body).toHaveProperty("id");
+    expect(res.body).toHaveProperty("data.id");
   });
 });

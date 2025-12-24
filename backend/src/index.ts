@@ -1,6 +1,6 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { reqLogger, logger } from "./utils/logger";
@@ -20,8 +20,6 @@ import swaggerDocument from "../swagger.json";
 import judgeRoutes from "./routes/judgeRoutes";
 import { errorHandler } from "./utils/errorHandler";
 import { startJobs } from "./jobs/cron";
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;

@@ -1,19 +1,22 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
+import { AuroraBackground } from "@/components/ui/aurora-background";
 
 export default function Home() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2 relative">
-      <div className="absolute top-4 right-4">
+    <AuroraBackground>
+      <div className="absolute top-4 right-4 z-50">
         <ModeToggle />
       </div>
-      <main className="flex flex-col items-center justify-center w-full flex-1 px-20 text-center">
-        <h1 className="text-6xl font-bold">
+      <div className="relative z-10 flex flex-col items-center justify-center w-full flex-1 px-20 text-center">
+        <h1 className="text-6xl font-bold text-black dark:text-white">
           Welcome to <span className="text-blue-600">ICPC Portal</span>
         </h1>
 
-        <p className="mt-3 text-2xl">USICT ACM Student Chapter</p>
+        <p className="mt-3 text-2xl text-neutral-700 dark:text-neutral-200">
+          USICT ACM Student Chapter
+        </p>
 
         <div className="flex mt-6 gap-4">
           <Link href="/login">
@@ -25,7 +28,7 @@ export default function Home() {
             </Button>
           </Link>
         </div>
-      </main>
-    </div>
+      </div>
+    </AuroraBackground>
   );
 }

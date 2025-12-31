@@ -26,6 +26,46 @@ export const approveUser = async (userId: string) => {
   });
 };
 
+export const getAllUsers = async () => {
+  return prisma.user.findMany({
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      approved: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+};
+
+export const getPendingUsers = async () => {
+  return prisma.user.findMany({
+    where: { approved: false },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      approved: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+};
+
+export const updateUserRole = async (userId: string, role: string) => {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { role: role as any },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      approved: true,
+    },
+  });
+};
+
 export const login = async (email: string, password: string) => {
   console.log(`Attempting login for ${email}`);
   const user = await prisma.user.findUnique({ where: { email } });

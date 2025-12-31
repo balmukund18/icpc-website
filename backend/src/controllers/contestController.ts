@@ -31,6 +31,27 @@ export const list = async (req: Request, res: Response) => {
   }
 };
 
+export const getById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const contest = await svc.getContest(id);
+    if (!contest) return fail(res, "Contest not found", 404);
+    success(res, contest);
+  } catch (err: any) {
+    fail(res, err.message);
+  }
+};
+
+export const deleteContest = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await svc.deleteContest(id);
+    success(res, { message: "Contest deleted successfully" });
+  } catch (err: any) {
+    fail(res, err.message);
+  }
+};
+
 export const saveResults = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -84,6 +105,17 @@ export const mySubmissions = async (req: any, res: Response) => {
   try {
     const userId = req.user.id;
     const list = await svc.getUserSubmissions(userId);
+    success(res, list);
+  } catch (err: any) {
+    fail(res, err.message);
+  }
+};
+
+export const myContestSubmissions = async (req: any, res: Response) => {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params; // contest id
+    const list = await svc.getUserContestSubmissions(id, userId);
     success(res, list);
   } catch (err: any) {
     fail(res, err.message);

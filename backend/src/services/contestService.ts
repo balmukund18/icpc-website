@@ -4,6 +4,10 @@ export const createContest = async (data: any) => {
   return prisma.contest.create({ data });
 };
 
+export const getContest = async (id: string) => {
+  return prisma.contest.findUnique({ where: { id } });
+};
+
 export const addProblem = async (contestId: string, problem: any) => {
   const c = await prisma.contest.findUnique({ where: { id: contestId } });
   let problems: any = c?.problems;
@@ -48,6 +52,23 @@ export const getUserSubmissions = async (userId: string) => {
   });
 };
 
+export const getUserContestSubmissions = async (
+  contestId: string,
+  userId: string
+) => {
+  return prisma.contestSubmission.findMany({
+    where: { contestId, userId },
+    orderBy: { createdAt: "desc" },
+  });
+};
+
 export const getSubmissionById = async (id: string) => {
   return prisma.contestSubmission.findUnique({ where: { id } });
+};
+
+export const deleteContest = async (id: string) => {
+  // First delete all submissions for this contest
+  await prisma.contestSubmission.deleteMany({ where: { contestId: id } });
+  // Then delete the contest
+  return prisma.contest.delete({ where: { id } });
 };

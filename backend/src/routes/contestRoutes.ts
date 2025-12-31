@@ -20,6 +20,13 @@ router.post(
   ctrl.addProblem
 );
 router.get("/", ctrl.list);
+
+// Get single contest by ID (must be before /:id/problems etc)
+router.get("/:id", ctrl.getById);
+
+// Delete contest (admin only)
+router.delete("/:id", isAuthenticated, isAdmin, ctrl.deleteContest);
+
 router.post(
   "/:id/results",
   isAuthenticated,
@@ -42,7 +49,10 @@ router.post(
 // Admin: list submissions for a contest
 router.get("/:id/submissions", isAuthenticated, isAdmin, ctrl.submissions);
 
-// Authenticated user: list own submissions
+// Authenticated user: list own submissions for a specific contest
+router.get("/:id/submissions/me", isAuthenticated, ctrl.myContestSubmissions);
+
+// Authenticated user: list all own submissions
 router.get("/submissions/me", isAuthenticated, ctrl.mySubmissions);
 
 // Fetch a single submission (owner or admin)

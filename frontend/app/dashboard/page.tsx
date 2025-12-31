@@ -12,7 +12,15 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import api from "@/lib/axios";
-import { Calendar, Trophy, User as UserIcon, Code, LogOut } from "lucide-react";
+import {
+  Calendar,
+  Trophy,
+  User as UserIcon,
+  Code,
+  LogOut,
+  Play,
+} from "lucide-react";
+import Link from "next/link";
 
 interface Profile {
   name: string;
@@ -108,6 +116,12 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Link href="/contests">
+              <Button variant="outline" className="gap-2">
+                <Play className="w-4 h-4" />
+                Contests
+              </Button>
+            </Link>
             {user.role === "ADMIN" && (
               <Button onClick={() => router.push("/admin")} variant="outline">
                 Admin Dashboard
@@ -225,9 +239,11 @@ export default function DashboardPage() {
                           {new Date(contest.createdAt).toLocaleDateString()}
                         </p>
                       </div>
-                      <Button variant="secondary" size="sm">
-                        View
-                      </Button>
+                      <Link href={`/contests/${contest.id}`}>
+                        <Button variant="secondary" size="sm">
+                          Enter
+                        </Button>
+                      </Link>
                     </div>
                   ))
                 )}

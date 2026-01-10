@@ -69,6 +69,7 @@ model Session {
   id        String   @id @default(cuid())
   title     String
   details   String?
+  meetLink  String   // Required: Video call URL (Google Meet, Zoom, etc.)
   date      DateTime?
   attendees Json?
   summary   String?

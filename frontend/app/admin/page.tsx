@@ -31,15 +31,17 @@ import {
   RefreshCw,
   Check,
   X,
+  ExternalLink,
+  Copy,
+  Pencil,
+  Link2,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   getUsers,
   getPendingUsers,
   approveUser,
   updateUserRole,
-  getSessions,
-  createSession,
-  deleteSession,
   createTask,
   getAnnouncements,
   createAnnouncement,
@@ -49,11 +51,11 @@ import {
   addProblemToContest,
   deleteContest,
   User,
-  Session,
   Announcement,
   Blog,
 } from "@/lib/adminService";
 import { getContests, Contest } from "@/lib/contestService";
+import { useSessionStore } from "@/store/useSessionStore";
 
 type TabType =
   | "users"
@@ -80,9 +82,20 @@ export default function AdminDashboardPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [contests, setContests] = useState<Contest[]>([]);
-  const [sessions, setSessions] = useState<Session[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [pendingBlogs, setPendingBlogs] = useState<Blog[]>([]);
+
+  // Session store (Zustand)
+  const {
+    sessions,
+    loading: sessionsLoading,
+    editingId,
+    fetchSessions,
+    addSession,
+    editSession,
+    removeSession,
+    setEditingId,
+  } = useSessionStore();
 
   // User filter
   const [userFilter, setUserFilter] = useState<"all" | "pending">("all");
@@ -107,7 +120,14 @@ export default function AdminDashboardPage() {
 
   const [sessionTitle, setSessionTitle] = useState("");
   const [sessionDetails, setSessionDetails] = useState("");
+  const [sessionMeetLink, setSessionMeetLink] = useState("");
   const [sessionDate, setSessionDate] = useState("");
+
+  // Edit session form states
+  const [editTitle, setEditTitle] = useState("");
+  const [editDetails, setEditDetails] = useState("");
+  const [editMeetLink, setEditMeetLink] = useState("");
+  const [editDate, setEditDate] = useState("");
 
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDesc, setTaskDesc] = useState("");
@@ -148,8 +168,7 @@ export default function AdminDashboardPage() {
           setContests(contestsData);
           break;
         case "sessions":
-          const sessionsData = await getSessions();
-          setSessions(sessionsData);
+          await fetchSessions();
           break;
         case "announcements":
           const announcementsData = await getAnnouncements();
@@ -357,16 +376,17 @@ export default function AdminDashboardPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await createSession({
+      await addSession({
         title: sessionTitle,
         details: sessionDetails || undefined,
+        meetLink: sessionMeetLink,
         date: sessionDate || undefined,
       });
       showMessage("success", "Session created successfully!");
       setSessionTitle("");
       setSessionDetails("");
+      setSessionMeetLink("");
       setSessionDate("");
-      fetchDataForTab("sessions");
     } catch (error: any) {
       showMessage(
         "error",
@@ -380,15 +400,65 @@ export default function AdminDashboardPage() {
   const handleDeleteSession = async (sessionId: string) => {
     if (!confirm("Are you sure you want to delete this session?")) return;
     try {
-      await deleteSession(sessionId);
+      await removeSession(sessionId);
       showMessage("success", "Session deleted successfully!");
-      fetchDataForTab("sessions");
     } catch (error: any) {
       showMessage(
         "error",
         error.response?.data?.message || "Failed to delete session"
       );
     }
+  };
+
+  const handleStartEdit = (session: typeof sessions[0]) => {
+    setEditingId(session.id);
+    setEditTitle(session.title);
+    setEditDetails(session.details || "");
+    setEditMeetLink(session.meetLink);
+    setEditDate(session.date ? new Date(session.date).toISOString().slice(0, 16) : "");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditTitle("");
+    setEditDetails("");
+    setEditMeetLink("");
+    setEditDate("");
+  };
+
+  const handleSaveEdit = async (sessionId: string) => {
+    try {
+      await editSession(sessionId, {
+        title: editTitle,
+        details: editDetails || undefined,
+        meetLink: editMeetLink,
+        date: editDate || undefined,
+      });
+      showMessage("success", "Session updated successfully!");
+      // Reset edit form states
+      setEditTitle("");
+      setEditDetails("");
+      setEditMeetLink("");
+      setEditDate("");
+    } catch (error: any) {
+      showMessage(
+        "error",
+        error.response?.data?.message || "Failed to update session"
+      );
+    }
+  };
+
+  const handleCopyLink = async (meetLink: string) => {
+    try {
+      await navigator.clipboard.writeText(meetLink);
+      toast.success("Link copied to clipboard!");
+    } catch (error) {
+      toast.error("Failed to copy link");
+    }
+  };
+
+  const handleJoinMeeting = (meetLink: string) => {
+    window.open(meetLink, "_blank", "noopener,noreferrer");
   };
 
   const handleDeleteContest = async (contestId: string) => {
@@ -1008,7 +1078,7 @@ export default function AdminDashboardPage() {
               <CardContent>
                 <form onSubmit={handleCreateSession} className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Session Title</Label>
+                    <Label>Session Title *</Label>
                     <Input
                       placeholder="e.g. Intro to Dynamic Programming"
                       value={sessionTitle}
@@ -1027,7 +1097,24 @@ export default function AdminDashboardPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Date</Label>
+                    <Label>Meeting Link *</Label>
+                    <div className="relative">
+                      <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        type="url"
+                        placeholder="https://meet.google.com/abc-defg-hij"
+                        value={sessionMeetLink}
+                        onChange={(e) => setSessionMeetLink(e.target.value)}
+                        className="bg-gray-800 border-gray-700 pl-10"
+                        required
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Google Meet, Zoom, or any video call URL
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Date & Time</Label>
                     <Input
                       type="datetime-local"
                       value={sessionDate}
@@ -1035,8 +1122,8 @@ export default function AdminDashboardPage() {
                       className="bg-gray-800 border-gray-700"
                     />
                   </div>
-                  <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Creating..." : "Create Session"}
+                  <Button type="submit" disabled={loading || sessionsLoading} className="w-full">
+                    {loading || sessionsLoading ? "Creating..." : "Create Session"}
                   </Button>
                 </form>
               </CardContent>
@@ -1047,7 +1134,7 @@ export default function AdminDashboardPage() {
                 <CardTitle className="text-white">Existing Sessions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div className="space-y-3 max-h-[500px] overflow-y-auto">
                   {sessions.length === 0 ? (
                     <p className="text-gray-500 text-center py-4">
                       No sessions yet
@@ -1056,23 +1143,124 @@ export default function AdminDashboardPage() {
                     sessions.map((s) => (
                       <div
                         key={s.id}
-                        className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg"
+                        className="p-4 bg-gray-800/50 rounded-lg"
                       >
-                        <div>
-                          <p className="font-medium">{s.title}</p>
-                          <p className="text-sm text-gray-400">
-                            {s.date
-                              ? new Date(s.date).toLocaleString()
-                              : "No date set"}
-                          </p>
-                        </div>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDeleteSession(s.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                        {editingId === s.id ? (
+                          // Edit Mode
+                          <div className="space-y-3">
+                            <div className="space-y-2">
+                              <Label className="text-xs text-gray-400">Title *</Label>
+                              <Input
+                                value={editTitle}
+                                onChange={(e) => setEditTitle(e.target.value)}
+                                className="bg-gray-800 border-gray-700 h-9"
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs text-gray-400">Details</Label>
+                              <textarea
+                                value={editDetails}
+                                onChange={(e) => setEditDetails(e.target.value)}
+                                className="w-full h-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs text-gray-400">Meeting Link *</Label>
+                              <Input
+                                type="url"
+                                value={editMeetLink}
+                                onChange={(e) => setEditMeetLink(e.target.value)}
+                                className="bg-gray-800 border-gray-700 h-9"
+                                required
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs text-gray-400">Date & Time</Label>
+                              <Input
+                                type="datetime-local"
+                                value={editDate}
+                                onChange={(e) => setEditDate(e.target.value)}
+                                className="bg-gray-800 border-gray-700 h-9"
+                              />
+                            </div>
+                            <div className="flex gap-2 pt-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleSaveEdit(s.id)}
+                                disabled={!editTitle || !editMeetLink || sessionsLoading}
+                                className="gap-1"
+                              >
+                                <Check className="h-4 w-4" />
+                                Save
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleCancelEdit}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          // View Mode
+                          <div className="space-y-3">
+                            <div>
+                              <p className="font-medium text-white">{s.title}</p>
+                              {s.details && (
+                                <p className="text-sm text-gray-400 mt-1 line-clamp-2">
+                                  {s.details}
+                                </p>
+                              )}
+                              <p className="text-sm text-gray-500 mt-1">
+                                {s.date
+                                  ? new Date(s.date).toLocaleString()
+                                  : "No date set"}
+                              </p>
+                              <div className="flex items-center gap-1 mt-2 text-sm text-blue-400">
+                                <Link2 className="h-3 w-3" />
+                                <span className="truncate max-w-[200px]">
+                                  {s.meetLink}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleJoinMeeting(s.meetLink)}
+                                className="gap-1"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                                Join
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleCopyLink(s.meetLink)}
+                                className="gap-1"
+                              >
+                                <Copy className="h-4 w-4" />
+                                Copy Link
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleStartEdit(s)}
+                                className="gap-1"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDeleteSession(s.id)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))
                   )}

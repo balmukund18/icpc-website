@@ -13,6 +13,7 @@ export interface Session {
   id: string;
   title: string;
   details: string | null;
+  meetLink: string; // Required: Video call URL (Google Meet, Zoom, etc.)
   date: string | null;
   attendees: string[] | null;
   summary: string | null;
@@ -77,6 +78,7 @@ export async function getSessions(): Promise<Session[]> {
 export async function createSession(data: {
   title: string;
   details?: string;
+  meetLink: string; // Required
   date?: string;
 }): Promise<Session> {
   const response = await api.post("/sessions", data);
@@ -85,7 +87,7 @@ export async function createSession(data: {
 
 export async function updateSession(
   id: string,
-  data: { title?: string; details?: string; date?: string }
+  data: { title?: string; details?: string; meetLink?: string; date?: string }
 ): Promise<Session> {
   const response = await api.put(`/sessions/${id}`, data);
   return response.data.data || response.data;

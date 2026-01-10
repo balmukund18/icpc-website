@@ -24,6 +24,7 @@ import {
   CheckSquare,
   Medal,
   ArrowRight,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -97,8 +98,22 @@ export default function DashboardPage() {
           ]);
 
         if (profileRes.status === "fulfilled") {
-          setProfile(profileRes.value.data.data);
+          const profileData = profileRes.value.data.data;
+          
+          // First-time user - redirect to profile setup
+          if (!profileData) {
+            router.push("/profile");
+            return;
+          }
+          
+          setProfile(profileData);
+        } else {
+          // Profile fetch failed (likely 404 - no profile exists)
+          // Redirect to profile setup
+          router.push("/profile");
+          return;
         }
+        
         if (contestsRes.status === "fulfilled") {
           setContests(contestsRes.value.data.data);
         }
@@ -177,6 +192,12 @@ export default function DashboardPage() {
               <Button variant="outline" className="gap-2">
                 <Calendar className="w-4 h-4" />
                 Sessions
+              </Button>
+            </Link>
+            <Link href="/profile">
+              <Button variant="outline" className="gap-2">
+                <Settings className="w-4 h-4" />
+                Profile
               </Button>
             </Link>
             {user.role === "ADMIN" && (

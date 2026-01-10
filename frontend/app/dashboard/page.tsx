@@ -61,6 +61,7 @@ export default function DashboardPage() {
   const logout = useAuthStore((state) => state.logout);
   const isAuthenticated = useAuthStore((state) => !!state.token);
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
+  const hasProfile = useAuthStore((state) => state.hasProfile);
   const router = useRouter();
 
   // Task store
@@ -80,14 +81,25 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (hasHydrated && !isAuthenticated) {
+    if (!hasHydrated) return;
+
+    if (!isAuthenticated) {
       router.push("/login");
+      return;
     }
-  }, [isAuthenticated, hasHydrated, router]);
+
+    // Redirect to profile if hasProfile is explicitly false
+    if (hasProfile === false) {
+      router.push("/profile");
+      return;
+    }
+  }, [isAuthenticated, hasHydrated, hasProfile, router]);
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!isAuthenticated) return;
+      // Only fetch if authenticated AND has profile
+      if (!isAuthenticated || hasProfile !== true) return;
+
       try {
         const [profileRes, contestsRes, submissionsRes, sessionsRes] =
           await Promise.allSettled([
@@ -97,23 +109,11 @@ export default function DashboardPage() {
             getSessions(),
           ]);
 
+        // Profile data for display (no redirect logic needed)
         if (profileRes.status === "fulfilled") {
-          const profileData = profileRes.value.data.data;
-          
-          // First-time user - redirect to profile setup
-          if (!profileData) {
-            router.push("/profile");
-            return;
-          }
-          
-          setProfile(profileData);
-        } else {
-          // Profile fetch failed (likely 404 - no profile exists)
-          // Redirect to profile setup
-          router.push("/profile");
-          return;
+          setProfile(profileRes.value.data.data);
         }
-        
+
         if (contestsRes.status === "fulfilled") {
           setContests(contestsRes.value.data.data);
         }
@@ -150,9 +150,10 @@ export default function DashboardPage() {
     };
 
     fetchData();
-  }, [isAuthenticated, fetchTasks, fetchUserPoints, fetchLeaderboard]);
+  }, [isAuthenticated, hasProfile, fetchTasks, fetchUserPoints, fetchLeaderboard]);
 
-  if (!hasHydrated || loading) {
+  // Show loading if not hydrated, OR hasProfile not confirmed, OR data still loading
+  if (!hasHydrated || hasProfile !== true || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
         <div className="animate-pulse text-xl">Loading Dashboard...</div>

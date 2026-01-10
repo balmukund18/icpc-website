@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import api from "@/lib/axios";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Vortex } from "@/components/ui/vortex";
+import { getProfile } from "@/lib/profileService";
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -29,6 +30,7 @@ const formSchema = z.object({
 export default function LoginPage() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
+  const setHasProfile = useAuthStore((state) => state.setHasProfile);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -43,6 +45,15 @@ export default function LoginPage() {
       const response = await api.post("/auth/login", values);
       const { user, token } = response.data.data;
       login(user, token);
+
+      // Check if profile exists and store result
+      try {
+        const profile = await getProfile();
+        setHasProfile(!!profile);
+      } catch {
+        setHasProfile(false);
+      }
+
       toast.success("Logged in successfully");
       router.push("/dashboard");
     } catch (error: any) {
@@ -56,7 +67,7 @@ export default function LoginPage() {
       className="flex items-center justify-center h-full"
       backgroundColor="black"
     >
-      <Card className="w-[350px]">
+      <Card className="w-87.5">
         <CardHeader>
           <CardTitle>Login</CardTitle>
         </CardHeader>

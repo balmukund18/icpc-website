@@ -48,6 +48,7 @@ export default function ProfilePage() {
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => !!state.token);
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
+  const setHasProfile = useAuthStore((state) => state.setHasProfile);
   const router = useRouter();
 
   // Form state
@@ -150,6 +151,9 @@ export default function ProfilePage() {
         contact: phone.trim() || "",
         handles,
       });
+
+      // Update auth store - profile now exists
+      setHasProfile(true);
 
       toast.success(
         isFirstTime

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -19,6 +19,7 @@ import {
   LANGUAGES,
   CODE_TEMPLATES,
 } from "@/components/code-editor";
+import { useCodePersistence } from "@/lib/hooks/useCodePersistence";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -67,6 +68,22 @@ export default function ContestDetailPage() {
   const [contestEnded, setContestEnded] = useState(false);
   const [contestStarted, setContestStarted] = useState(false);
   const [timeUntilStart, setTimeUntilStart] = useState<number | null>(null);
+  const [contestEndTime, setContestEndTime] = useState<number | null>(null);
+
+  // Get default code template for current language
+  const defaultCode = useMemo(
+    () => CODE_TEMPLATES[languageId] || "",
+    [languageId]
+  );
+
+  // Code persistence hook
+  const { loadCode, saveCode, clearContestCode } = useCodePersistence(
+    contestId,
+    contestEndTime,
+    selectedProblemIdx,
+    languageId,
+    defaultCode
+  );
 
   // Fetch contest data
   useEffect(() => {
@@ -80,11 +97,15 @@ export default function ContestDetailPage() {
         const data = await getContest(contestId);
         setContest(data);
 
-        // Initialize code with template
+        // Calculate contest end time
+        const startTime = new Date(data.startTime).getTime();
+        const endTime = startTime + data.timer * 60 * 1000;
+        setContestEndTime(endTime);
+
+        // Initialize code with template (will be overridden by loadCode effect)
         setCode(CODE_TEMPLATES[54] || "");
 
         // Calculate contest status using startTime
-        const startTime = new Date(data.startTime).getTime();
         const now = Date.now();
         
         if (now < startTime) {
@@ -97,7 +118,6 @@ export default function ContestDetailPage() {
           setTimeUntilStart(null);
           
           // Calculate time remaining until end
-          const endTime = startTime + data.timer * 60 * 1000;
           const remaining = endTime - now;
 
           if (remaining <= 0) {
@@ -166,6 +186,8 @@ export default function ContestDetailPage() {
       setTimeRemaining((prev) => {
         if (prev === null || prev <= 1000) {
           setContestEnded(true);
+          // Clear saved code immediately when contest ends
+          clearContestCode();
           return 0;
         }
         return prev - 1000;
@@ -173,17 +195,34 @@ export default function ContestDetailPage() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [contestStarted, timeRemaining]);
+  }, [contestStarted, timeRemaining, clearContestCode]);
 
-  // Update code template when language changes
+  // Load saved code when problem or language changes
+  useEffect(() => {
+    if (!contestId || !contestEndTime || loading) return;
+    
+    // Don't load if contest hasn't started or has ended
+    if (!contestStarted || contestEnded) return;
+
+    const savedCode = loadCode();
+    setCode(savedCode);
+  }, [contestId, contestEndTime, selectedProblemIdx, languageId, contestStarted, contestEnded, loading, loadCode]);
+
+  // Save code on changes (debounced via hook)
+  const handleCodeChange = useCallback(
+    (newCode: string) => {
+      setCode(newCode);
+      // Save to localStorage (debounced in hook)
+      saveCode(newCode);
+    },
+    [saveCode]
+  );
+
+  // Handle language change - load saved code for new language
   const handleLanguageChange = (value: string) => {
     const newLangId = parseInt(value);
     setLanguageId(newLangId);
-    // Only set template if code is empty or matches another template
-    const currentTemplate = CODE_TEMPLATES[languageId];
-    if (!code || code === currentTemplate) {
-      setCode(CODE_TEMPLATES[newLangId] || "");
-    }
+    // Code will be loaded by the useEffect above when languageId changes
   };
 
   // Submit solution
@@ -769,7 +808,7 @@ export default function ContestDetailPage() {
             <div className="flex-1 p-3 overflow-hidden">
               <CodeEditor
                 value={code}
-                onChange={setCode}
+                onChange={handleCodeChange}
                 languageId={languageId}
                 height="100%"
                 readOnly={contestEnded}

@@ -33,7 +33,9 @@ export interface Announcement {
   id: string;
   title: string;
   content: string;
+  pinned: boolean;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface Blog {
@@ -139,9 +141,22 @@ export async function getAnnouncements(): Promise<Announcement[]> {
 export async function createAnnouncement(data: {
   title: string;
   content: string;
+  pinned?: boolean;
 }): Promise<Announcement> {
   const response = await api.post("/announcements", data);
   return response.data.data || response.data;
+}
+
+export async function updateAnnouncement(
+  id: string,
+  data: { title?: string; content?: string; pinned?: boolean }
+): Promise<Announcement> {
+  const response = await api.put(`/announcements/${id}`, data);
+  return response.data.data || response.data;
+}
+
+export async function deleteAnnouncement(id: string): Promise<void> {
+  await api.delete(`/announcements/${id}`);
 }
 
 // Blogs

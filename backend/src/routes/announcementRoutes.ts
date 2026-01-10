@@ -4,7 +4,12 @@ import { isAuthenticated, isAdmin } from '../middleware/auth';
 
 const router = Router();
 
-router.post('/', isAuthenticated, isAdmin, ctrl.create);
+// Public
 router.get('/', ctrl.listAll);
+
+// Admin only
+router.post('/', isAuthenticated, isAdmin, ctrl.create);
+router.put('/:id', isAuthenticated, isAdmin, ctrl.update);
+router.delete('/:id', isAuthenticated, isAdmin, ctrl.remove);
 
 export default router;

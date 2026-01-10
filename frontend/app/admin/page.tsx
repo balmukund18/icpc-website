@@ -39,6 +39,7 @@ import {
   ChevronUp,
   Globe,
   User as UserIcon,
+  Pin,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -48,6 +49,8 @@ import {
   updateUserRole,
   getAnnouncements,
   createAnnouncement,
+  updateAnnouncement,
+  deleteAnnouncement,
   getPendingBlogs,
   approveBlog,
   createContest,
@@ -179,6 +182,13 @@ export default function AdminDashboardPage() {
 
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementContent, setAnnouncementContent] = useState("");
+  const [announcementPinned, setAnnouncementPinned] = useState(false);
+
+  // Announcement edit states
+  const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
+  const [editAnnTitle, setEditAnnTitle] = useState("");
+  const [editAnnContent, setEditAnnContent] = useState("");
+  const [editAnnPinned, setEditAnnPinned] = useState(false);
 
   useEffect(() => {
     if (hasHydrated) {
@@ -667,10 +677,12 @@ export default function AdminDashboardPage() {
       await createAnnouncement({
         title: announcementTitle,
         content: announcementContent,
+        pinned: announcementPinned,
       });
       showMessage("success", "Announcement created successfully!");
       setAnnouncementTitle("");
       setAnnouncementContent("");
+      setAnnouncementPinned(false);
       fetchDataForTab("announcements");
     } catch (error: any) {
       showMessage(
@@ -679,6 +691,65 @@ export default function AdminDashboardPage() {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleStartEditAnnouncement = (announcement: Announcement) => {
+    setEditingAnnouncementId(announcement.id);
+    setEditAnnTitle(announcement.title);
+    setEditAnnContent(announcement.content);
+    setEditAnnPinned(announcement.pinned);
+  };
+
+  const handleCancelEditAnnouncement = () => {
+    setEditingAnnouncementId(null);
+    setEditAnnTitle("");
+    setEditAnnContent("");
+    setEditAnnPinned(false);
+  };
+
+  const handleSaveEditAnnouncement = async (id: string) => {
+    try {
+      await updateAnnouncement(id, {
+        title: editAnnTitle,
+        content: editAnnContent,
+        pinned: editAnnPinned,
+      });
+      showMessage("success", "Announcement updated successfully!");
+      handleCancelEditAnnouncement();
+      fetchDataForTab("announcements");
+    } catch (error: any) {
+      showMessage(
+        "error",
+        error.response?.data?.message || "Failed to update announcement"
+      );
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this announcement?")) return;
+    try {
+      await deleteAnnouncement(id);
+      showMessage("success", "Announcement deleted successfully!");
+      fetchDataForTab("announcements");
+    } catch (error: any) {
+      showMessage(
+        "error",
+        error.response?.data?.message || "Failed to delete announcement"
+      );
+    }
+  };
+
+  const handleTogglePin = async (announcement: Announcement) => {
+    try {
+      await updateAnnouncement(announcement.id, { pinned: !announcement.pinned });
+      showMessage("success", announcement.pinned ? "Announcement unpinned" : "Announcement pinned");
+      fetchDataForTab("announcements");
+    } catch (error: any) {
+      showMessage(
+        "error",
+        error.response?.data?.message || "Failed to update announcement"
+      );
     }
   };
 
@@ -1971,7 +2042,7 @@ export default function AdminDashboardPage() {
               <CardContent>
                 <form onSubmit={handleCreateAnnouncement} className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Title</Label>
+                    <Label>Title *</Label>
                     <Input
                       placeholder="Announcement title"
                       value={announcementTitle}
@@ -1981,7 +2052,7 @@ export default function AdminDashboardPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Content</Label>
+                    <Label>Content *</Label>
                     <textarea
                       placeholder="Announcement content..."
                       value={announcementContent}
@@ -1989,6 +2060,19 @@ export default function AdminDashboardPage() {
                       className="w-full h-32 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none"
                       required
                     />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="pinned"
+                      checked={announcementPinned}
+                      onChange={(e) => setAnnouncementPinned(e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-yellow-500 focus:ring-yellow-500"
+                    />
+                    <Label htmlFor="pinned" className="flex items-center gap-1 cursor-pointer">
+                      <Pin className="h-4 w-4 text-yellow-500" />
+                      Pin this announcement
+                    </Label>
                   </div>
                   <Button type="submit" disabled={loading} className="w-full">
                     {loading ? "Creating..." : "Post Announcement"}
@@ -2000,27 +2084,139 @@ export default function AdminDashboardPage() {
             <Card className="bg-gray-900 border-gray-800">
               <CardHeader>
                 <CardTitle className="text-white">
-                  Recent Announcements
+                  All Announcements
                 </CardTitle>
+                <CardDescription>
+                  {announcements.length} announcement{announcements.length !== 1 ? "s" : ""}
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div className="space-y-3 max-h-[500px] overflow-y-auto">
                   {announcements.length === 0 ? (
                     <p className="text-gray-500 text-center py-4">
                       No announcements yet
                     </p>
                   ) : (
-                    announcements.map((a) => (
-                      <div key={a.id} className="p-3 bg-gray-800/50 rounded-lg">
-                        <p className="font-medium">{a.title}</p>
-                        <p className="text-sm text-gray-400 line-clamp-2">
-                          {a.content}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-2">
-                          {new Date(a.createdAt).toLocaleString()}
-                        </p>
-                      </div>
-                    ))
+                    announcements.map((a) => {
+                      const isEditing = editingAnnouncementId === a.id;
+                      
+                      return (
+                        <div
+                          key={a.id}
+                          className={`p-4 rounded-lg ${
+                            a.pinned
+                              ? "bg-yellow-500/10 border-l-4 border-yellow-500"
+                              : "bg-gray-800/50"
+                          }`}
+                        >
+                          {isEditing ? (
+                            // Edit Mode
+                            <div className="space-y-3">
+                              <div className="space-y-2">
+                                <Label className="text-xs text-gray-400">Title *</Label>
+                                <Input
+                                  value={editAnnTitle}
+                                  onChange={(e) => setEditAnnTitle(e.target.value)}
+                                  className="bg-gray-800 border-gray-700 h-9"
+                                  required
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-xs text-gray-400">Content *</Label>
+                                <textarea
+                                  value={editAnnContent}
+                                  onChange={(e) => setEditAnnContent(e.target.value)}
+                                  className="w-full h-24 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none"
+                                  required
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  id={`edit-pinned-${a.id}`}
+                                  checked={editAnnPinned}
+                                  onChange={(e) => setEditAnnPinned(e.target.checked)}
+                                  className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-yellow-500 focus:ring-yellow-500"
+                                />
+                                <Label htmlFor={`edit-pinned-${a.id}`} className="flex items-center gap-1 cursor-pointer text-sm">
+                                  <Pin className="h-3 w-3 text-yellow-500" />
+                                  Pinned
+                                </Label>
+                              </div>
+                              <div className="flex gap-2 pt-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSaveEditAnnouncement(a.id)}
+                                  disabled={!editAnnTitle || !editAnnContent}
+                                  className="gap-1"
+                                >
+                                  <Check className="h-4 w-4" />
+                                  Save
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={handleCancelEditAnnouncement}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            // View Mode
+                            <div className="space-y-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    {a.pinned && (
+                                      <Pin className="h-4 w-4 text-yellow-500 flex-shrink-0" />
+                                    )}
+                                    <p className="font-medium text-white">{a.title}</p>
+                                  </div>
+                                  <p className="text-sm text-gray-400 mt-1 whitespace-pre-wrap">
+                                    {a.content}
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-2">
+                                    {new Date(a.createdAt).toLocaleString()}
+                                  </p>
+                                </div>
+                                <div className="flex gap-1 flex-shrink-0">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleTogglePin(a)}
+                                    className={`h-8 w-8 p-0 ${
+                                      a.pinned ? "text-yellow-500 hover:text-yellow-400" : "text-gray-400 hover:text-yellow-500"
+                                    }`}
+                                    title={a.pinned ? "Unpin" : "Pin"}
+                                  >
+                                    <Pin className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleStartEditAnnouncement(a)}
+                                    className="h-8 w-8 p-0"
+                                    title="Edit"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleDeleteAnnouncement(a.id)}
+                                    className="h-8 w-8 p-0 text-red-400 hover:text-red-300"
+                                    title="Delete"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </CardContent>

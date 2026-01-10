@@ -25,6 +25,7 @@ import {
   Medal,
   ArrowRight,
   Settings,
+  Megaphone,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -33,6 +34,7 @@ import {
   Session,
 } from "@/lib/sessionService";
 import { getTaskStatus } from "@/lib/taskService";
+import { getAnnouncements, Announcement } from "@/lib/adminService";
 
 interface Profile {
   name: string;
@@ -78,6 +80,7 @@ export default function DashboardPage() {
   const [contests, setContests] = useState<Contest[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [nextSession, setNextSession] = useState<Session | null>(null);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -101,12 +104,13 @@ export default function DashboardPage() {
       if (!isAuthenticated || hasProfile !== true) return;
 
       try {
-        const [profileRes, contestsRes, submissionsRes, sessionsRes] =
+        const [profileRes, contestsRes, submissionsRes, sessionsRes, announcementsRes] =
           await Promise.allSettled([
             api.get("/profile"),
             api.get("/contests"),
             api.get("/contests/my-submissions"),
             getSessions(),
+            getAnnouncements(),
           ]);
 
         // Profile data for display (no redirect logic needed)
@@ -134,6 +138,9 @@ export default function DashboardPage() {
               return new Date(a.date).getTime() - new Date(b.date).getTime();
             });
           setNextSession(upcomingOrLive[0] || null);
+        }
+        if (announcementsRes.status === "fulfilled") {
+          setAnnouncements(announcementsRes.value);
         }
 
         // Fetch tasks data
@@ -219,6 +226,34 @@ export default function DashboardPage() {
             </Button>
           </div>
         </div>
+
+        {/* Announcements Banner */}
+        {announcements.length > 0 && (
+          <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Megaphone className="h-5 w-5 text-yellow-500" />
+                <span className="font-semibold text-yellow-500 text-sm uppercase tracking-wide">
+                  {announcements[0].pinned ? "Pinned" : "Latest"}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-foreground truncate">
+                  {announcements[0].title}
+                </p>
+                <p className="text-sm text-muted-foreground truncate">
+                  {announcements[0].content}
+                </p>
+              </div>
+              <Link href="/announcements" className="flex-shrink-0">
+                <Button variant="outline" size="sm" className="gap-1 border-yellow-500/30 hover:bg-yellow-500/10">
+                  View All ({announcements.length})
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

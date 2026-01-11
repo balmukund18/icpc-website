@@ -42,9 +42,18 @@ export interface Blog {
   id: string;
   title: string;
   content: string;
-  approved: boolean;
+  tags: string[];
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  rejectionReason: string | null;
   authorId: string;
+  author: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
   createdAt: string;
+  updatedAt: string;
 }
 
 // User Management
@@ -171,6 +180,11 @@ export async function getPendingBlogs(): Promise<Blog[]> {
 
 export async function approveBlog(blogId: string): Promise<Blog> {
   const response = await api.post(`/blogs/${blogId}/approve`);
+  return response.data.data || response.data;
+}
+
+export async function rejectBlog(blogId: string, reason?: string): Promise<Blog> {
+  const response = await api.post(`/blogs/${blogId}/reject`, { reason });
   return response.data.data || response.data;
 }
 

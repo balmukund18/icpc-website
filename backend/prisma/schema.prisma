@@ -15,6 +15,7 @@ model User {
   approved           Boolean             @default(false)
   createdAt          DateTime            @default(now())
   blogs              Blog[]
+  comments           Comment[]
   contestSubmissions ContestSubmission[]
   profile            Profile?
   submissions        Submission[]
@@ -90,14 +91,35 @@ model Session {
 }
 
 model Blog {
+  id              String     @id @default(cuid())
+  authorId        String
+  title           String
+  content         String     @db.Text
+  tags            String[]
+  status          BlogStatus @default(PENDING)
+  rejectionReason String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  author          User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments        Comment[]
+}
+
+enum BlogStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Comment {
   id        String   @id @default(cuid())
-  authorId  String
-  title     String
-  content   String
-  approved  Boolean  @default(false)
-  comments  Json?
+  blogId    String
+  userId    String
+  content   String   @db.Text
+  isEdited  Boolean  @default(false)
   createdAt DateTime @default(now())
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  updatedAt DateTime @updatedAt
+  blog      Blog     @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ContestSubmission {

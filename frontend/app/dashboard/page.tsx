@@ -27,6 +27,7 @@ import {
   Settings,
   Megaphone,
   GraduationCap,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -201,6 +202,12 @@ export default function DashboardPage() {
               <Button variant="outline" className="gap-2">
                 <Calendar className="w-4 h-4" />
                 Sessions
+              </Button>
+            </Link>
+            <Link href="/blog">
+              <Button variant="outline" className="gap-2">
+                <FileText className="w-4 h-4" />
+                Blog
               </Button>
             </Link>
             <Link href="/profile">

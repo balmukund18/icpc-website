@@ -55,6 +55,7 @@ import {
   deleteAnnouncement,
   getPendingBlogs,
   approveBlog,
+  rejectBlog,
   createContest,
   addProblemToContest,
   deleteContest,
@@ -191,6 +192,10 @@ export default function AdminDashboardPage() {
   const [editAnnTitle, setEditAnnTitle] = useState("");
   const [editAnnContent, setEditAnnContent] = useState("");
   const [editAnnPinned, setEditAnnPinned] = useState(false);
+
+  // Blog rejection states
+  const [rejectingBlogId, setRejectingBlogId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   useEffect(() => {
     if (hasHydrated) {
@@ -787,6 +792,21 @@ export default function AdminDashboardPage() {
       showMessage(
         "error",
         error.response?.data?.message || "Failed to approve blog"
+      );
+    }
+  };
+
+  const handleRejectBlog = async (blogId: string) => {
+    try {
+      await rejectBlog(blogId, rejectionReason || undefined);
+      showMessage("success", "Blog rejected. Author has been notified.");
+      setRejectingBlogId(null);
+      setRejectionReason("");
+      fetchDataForTab("blogs");
+    } catch (error: any) {
+      showMessage(
+        "error",
+        error.response?.data?.message || "Failed to reject blog"
       );
     }
   };
@@ -2270,43 +2290,129 @@ export default function AdminDashboardPage() {
                 Pending Blog Approvals
               </CardTitle>
               <CardDescription>
-                Review and approve blog posts submitted by users
+                Review and approve or reject blog posts submitted by users
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {pendingBlogs.length === 0 ? (
                   <p className="text-gray-500 text-center py-8">
-                    No pending blogs
+                    No pending blogs to review
                   </p>
                 ) : (
-                  pendingBlogs.map((blog) => (
-                    <div
-                      key={blog.id}
-                      className="p-4 bg-gray-800/50 rounded-lg space-y-2"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="font-medium">{blog.title}</h3>
-                          <p className="text-sm text-gray-400">
-                            By: {blog.authorId} •{" "}
-                            {new Date(blog.createdAt).toLocaleDateString()}
-                          </p>
+                  pendingBlogs.map((blog) => {
+                    const isRejecting = rejectingBlogId === blog.id;
+                    
+                    return (
+                      <div
+                        key={blog.id}
+                        className="p-4 bg-gray-800/50 rounded-lg space-y-3"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-white">{blog.title}</h3>
+                            <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
+                              <span>By: {blog.author?.name || blog.authorId}</span>
+                              <span>•</span>
+                              <span>{new Date(blog.createdAt).toLocaleDateString()}</span>
+                            </div>
+                            {blog.tags && blog.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {blog.tags.slice(0, 5).map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="px-2 py-0.5 text-xs rounded-full bg-white/10 text-white/70"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                                {blog.tags.length > 5 && (
+                                  <span className="px-2 py-0.5 text-xs rounded-full bg-white/10 text-white/70">
+                                    +{blog.tags.length - 5}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          {!isRejecting && (
+                            <div className="flex gap-2 flex-shrink-0">
+                              <Button
+                                size="sm"
+                                className="gap-1"
+                                onClick={() => handleApproveBlog(blog.id)}
+                              >
+                                <Check className="h-4 w-4" />
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="gap-1"
+                                onClick={() => setRejectingBlogId(blog.id)}
+                              >
+                                <X className="h-4 w-4" />
+                                Reject
+                              </Button>
+                            </div>
+                          )}
                         </div>
+                        
+                        {/* Blog content preview */}
+                        <div 
+                          className="text-sm text-gray-300 line-clamp-3 prose prose-invert prose-sm max-w-none"
+                          dangerouslySetInnerHTML={{ __html: blog.content }}
+                        />
+                        
+                        {/* View full blog link */}
                         <Button
+                          variant="link"
                           size="sm"
-                          className="gap-1"
-                          onClick={() => handleApproveBlog(blog.id)}
+                          className="p-0 h-auto text-blue-400 hover:text-blue-300"
+                          onClick={() => window.open(`/blog/${blog.id}`, '_blank')}
                         >
-                          <Check className="h-4 w-4" />
-                          Approve
+                          View full blog →
                         </Button>
+                        
+                        {/* Rejection form */}
+                        {isRejecting && (
+                          <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg space-y-3">
+                            <div className="space-y-2">
+                              <Label className="text-sm text-red-400">
+                                Rejection Reason (optional)
+                              </Label>
+                              <textarea
+                                value={rejectionReason}
+                                onChange={(e) => setRejectionReason(e.target.value)}
+                                placeholder="Provide feedback to help the author improve their blog..."
+                                className="w-full h-20 px-3 py-2 bg-gray-800 border border-red-500/30 rounded-md text-sm resize-none text-white placeholder:text-gray-500"
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleRejectBlog(blog.id)}
+                                className="gap-1"
+                              >
+                                <X className="h-4 w-4" />
+                                Confirm Rejection
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setRejectingBlogId(null);
+                                  setRejectionReason("");
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <p className="text-sm text-gray-300 line-clamp-3">
-                        {blog.content}
-                      </p>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </CardContent>

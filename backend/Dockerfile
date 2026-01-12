@@ -1,5 +1,5 @@
 # Multi-stage build for smaller production image
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /usr/src/app
 
@@ -16,7 +16,7 @@ COPY . .
 RUN npm run build
 
 # production image
-FROM node:20-alpine AS runtime
+FROM node:20-slim AS runtime
 WORKDIR /usr/src/app
 
 # copy only what we need

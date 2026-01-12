@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Megaphone, Pin } from "lucide-react";
+import { Megaphone, Pin, Loader2 } from "lucide-react";
 import { getAnnouncements, Announcement } from "@/lib/adminService";
 
 export default function AnnouncementsPage() {
@@ -40,7 +40,7 @@ export default function AnnouncementsPage() {
   if (!hasHydrated || hasProfile !== true || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
-        <div className="animate-pulse text-xl">Loading Announcements...</div>
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }

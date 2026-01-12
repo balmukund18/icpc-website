@@ -41,6 +41,7 @@ import {
   User as UserIcon,
   Pin,
   Trash2,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -88,6 +89,7 @@ export default function AdminDashboardPage() {
 
   const [activeTab, setActiveTab] = useState<TabType>("users");
   const [loading, setLoading] = useState(false);
+  const [tabLoading, setTabLoading] = useState(true);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -210,6 +212,7 @@ export default function AdminDashboardPage() {
   }, [activeTab, hasHydrated, user]);
 
   const fetchDataForTab = async (tab: TabType) => {
+    setTabLoading(true);
     try {
       switch (tab) {
         case "users":
@@ -245,6 +248,8 @@ export default function AdminDashboardPage() {
       }
     } catch (error) {
       console.error(`Error fetching ${tab} data`, error);
+    } finally {
+      setTabLoading(false);
     }
   };
 
@@ -901,104 +906,110 @@ export default function AdminDashboardPage() {
               </Select>
             </div>
 
-            <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-800">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
-                      Email
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
-                      Role
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
-                      Joined
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-800">
-                  {displayedUsers.length === 0 ? (
+            {tabLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-gray-800">
                     <tr>
-                      <td
-                        colSpan={5}
-                        className="px-4 py-8 text-center text-gray-500"
-                      >
-                        No users found
-                      </td>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
+                        Email
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
+                        Role
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
+                        Status
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
+                        Joined
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
+                        Actions
+                      </th>
                     </tr>
-                  ) : (
-                    displayedUsers.map((u) => (
-                      <tr key={u.id} className="hover:bg-gray-800/50">
-                        <td className="px-4 py-3 text-sm">{u.email}</td>
-                        <td className="px-4 py-3">
-                          <Select
-                            value={u.role}
-                            onValueChange={(role) =>
-                              handleUpdateRole(u.id, role)
-                            }
-                          >
-                            <SelectTrigger className="w-28 h-8 bg-gray-800 border-gray-700 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="bg-gray-800 border-gray-700">
-                              <SelectItem value="STUDENT">Student</SelectItem>
-                              <SelectItem value="ADMIN">Admin</SelectItem>
-                              <SelectItem value="ALUMNI">Alumni</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`px-2 py-1 rounded text-xs ${
-                              u.approved
-                                ? "bg-green-500/20 text-green-400"
-                                : "bg-yellow-500/20 text-yellow-400"
-                            }`}
-                          >
-                            {u.approved ? "Approved" : "Pending"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-400">
-                          {new Date(u.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-2">
-                            {!u.approved && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-7 text-xs gap-1"
-                                onClick={() => handleApproveUser(u.id)}
-                              >
-                                <Check className="h-3 w-3" />
-                                Approve
-                              </Button>
-                            )}
-                            {u.role !== "ADMIN" && (
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                className="h-7 text-xs gap-1"
-                                onClick={() => handleDeleteUser(u.id, u.email, u.role)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                                Delete
-                              </Button>
-                            )}
-                          </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800">
+                    {displayedUsers.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className="px-4 py-8 text-center text-gray-500"
+                        >
+                          No users found
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    ) : (
+                      displayedUsers.map((u) => (
+                        <tr key={u.id} className="hover:bg-gray-800/50">
+                          <td className="px-4 py-3 text-sm">{u.email}</td>
+                          <td className="px-4 py-3">
+                            <Select
+                              value={u.role}
+                              onValueChange={(role) =>
+                                handleUpdateRole(u.id, role)
+                              }
+                            >
+                              <SelectTrigger className="w-28 h-8 bg-gray-800 border-gray-700 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-gray-800 border-gray-700">
+                                <SelectItem value="STUDENT">Student</SelectItem>
+                                <SelectItem value="ADMIN">Admin</SelectItem>
+                                <SelectItem value="ALUMNI">Alumni</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`px-2 py-1 rounded text-xs ${
+                                u.approved
+                                  ? "bg-green-500/20 text-green-400"
+                                  : "bg-yellow-500/20 text-yellow-400"
+                              }`}
+                            >
+                              {u.approved ? "Approved" : "Pending"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-400">
+                            {new Date(u.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-2">
+                              {!u.approved && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs gap-1"
+                                  onClick={() => handleApproveUser(u.id)}
+                                >
+                                  <Check className="h-3 w-3" />
+                                  Approve
+                                </Button>
+                              )}
+                              {u.role !== "ADMIN" && (
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  className="h-7 text-xs gap-1"
+                                  onClick={() => handleDeleteUser(u.id, u.email, u.role)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                  Delete
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
@@ -1268,6 +1279,11 @@ export default function AdminDashboardPage() {
                 <CardTitle className="text-white">Existing Contests</CardTitle>
               </CardHeader>
               <CardContent>
+                {tabLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
                 <div className="space-y-3">
                   {contests.length === 0 ? (
                     <p className="text-gray-500 text-center py-4">
@@ -1330,6 +1346,7 @@ export default function AdminDashboardPage() {
                     })
                   )}
                 </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -1404,6 +1421,11 @@ export default function AdminDashboardPage() {
                 <CardTitle className="text-white">Existing Sessions</CardTitle>
               </CardHeader>
               <CardContent>
+                {tabLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
                 <div className="space-y-3 max-h-[500px] overflow-y-auto">
                   {sessions.length === 0 ? (
                     <p className="text-gray-500 text-center py-4">
@@ -1535,6 +1557,7 @@ export default function AdminDashboardPage() {
                     ))
                   )}
                 </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -1691,6 +1714,11 @@ export default function AdminDashboardPage() {
                   <CardDescription>{tasks.length} task{tasks.length !== 1 ? "s" : ""} created</CardDescription>
                 </CardHeader>
                 <CardContent>
+                  {tabLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : (
                   <div className="space-y-3 max-h-[500px] overflow-y-auto">
                     {tasksLoading ? (
                       <p className="text-gray-500 text-center py-4">Loading...</p>
@@ -2002,6 +2030,7 @@ export default function AdminDashboardPage() {
                       })
                     )}
                   </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -2133,6 +2162,11 @@ export default function AdminDashboardPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {tabLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
                 <div className="space-y-3 max-h-[500px] overflow-y-auto">
                   {announcements.length === 0 ? (
                     <p className="text-gray-500 text-center py-4">
@@ -2261,6 +2295,7 @@ export default function AdminDashboardPage() {
                     })
                   )}
                 </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -2278,6 +2313,11 @@ export default function AdminDashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {tabLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
               <div className="space-y-4">
                 {pendingBlogs.length === 0 ? (
                   <p className="text-gray-500 text-center py-8">
@@ -2399,6 +2439,7 @@ export default function AdminDashboardPage() {
                   })
                 )}
               </div>
+              )}
             </CardContent>
           </Card>
         )}

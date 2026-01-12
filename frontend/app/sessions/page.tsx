@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +26,7 @@ import {
   ExternalLink,
   Users,
   CheckCircle,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -80,40 +82,6 @@ function SessionCard({ session, userId, onRegister, registering }: SessionCardPr
   const isRegistered = userId && session.attendees?.includes(userId);
   const isRegistering = registering === session.id;
 
-  // Expandable text state
-  const [expanded, setExpanded] = useState(false);
-  const [needsExpansion, setNeedsExpansion] = useState(false);
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  const detailsRef = useRef<HTMLParagraphElement>(null);
-  const summaryRef = useRef<HTMLParagraphElement>(null);
-
-  // Check if any text is truncated
-  useEffect(() => {
-    const checkTruncation = () => {
-      const isTitleTruncated = titleRef.current
-        ? titleRef.current.scrollHeight > titleRef.current.clientHeight
-        : false;
-      const isDetailsTruncated = detailsRef.current
-        ? detailsRef.current.scrollHeight > detailsRef.current.clientHeight
-        : false;
-      const isSummaryTruncated = summaryRef.current
-        ? summaryRef.current.scrollHeight > summaryRef.current.clientHeight
-        : false;
-
-      setNeedsExpansion(isTitleTruncated || isDetailsTruncated || isSummaryTruncated);
-    };
-
-    // Small delay to ensure DOM is rendered
-    const timer = setTimeout(checkTruncation, 100);
-    return () => clearTimeout(timer);
-  }, [session.title, session.details, session.summary]);
-
-  const toggleExpand = () => {
-    if (needsExpansion) {
-      setExpanded(!expanded);
-    }
-  };
-
   const handleJoin = () => {
     window.open(session.meetLink, "_blank", "noopener,noreferrer");
   };
@@ -126,13 +94,7 @@ function SessionCard({ session, userId, onRegister, registering }: SessionCardPr
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle 
-            ref={titleRef}
-            onClick={toggleExpand}
-            className={`text-lg text-card-foreground transition-all duration-300 ease-in-out ${
-              expanded ? '' : 'line-clamp-1'
-            } ${needsExpansion ? 'cursor-pointer' : ''}`}
-          >
+          <CardTitle className="text-lg text-card-foreground line-clamp-1">
             {session.title}
           </CardTitle>
           <span
@@ -142,13 +104,7 @@ function SessionCard({ session, userId, onRegister, registering }: SessionCardPr
           </span>
         </div>
         {session.details && (
-          <CardDescription 
-            ref={detailsRef}
-            onClick={toggleExpand}
-            className={`text-muted-foreground mt-1 transition-all duration-300 ease-in-out ${
-              expanded ? '' : 'line-clamp-2'
-            } ${needsExpansion ? 'cursor-pointer' : ''}`}
-          >
+          <CardDescription className="text-muted-foreground line-clamp-2 mt-1">
             {session.details}
           </CardDescription>
         )}
@@ -176,61 +132,53 @@ function SessionCard({ session, userId, onRegister, registering }: SessionCardPr
             <p className="text-xs text-muted-foreground font-medium mb-1">
               Summary
             </p>
-            <p 
-              ref={summaryRef}
-              onClick={toggleExpand}
-              className={`text-sm text-foreground transition-all duration-300 ease-in-out ${
-                expanded ? '' : 'line-clamp-3'
-              } ${needsExpansion ? 'cursor-pointer' : ''}`}
-            >
+            <p className="text-sm text-foreground line-clamp-3">
               {session.summary}
             </p>
           </div>
         )}
       </CardContent>
 
-      {needsExpansion && (
-        <div className="px-6 pb-2">
-          <button
-            onClick={toggleExpand}
-            className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-          >
-            {expanded ? 'Show less' : 'Show more'}
-          </button>
-        </div>
-      )}
-
-      <CardFooter className="pt-3">
-        {status === "live" && (
-          <Button onClick={handleJoin} className="w-full gap-2">
-            <ExternalLink className="h-4 w-4" />
-            Join Meeting
+      <CardFooter className="pt-3 flex items-center justify-between gap-2">
+        <Link href={`/sessions/${session.id}`}>
+          <Button variant="ghost" size="sm" className="gap-2">
+            <Eye className="h-4 w-4" />
+            View Details
           </Button>
-        )}
-        {status === "upcoming" && (
-          <>
-            {isRegistered ? (
-              <Button variant="secondary" className="w-full gap-2" disabled>
-                <CheckCircle className="h-4 w-4" />
-                Registered
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => onRegister(session.id)}
-                disabled={isRegistering}
-              >
-                {isRegistering ? "Registering..." : "Register"}
-              </Button>
-            )}
-          </>
-        )}
-        {status === "ended" && (
-          <p className="text-sm text-muted-foreground w-full text-center">
-            This session has ended
-          </p>
-        )}
+        </Link>
+        
+        <div className="flex-1 flex justify-end">
+          {status === "live" && (
+            <Button onClick={handleJoin} size="sm" className="gap-2">
+              <ExternalLink className="h-4 w-4" />
+              Join Meeting
+            </Button>
+          )}
+          {status === "upcoming" && (
+            <>
+              {isRegistered ? (
+                <Button variant="secondary" size="sm" className="gap-2" disabled>
+                  <CheckCircle className="h-4 w-4" />
+                  Registered
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onRegister(session.id)}
+                  disabled={isRegistering}
+                >
+                  {isRegistering ? "Registering..." : "Register"}
+                </Button>
+              )}
+            </>
+          )}
+          {status === "ended" && (
+            <p className="text-sm text-muted-foreground">
+              Session ended
+            </p>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );

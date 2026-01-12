@@ -44,6 +44,14 @@ export async function getSessions(): Promise<Session[]> {
 }
 
 /**
+ * Get a single session by ID
+ */
+export async function getSession(id: string): Promise<Session> {
+  const response = await api.get(`/sessions/${id}`);
+  return response.data.data || response.data;
+}
+
+/**
  * Register for a session (requires authentication)
  */
 export async function registerForSession(sessionId: string): Promise<Session> {

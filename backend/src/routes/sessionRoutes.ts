@@ -20,6 +20,7 @@ router.post(
 router.put('/:id', isAuthenticated, isAdmin, ctrl.update);
 router.delete('/:id', isAuthenticated, isAdmin, ctrl.remove);
 router.get('/', ctrl.listAll);
+router.get('/:id', ctrl.getById);
 router.post('/:id/register', isAuthenticated, ctrl.register);
 router.post(
   '/:id/attendance',

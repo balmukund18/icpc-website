@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTaskStore } from "@/store/useTaskStore";
 import { Button } from "@/components/ui/button";
@@ -25,176 +26,12 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Task, getTaskStatus } from "@/lib/taskService";
 
 type FilterType = "all" | "available" | "pending" | "completed";
-
-interface TaskCardProps {
-  task: Task;
-  onOpenSubmitModal: (task: Task) => void;
-}
-
-function TaskCard({ task, onOpenSubmitModal }: TaskCardProps) {
-  const status = getTaskStatus(task);
-  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
-  const submissionCount = task.userSubmissions?.length || 0;
-  const latestSubmission = task.userSubmissions?.[0];
-
-  // Expandable text state
-  const [expanded, setExpanded] = useState(false);
-  const [needsExpansion, setNeedsExpansion] = useState(false);
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  const descriptionRef = useRef<HTMLParagraphElement>(null);
-
-  // Check if any text is truncated
-  useEffect(() => {
-    const checkTruncation = () => {
-      const isTitleTruncated = titleRef.current
-        ? titleRef.current.scrollHeight > titleRef.current.clientHeight
-        : false;
-      const isDescriptionTruncated = descriptionRef.current
-        ? descriptionRef.current.scrollHeight > descriptionRef.current.clientHeight
-        : false;
-
-      setNeedsExpansion(isTitleTruncated || isDescriptionTruncated);
-    };
-
-    const timer = setTimeout(checkTruncation, 100);
-    return () => clearTimeout(timer);
-  }, [task.title, task.description]);
-
-  const toggleExpand = () => {
-    if (needsExpansion) {
-      setExpanded(!expanded);
-    }
-  };
-
-  return (
-    <Card className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-colors">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle
-            ref={titleRef}
-            onClick={toggleExpand}
-            className={`text-white text-lg transition-all duration-300 ease-in-out ${
-              expanded ? '' : 'line-clamp-1'
-            } ${needsExpansion ? 'cursor-pointer' : ''}`}
-          >
-            {task.title}
-          </CardTitle>
-          <span className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-sm font-semibold whitespace-nowrap">
-            {task.points} pts
-          </span>
-        </div>
-        <div className="flex flex-wrap gap-2 mt-2">
-          <span className={`px-2 py-0.5 rounded text-xs font-medium ${status.color}`}>
-            {status.label}
-          </span>
-          {isOverdue && status.canSubmit && (
-            <span className="px-2 py-0.5 bg-red-500/20 text-red-400 rounded text-xs">
-              Overdue
-            </span>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {task.description && (
-          <p
-            ref={descriptionRef}
-            onClick={toggleExpand}
-            className={`text-sm text-gray-400 transition-all duration-300 ease-in-out ${
-              expanded ? '' : 'line-clamp-3'
-            } ${needsExpansion ? 'cursor-pointer' : ''}`}
-          >
-            {task.description}
-          </p>
-        )}
-
-        {needsExpansion && (
-          <button
-            onClick={toggleExpand}
-            className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
-          >
-            {expanded ? 'Show less' : 'Show more'}
-          </button>
-        )}
-
-        <div className="space-y-2 text-sm text-gray-500">
-          {task.dueDate && status.label !== "Completed" && (
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              <span className={isOverdue ? "text-red-400" : ""}>
-                Due: {new Date(task.dueDate).toLocaleString()}
-              </span>
-            </div>
-          )}
-          {submissionCount > 0 && (
-            <div className="flex items-center gap-2">
-              <Send className="h-4 w-4" />
-              <span>
-                {submissionCount}/2 attempt{submissionCount !== 1 ? "s" : ""} used
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Latest Submission Info */}
-        {latestSubmission && (
-          <div className="p-2 bg-gray-800/50 rounded text-sm">
-            <div className="flex items-center gap-2 mb-1">
-              {latestSubmission.status === "VERIFIED" && (
-                <CheckCircle className="h-4 w-4 text-green-400" />
-              )}
-              {latestSubmission.status === "PENDING" && (
-                <Clock className="h-4 w-4 text-yellow-400" />
-              )}
-              {latestSubmission.status === "REJECTED" && (
-                <XCircle className="h-4 w-4 text-red-400" />
-              )}
-              <span
-                className={`text-xs font-medium ${
-                  latestSubmission.status === "VERIFIED"
-                    ? "text-green-400"
-                    : latestSubmission.status === "PENDING"
-                    ? "text-yellow-400"
-                    : "text-red-400"
-                }`}
-              >
-                {latestSubmission.status === "VERIFIED"
-                  ? `Verified (+${latestSubmission.points} pts)`
-                  : latestSubmission.status === "PENDING"
-                  ? "Awaiting verification"
-                  : "Rejected"}
-              </span>
-            </div>
-            <a
-              href={latestSubmission.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-blue-400 hover:underline truncate block"
-            >
-              {latestSubmission.link}
-            </a>
-          </div>
-        )}
-
-        {/* Submit Button */}
-        {status.canSubmit && (
-          <Button
-            onClick={() => onOpenSubmitModal(task)}
-            className="w-full gap-2"
-            variant={submissionCount > 0 ? "outline" : "default"}
-          >
-            <Send className="h-4 w-4" />
-            {submissionCount > 0 ? "Resubmit Solution" : "Submit Solution"}
-          </Button>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
 
 export default function TasksPage() {
   const user = useAuthStore((state) => state.user);
@@ -359,13 +196,132 @@ export default function TasksPage() {
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onOpenSubmitModal={handleOpenSubmitModal}
-              />
-            ))}
+            {filteredTasks.map((task) => {
+              const status = getTaskStatus(task);
+              const isOverdue =
+                task.dueDate && new Date(task.dueDate) < new Date();
+              const submissionCount = task.userSubmissions?.length || 0;
+              const latestSubmission = task.userSubmissions?.[0];
+
+              return (
+                <Card
+                  key={task.id}
+                  className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-colors"
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-white text-lg line-clamp-1">
+                        {task.title}
+                      </CardTitle>
+                      <span className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-sm font-semibold whitespace-nowrap">
+                        {task.points} pts
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <span
+                        className={`px-2 py-0.5 rounded text-xs font-medium ${status.color}`}
+                      >
+                        {status.label}
+                      </span>
+                      {isOverdue && status.canSubmit && (
+                        <span className="px-2 py-0.5 bg-red-500/20 text-red-400 rounded text-xs">
+                          Overdue
+                        </span>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {task.description && (
+                      <p className="text-sm text-gray-400 line-clamp-3">
+                        {task.description}
+                      </p>
+                    )}
+
+                    <div className="space-y-2 text-sm text-gray-500">
+                      {task.dueDate && status.label !== "Completed" && (
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          <span className={isOverdue ? "text-red-400" : ""}>
+                            Due: {new Date(task.dueDate).toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+                      {submissionCount > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Send className="h-4 w-4" />
+                          <span>
+                            {submissionCount}/2 attempt
+                            {submissionCount !== 1 ? "s" : ""} used
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Latest Submission Info */}
+                    {latestSubmission && (
+                      <div className="p-2 bg-gray-800/50 rounded text-sm">
+                        <div className="flex items-center gap-2 mb-1">
+                          {latestSubmission.status === "VERIFIED" && (
+                            <CheckCircle className="h-4 w-4 text-green-400" />
+                          )}
+                          {latestSubmission.status === "PENDING" && (
+                            <Clock className="h-4 w-4 text-yellow-400" />
+                          )}
+                          {latestSubmission.status === "REJECTED" && (
+                            <XCircle className="h-4 w-4 text-red-400" />
+                          )}
+                          <span
+                            className={`text-xs font-medium ${
+                              latestSubmission.status === "VERIFIED"
+                                ? "text-green-400"
+                                : latestSubmission.status === "PENDING"
+                                ? "text-yellow-400"
+                                : "text-red-400"
+                            }`}
+                          >
+                            {latestSubmission.status === "VERIFIED"
+                              ? `Verified (+${latestSubmission.points} pts)`
+                              : latestSubmission.status === "PENDING"
+                              ? "Awaiting verification"
+                              : "Rejected"}
+                          </span>
+                        </div>
+                        <a
+                          href={latestSubmission.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-400 hover:underline truncate block"
+                        >
+                          {latestSubmission.link}
+                        </a>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center justify-between gap-2 pt-2">
+                      <Link href={`/tasks/${task.id}`}>
+                        <Button variant="ghost" size="sm" className="gap-2">
+                          <Eye className="h-4 w-4" />
+                          View Details
+                        </Button>
+                      </Link>
+                      
+                      {status.canSubmit && (
+                        <Button
+                          onClick={() => handleOpenSubmitModal(task)}
+                          size="sm"
+                          className="gap-2"
+                          variant={submissionCount > 0 ? "outline" : "default"}
+                        >
+                          <Send className="h-4 w-4" />
+                          {submissionCount > 0 ? "Resubmit" : "Submit"}
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>

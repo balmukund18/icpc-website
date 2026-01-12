@@ -25,6 +25,11 @@ export const updateSession = async (id: string, data: any) => {
 
 export const deleteSession = async (id: string) => prisma.session.delete({ where: { id } });
 export const listSessions = async () => prisma.session.findMany({ orderBy: { date: 'desc' } });
+export const getSessionById = async (id: string) => {
+	const session = await prisma.session.findUnique({ where: { id } });
+	if (!session) throw new Error('Session not found');
+	return session;
+};
 export const registerForSession = async (sessionId: string, userId: string) => {
 	const s = await prisma.session.findUnique({ where: { id: sessionId } });
 	if (!s) throw new Error('Session not found');

@@ -38,6 +38,15 @@ export const listAll = async (req: Request, res: Response) => {
   }
 };
 
+export const getById = async (req: Request, res: Response) => {
+  try {
+    const s = await svc.getSessionById(req.params.id);
+    success(res, s);
+  } catch (err: any) {
+    fail(res, err.message, 404);
+  }
+};
+
 export const register = async (req: any, res: Response) => {
   try {
     const sessionId = req.params.id;

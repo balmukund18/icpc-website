@@ -3,9 +3,13 @@ FROM node:20-alpine AS builder
 
 WORKDIR /usr/src/app
 
-# install deps
+# install deps (includes devDependencies for build)
 COPY package*.json ./
 RUN npm ci
+
+# Generate Prisma client
+COPY prisma ./prisma
+RUN npx prisma generate
 
 # copy sources and build
 COPY . .
@@ -18,22 +22,12 @@ WORKDIR /usr/src/app
 # copy only what we need
 COPY package*.json ./
 RUN npm ci --omit=dev
+
+# Copy Prisma schema and generate client for production
+COPY prisma ./prisma
+RUN npx prisma generate
+
 COPY --from=builder /usr/src/app/dist ./dist
-COPY --from=builder /usr/src/app/node_modules ./node_modules
-
-ENV NODE_ENV=production
-EXPOSE 5000
-CMD ["node", "dist/index.js"]
-FROM node:20-alpine
-
-WORKDIR /usr/src/app
-
-COPY package*.json ./
-RUN npm ci --omit=dev
-
-COPY . .
-
-RUN npm run build
 
 ENV NODE_ENV=production
 EXPOSE 5000

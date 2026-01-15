@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Button } from "@/components/ui/button";
@@ -13,13 +13,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { SessionsPageSkeleton } from "@/components/ui/skeletons";
+import { useSessions, invalidateSessions } from "@/lib/hooks/useData";
 import {
-  getSessions,
   registerForSession,
   getSessionStatus,
-  Session,
   SessionStatus,
 } from "@/lib/sessionService";
+import type { Session } from "@/lib/hooks/useData";
 import {
   Calendar,
   Clock,
@@ -127,16 +128,6 @@ function SessionCard({ session, userId, onRegister, registering }: SessionCardPr
             <span>{session.attendees.length} registered</span>
           </div>
         )}
-        {status === "ended" && session.summary && (
-          <div className="mt-3 p-3 bg-muted/50 rounded-md">
-            <p className="text-xs text-muted-foreground font-medium mb-1">
-              Summary
-            </p>
-            <p className="text-sm text-foreground line-clamp-3">
-              {session.summary}
-            </p>
-          </div>
-        )}
       </CardContent>
 
       <CardFooter className="pt-3 flex items-center justify-between gap-2">
@@ -185,32 +176,13 @@ function SessionCard({ session, userId, onRegister, registering }: SessionCardPr
 }
 
 export default function SessionsPage() {
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [registering, setRegistering] = useState<string | null>(null);
 
   const { user, token } = useAuthStore();
   const isAuthenticated = !!token;
 
-  useEffect(() => {
-    const fetchSessions = async () => {
-      try {
-        setError(null);
-        const data = await getSessions();
-        setSessions(data);
-      } catch (err: any) {
-        console.error("Error fetching sessions:", err);
-        setError(err.response?.data?.error || "Failed to load sessions");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (isAuthenticated) {
-      fetchSessions();
-    }
-  }, [isAuthenticated]);
+  // Use SWR hook for sessions data
+  const { sessions, isLoading, error } = useSessions();
 
   const handleRegister = async (sessionId: string) => {
     if (!isAuthenticated) {
@@ -220,10 +192,9 @@ export default function SessionsPage() {
 
     setRegistering(sessionId);
     try {
-      const updatedSession = await registerForSession(sessionId);
-      setSessions((prev) =>
-        prev.map((s) => (s.id === sessionId ? updatedSession : s))
-      );
+      await registerForSession(sessionId);
+      // Invalidate cache to refresh data
+      await invalidateSessions();
       toast.success("Successfully registered for session!");
     } catch (err: any) {
       console.error("Error registering for session:", err);
@@ -255,6 +226,14 @@ export default function SessionsPage() {
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
 
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <SessionsPageSkeleton />
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto space-y-8">
@@ -268,22 +247,15 @@ export default function SessionsPage() {
           </p>
         </div>
 
-        {/* Loading */}
-        {loading && (
-          <div className="text-center py-12">
-            <div className="animate-pulse text-xl">Loading Sessions...</div>
-          </div>
-        )}
-
         {/* Error Banner */}
         {error && (
           <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg">
-            {error}
+            Failed to load sessions
           </div>
         )}
 
         {/* Empty State */}
-        {!loading && sessions.length === 0 && !error && (
+        {sessions.length === 0 && !error && (
           <Card className="bg-card border-border">
             <CardContent className="py-12 text-center">
               <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -298,7 +270,7 @@ export default function SessionsPage() {
         )}
 
         {/* Upcoming Sessions */}
-        {!loading && upcomingSessions.length > 0 && (
+        {upcomingSessions.length > 0 && (
           <section>
             <h2 className="text-2xl font-semibold text-foreground mb-4">
               Upcoming Sessions
@@ -318,19 +290,19 @@ export default function SessionsPage() {
         )}
 
         {/* No Upcoming Sessions Message */}
-        {!loading && upcomingSessions.length === 0 && pastSessions.length > 0 && (
+        {upcomingSessions.length === 0 && pastSessions.length > 0 && (
           <div className="text-center py-8 border border-border rounded-lg bg-card">
             <p className="text-muted-foreground">No upcoming sessions</p>
           </div>
         )}
 
         {/* Divider */}
-        {!loading && upcomingSessions.length > 0 && pastSessions.length > 0 && (
+        {upcomingSessions.length > 0 && pastSessions.length > 0 && (
           <hr className="border-border" />
         )}
 
         {/* Past Sessions */}
-        {!loading && pastSessions.length > 0 && (
+        {pastSessions.length > 0 && (
           <section>
             <h2 className="text-2xl font-semibold text-foreground mb-4">
               Past Sessions

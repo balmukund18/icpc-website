@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
-import { useTaskStore } from "@/store/useTaskStore";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,143 +10,64 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import api from "@/lib/axios";
+import { DashboardSkeleton } from "@/components/ui/skeletons";
+import { useDashboard } from "@/lib/hooks/useData";
+import { getTaskStatus } from "@/lib/taskService";
+import { getSessionStatus } from "@/lib/sessionService";
 import {
   Calendar,
   Trophy,
   User as UserIcon,
   Code,
-  Play,
   ExternalLink,
   CheckSquare,
   ArrowRight,
   Megaphone,
 } from "lucide-react";
 import Link from "next/link";
-import {
-  getSessions,
-  getSessionStatus,
-  Session,
-} from "@/lib/sessionService";
-import { getTaskStatus } from "@/lib/taskService";
-import { getAnnouncements, Announcement } from "@/lib/adminService";
-
-interface Profile {
-  name: string;
-  branch: string;
-  year: number;
-  contact: string;
-  handles: any;
-}
-
-interface Contest {
-  id: string;
-  title: string;
-  createdAt: string;
-}
-
-interface Submission {
-  id: string;
-  contestId: string;
-  problemIdx: number;
-  status: string;
-  createdAt: string;
-}
 
 export default function DashboardPage() {
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => !!state.token);
   const hasProfile = useAuthStore((state) => state.hasProfile);
 
-  // Task store
+  // Use SWR hook for all dashboard data
   const {
+    profile,
+    contests,
+    submissions,
+    sessions,
+    announcements,
     tasks,
     userPoints,
     leaderboard,
-    fetchTasks,
-    fetchUserPoints,
-    fetchLeaderboard,
-  } = useTaskStore();
+    isLoading,
+  } = useDashboard();
 
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [contests, setContests] = useState<Contest[]>([]);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [nextSession, setNextSession] = useState<Session | null>(null);
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Don't fetch if not authenticated or no profile
+  const shouldShowSkeleton = isLoading && isAuthenticated && hasProfile === true;
 
-  useEffect(() => {
-    const fetchData = async () => {
-      // Only fetch if authenticated AND has profile
-      if (!isAuthenticated || hasProfile !== true) return;
-
-      try {
-        const [profileRes, contestsRes, submissionsRes, sessionsRes, announcementsRes] =
-          await Promise.allSettled([
-            api.get("/profile"),
-            api.get("/contests"),
-            api.get("/contests/my-submissions"),
-            getSessions(),
-            getAnnouncements(),
-          ]);
-
-        // Profile data for display (no redirect logic needed)
-        if (profileRes.status === "fulfilled") {
-          setProfile(profileRes.value.data.data);
-        }
-
-        if (contestsRes.status === "fulfilled") {
-          setContests(contestsRes.value.data.data);
-        }
-        if (submissionsRes.status === "fulfilled") {
-          setSubmissions(submissionsRes.value.data.data);
-        }
-        if (sessionsRes.status === "fulfilled") {
-          // Find next upcoming or live session
-          const sessions = sessionsRes.value;
-          const upcomingOrLive = sessions
-            .filter((s: Session) => {
-              const status = getSessionStatus(s);
-              return status === "upcoming" || status === "live";
-            })
-            .sort((a: Session, b: Session) => {
-              if (!a.date) return 1;
-              if (!b.date) return -1;
-              return new Date(a.date).getTime() - new Date(b.date).getTime();
-            });
-          setNextSession(upcomingOrLive[0] || null);
-        }
-        if (announcementsRes.status === "fulfilled") {
-          setAnnouncements(announcementsRes.value);
-        }
-
-        // Fetch tasks data
-        await Promise.allSettled([
-          fetchTasks(),
-          fetchUserPoints(),
-          fetchLeaderboard("all"),
-        ]);
-      } catch (error) {
-        console.error("Error fetching dashboard data", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [isAuthenticated, hasProfile, fetchTasks, fetchUserPoints, fetchLeaderboard]);
-
-  if (loading) {
+  if (shouldShowSkeleton) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-pulse text-xl">Loading Dashboard...</div>
-        </div>
+        <DashboardSkeleton />
       </DashboardLayout>
     );
   }
 
   if (!user) return null;
+
+  // Find next upcoming or live session
+  const nextSession = sessions
+    .filter((s) => {
+      const status = getSessionStatus(s);
+      return status === "upcoming" || status === "live";
+    })
+    .sort((a, b) => {
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    })[0] || null;
 
   return (
     <DashboardLayout>

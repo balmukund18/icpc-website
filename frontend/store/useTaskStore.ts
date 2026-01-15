@@ -2,11 +2,8 @@ import { create } from "zustand";
 import {
   Task,
   Submission,
-  LeaderboardEntry,
   CreateTaskInput,
   UpdateTaskInput,
-  getTasks,
-  getTask,
   createTask as createTaskApi,
   updateTask as updateTaskApi,
   deleteTask as deleteTaskApi,
@@ -14,43 +11,30 @@ import {
   submitSolution as submitSolutionApi,
   verifySubmission as verifySubmissionApi,
   rejectSubmission as rejectSubmissionApi,
-  getLeaderboard,
-  getMyPoints,
 } from "@/lib/taskService";
 
 interface TaskState {
-  // Data
-  tasks: Task[];
-  selectedTask: Task | null;
+  // Admin UI state
   submissions: Submission[]; // Submissions for selected task (admin view)
-  leaderboard: LeaderboardEntry[];
-  userPoints: number;
-  userRank: number | null;
-
-  // Loading states
-  loading: boolean;
   submissionsLoading: boolean;
-  leaderboardLoading: boolean;
-
-  // Edit mode
   editingTaskId: string | null;
+  selectedTask: Task | null;
 
-  // Actions - Fetching
-  fetchTasks: () => Promise<void>;
-  fetchTask: (id: string) => Promise<void>;
-  fetchTaskSubmissions: (taskId: string) => Promise<void>;
-  fetchLeaderboard: (period?: "month" | "semester" | "all") => Promise<void>;
-  fetchUserPoints: () => Promise<void>;
+  // Mutation loading state
+  mutationLoading: boolean;
 
   // Actions - Admin Task Management
   createTask: (data: CreateTaskInput) => Promise<Task>;
   updateTask: (id: string, data: UpdateTaskInput) => Promise<Task>;
   deleteTask: (id: string) => Promise<void>;
 
-  // Actions - Submissions
-  submitSolution: (taskId: string, link: string) => Promise<Submission>;
+  // Actions - Submissions (Admin)
+  fetchTaskSubmissions: (taskId: string) => Promise<void>;
   verifySubmission: (subId: string, points?: number) => Promise<Submission>;
   rejectSubmission: (subId: string) => Promise<Submission>;
+
+  // Actions - Submissions (User)
+  submitSolution: (taskId: string, link: string) => Promise<Submission>;
 
   // Actions - UI State
   setSelectedTask: (task: Task | null) => void;
@@ -60,44 +44,62 @@ interface TaskState {
 
 export const useTaskStore = create<TaskState>((set, get) => ({
   // Initial state
-  tasks: [],
-  selectedTask: null,
   submissions: [],
-  leaderboard: [],
-  userPoints: 0,
-  userRank: null,
-  loading: false,
   submissionsLoading: false,
-  leaderboardLoading: false,
   editingTaskId: null,
+  selectedTask: null,
+  mutationLoading: false,
 
-  // Fetch all tasks
-  fetchTasks: async () => {
-    set({ loading: true });
+  // Create a new task (admin)
+  createTask: async (data: CreateTaskInput) => {
+    set({ mutationLoading: true });
     try {
-      const tasks = await getTasks();
-      set({ tasks, loading: false });
+      const task = await createTaskApi(data);
+      set({ mutationLoading: false });
+      return task;
     } catch (error) {
-      console.error("Failed to fetch tasks:", error);
-      set({ loading: false });
+      console.error("Failed to create task:", error);
+      set({ mutationLoading: false });
       throw error;
     }
   },
 
-  // Fetch single task
-  fetchTask: async (id: string) => {
-    set({ loading: true });
+  // Update a task (admin)
+  updateTask: async (id: string, data: UpdateTaskInput) => {
+    set({ mutationLoading: true });
     try {
-      const task = await getTask(id);
-      set({ selectedTask: task, loading: false });
+      const task = await updateTaskApi(id, data);
+      set({
+        editingTaskId: null,
+        mutationLoading: false,
+      });
+      return task;
     } catch (error) {
-      console.error("Failed to fetch task:", error);
-      set({ loading: false });
+      console.error("Failed to update task:", error);
+      set({ mutationLoading: false });
       throw error;
     }
   },
 
-  // Fetch submissions for a task (admin)
+  // Delete a task (admin)
+  deleteTask: async (id: string) => {
+    set({ mutationLoading: true });
+    try {
+      await deleteTaskApi(id);
+      const { selectedTask } = get();
+      set({
+        selectedTask: selectedTask?.id === id ? null : selectedTask,
+        submissions: selectedTask?.id === id ? [] : get().submissions,
+        mutationLoading: false,
+      });
+    } catch (error) {
+      console.error("Failed to delete task:", error);
+      set({ mutationLoading: false });
+      throw error;
+    }
+  },
+
+  // Fetch submissions for a task (admin only - not cached)
   fetchTaskSubmissions: async (taskId: string) => {
     set({ submissionsLoading: true });
     try {
@@ -110,91 +112,11 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     }
   },
 
-  // Fetch leaderboard
-  fetchLeaderboard: async (period: "month" | "semester" | "all" = "all") => {
-    set({ leaderboardLoading: true });
-    try {
-      const leaderboard = await getLeaderboard(period);
-      set({ leaderboard, leaderboardLoading: false });
-    } catch (error) {
-      console.error("Failed to fetch leaderboard:", error);
-      set({ leaderboardLoading: false });
-      throw error;
-    }
-  },
-
-  // Fetch user's total points
-  fetchUserPoints: async () => {
-    try {
-      const userPoints = await getMyPoints();
-      // Calculate user's rank from leaderboard
-      const { leaderboard } = get();
-      set({ userPoints });
-    } catch (error) {
-      console.error("Failed to fetch user points:", error);
-      throw error;
-    }
-  },
-
-  // Create a new task (admin)
-  createTask: async (data: CreateTaskInput) => {
-    set({ loading: true });
-    try {
-      const task = await createTaskApi(data);
-      const { tasks } = get();
-      set({ tasks: [task, ...tasks], loading: false });
-      return task;
-    } catch (error) {
-      console.error("Failed to create task:", error);
-      set({ loading: false });
-      throw error;
-    }
-  },
-
-  // Update a task (admin)
-  updateTask: async (id: string, data: UpdateTaskInput) => {
-    set({ loading: true });
-    try {
-      const task = await updateTaskApi(id, data);
-      const { tasks } = get();
-      set({
-        tasks: tasks.map((t) => (t.id === id ? { ...t, ...task } : t)),
-        editingTaskId: null,
-        loading: false,
-      });
-      return task;
-    } catch (error) {
-      console.error("Failed to update task:", error);
-      set({ loading: false });
-      throw error;
-    }
-  },
-
-  // Delete a task (admin)
-  deleteTask: async (id: string) => {
-    set({ loading: true });
-    try {
-      await deleteTaskApi(id);
-      const { tasks, selectedTask } = get();
-      set({
-        tasks: tasks.filter((t) => t.id !== id),
-        selectedTask: selectedTask?.id === id ? null : selectedTask,
-        submissions: selectedTask?.id === id ? [] : get().submissions,
-        loading: false,
-      });
-    } catch (error) {
-      console.error("Failed to delete task:", error);
-      set({ loading: false });
-      throw error;
-    }
-  },
-
   // Submit a solution (user)
+  // Note: Cache invalidation should be handled by the calling component using invalidateTasks()
   submitSolution: async (taskId: string, link: string) => {
     try {
       const submission = await submitSolutionApi(taskId, link);
-      // Refresh tasks to update submission status
-      await get().fetchTasks();
       return submission;
     } catch (error) {
       console.error("Failed to submit solution:", error);

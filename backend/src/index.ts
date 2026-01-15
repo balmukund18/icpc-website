@@ -14,6 +14,7 @@ import contestRoutes from "./routes/contestRoutes";
 import sessionRoutes from "./routes/sessionRoutes";
 import alumniRoutes from "./routes/alumniRoutes";
 import gamificationRoutes from "./routes/gamificationRoutes";
+import dashboardRoutes from "./routes/dashboardRoutes";
 import path from "path";
 import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "../swagger.json";
@@ -68,6 +69,7 @@ app.use("/api/contests", contestRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/alumni", alumniRoutes);
 app.use("/api/gamification", gamificationRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.use("/api/judge", judgeRoutes);
 

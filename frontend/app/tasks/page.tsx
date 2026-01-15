@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTaskStore } from "@/store/useTaskStore";
@@ -15,6 +15,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { TasksPageSkeleton } from "@/components/ui/skeletons";
+import { useTasks, useUserPoints, invalidateTasks } from "@/lib/hooks/useData";
 import {
   CheckSquare,
   Clock,
@@ -29,36 +31,26 @@ import {
   Eye,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Task, getTaskStatus } from "@/lib/taskService";
+import { getTaskStatus } from "@/lib/taskService";
+import type { Task } from "@/lib/hooks/useData";
 
 type FilterType = "all" | "available" | "pending" | "completed";
 
 export default function TasksPage() {
   const user = useAuthStore((state) => state.user);
-  const isAuthenticated = useAuthStore((state) => !!state.token);
-  const hasHydrated = useAuthStore((state) => state._hasHydrated);
 
-  const {
-    tasks,
-    userPoints,
-    loading,
-    fetchTasks,
-    fetchUserPoints,
-    submitSolution,
-  } = useTaskStore();
+  // Use SWR hooks for tasks and points data
+  const { tasks, isLoading } = useTasks();
+  const { points: userPoints } = useUserPoints();
+
+  // Keep mutation functions from Zustand store
+  const { submitSolution } = useTaskStore();
 
   const [filter, setFilter] = useState<FilterType>("all");
   const [submitModalOpen, setSubmitModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [submissionLink, setSubmissionLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (hasHydrated && isAuthenticated) {
-      fetchTasks();
-      fetchUserPoints();
-    }
-  }, [hasHydrated, isAuthenticated, fetchTasks, fetchUserPoints]);
 
   const handleOpenSubmitModal = (task: Task) => {
     setSelectedTask(task);
@@ -87,6 +79,8 @@ export default function TasksPage() {
     setSubmitting(true);
     try {
       await submitSolution(selectedTask.id, submissionLink.trim());
+      // Invalidate cache to refresh data
+      await invalidateTasks();
       toast.success("Solution submitted successfully!");
       handleCloseSubmitModal();
     } catch (error: any) {
@@ -130,6 +124,14 @@ export default function TasksPage() {
       t.userSubmissions?.some((s) => s.status === "VERIFIED")
     ).length,
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <TasksPageSkeleton />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -181,11 +183,7 @@ export default function TasksPage() {
         </div>
 
         {/* Tasks Grid */}
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-          </div>
-        ) : filteredTasks.length === 0 ? (
+        {filteredTasks.length === 0 ? (
           <div className="text-center py-12">
             <CheckSquare className="h-12 w-12 text-gray-600 mx-auto mb-4" />
             <p className="text-gray-400">

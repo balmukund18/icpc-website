@@ -1,47 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { AnnouncementsPageSkeleton } from "@/components/ui/skeletons";
+import { useAnnouncements } from "@/lib/hooks/useData";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Megaphone, Pin, Loader2 } from "lucide-react";
-import { getAnnouncements, Announcement } from "@/lib/adminService";
+import { Megaphone, Pin } from "lucide-react";
 
 export default function AnnouncementsPage() {
-  const isAuthenticated = useAuthStore((state) => !!state.token);
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
   const hasProfile = useAuthStore((state) => state.hasProfile);
 
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Use SWR hook for announcements data
+  const { announcements, isLoading } = useAnnouncements();
 
-  useEffect(() => {
-    const fetchAnnouncements = async () => {
-      if (!isAuthenticated || hasProfile !== true) return;
-
-      try {
-        const data = await getAnnouncements();
-        setAnnouncements(data);
-      } catch (error) {
-        console.error("Error fetching announcements", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAnnouncements();
-  }, [isAuthenticated, hasProfile]);
-
-  if (!hasHydrated || hasProfile !== true || loading) {
+  if (!hasHydrated || hasProfile !== true || isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      <DashboardLayout>
+        <AnnouncementsPageSkeleton />
+      </DashboardLayout>
     );
   }
 
@@ -60,64 +42,54 @@ export default function AnnouncementsPage() {
             </p>
           </div>
 
-        {/* Announcements List */}
-        {announcements.length === 0 ? (
-          <Card className="bg-card border-border">
-            <CardContent className="py-12 text-center">
-              <Megaphone className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No announcements yet.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {announcements.map((announcement) => (
-              <Card
-                key={announcement.id}
-                className={`bg-card border-border ${
-                  announcement.pinned
-                    ? "border-l-4 border-l-yellow-500 bg-yellow-500/5"
-                    : ""
-                }`}
-              >
-                <CardHeader className="pb-2">
-                  <div className="flex items-start gap-3">
-                    {announcement.pinned && (
-                      <Pin className="h-5 w-5 text-yellow-500 mt-1 flex-shrink-0" />
-                    )}
-                    <div className="flex-1">
-                      <CardTitle className="text-xl text-card-foreground">
-                        {announcement.title}
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {new Date(announcement.createdAt).toLocaleDateString("en-US", {
-                          weekday: "long",
-                          month: "long",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                        {announcement.updatedAt !== announcement.createdAt && (
-                          <span className="ml-2 text-xs">
-                            (Updated:{" "}
-                            {new Date(announcement.updatedAt).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                            })}
-                            )
-                          </span>
-                        )}
-                      </p>
+          {/* Announcements List */}
+          {announcements.length === 0 ? (
+            <Card className="bg-card border-border">
+              <CardContent className="py-12 text-center">
+                <Megaphone className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No announcements yet.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {announcements.map((announcement) => (
+                <Card
+                  key={announcement.id}
+                  className={`bg-card border-border ${
+                    announcement.pinned
+                      ? "border-l-4 border-l-yellow-500 bg-yellow-500/5"
+                      : ""
+                  }`}
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start gap-3">
+                      {announcement.pinned && (
+                        <Pin className="h-5 w-5 text-yellow-500 mt-1 flex-shrink-0" />
+                      )}
+                      <div className="flex-1">
+                        <CardTitle className="text-xl text-card-foreground">
+                          {announcement.title}
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {new Date(announcement.createdAt).toLocaleDateString("en-US", {
+                            weekday: "long",
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-foreground whitespace-pre-wrap">
-                    {announcement.content}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-foreground whitespace-pre-wrap">
+                      {announcement.content}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useTaskStore } from "@/store/useTaskStore";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { TaskDetailSkeleton } from "@/components/ui/skeletons";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,11 +16,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  getTask,
-  getTaskStatus,
-  Task,
-} from "@/lib/taskService";
+import { useTask, invalidateTask } from "@/lib/hooks/useData";
+import { getTaskStatus } from "@/lib/taskService";
 import {
   ArrowLeft,
   Clock,
@@ -39,38 +37,15 @@ export default function TaskDetailPage() {
   const params = useParams();
   const taskId = params.id as string;
 
-  const isAuthenticated = useAuthStore((state) => !!state.token);
-  const hasHydrated = useAuthStore((state) => state._hasHydrated);
-
   const { submitSolution } = useTaskStore();
 
-  const [task, setTask] = useState<Task | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Use SWR hook for task data
+  const { task, isLoading, error } = useTask(taskId);
 
   // Submit modal state
   const [submitModalOpen, setSubmitModalOpen] = useState(false);
   const [submissionLink, setSubmissionLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    const fetchTask = async () => {
-      try {
-        setError(null);
-        const data = await getTask(taskId);
-        setTask(data);
-      } catch (err: any) {
-        console.error("Error fetching task:", err);
-        setError(err.response?.data?.error || "Task not found");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (hasHydrated && isAuthenticated && taskId) {
-      fetchTask();
-    }
-  }, [hasHydrated, isAuthenticated, taskId]);
 
   const handleOpenSubmitModal = () => {
     setSubmissionLink("");
@@ -97,11 +72,10 @@ export default function TaskDetailPage() {
     setSubmitting(true);
     try {
       await submitSolution(task.id, submissionLink.trim());
+      // Invalidate cache to refresh data
+      await invalidateTask(taskId);
       toast.success("Solution submitted successfully!");
       handleCloseSubmitModal();
-      // Refetch task to get updated submission info
-      const updatedTask = await getTask(taskId);
-      setTask(updatedTask);
     } catch (error: any) {
       toast.error(
         error.response?.data?.error ||
@@ -114,12 +88,10 @@ export default function TaskDetailPage() {
   };
 
   // Loading state
-  if (loading) {
+  if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <TaskDetailSkeleton />
       </DashboardLayout>
     );
   }
@@ -134,7 +106,7 @@ export default function TaskDetailPage() {
               <CardContent className="py-12 text-center">
                 <AlertCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
                 <h2 className="text-xl font-semibold text-red-400 mb-2">
-                  {error}
+                  Task not found
                 </h2>
                 <p className="text-muted-foreground mb-4">
                   The task you're looking for might not exist or you don't have permission to view it.

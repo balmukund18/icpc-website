@@ -67,6 +67,7 @@ import {
 import { getContests, Contest } from "@/lib/contestService";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useTaskStore } from "@/store/useTaskStore";
+import { useTasks, invalidateTasks } from "@/lib/hooks/useData";
 import {
   Task,
   Submission,
@@ -114,14 +115,15 @@ export default function AdminDashboardPage() {
     setEditingId,
   } = useSessionStore();
 
-  // Task store (Zustand)
+  // Tasks data via SWR
+  const { tasks, isLoading: tasksLoading } = useTasks();
+
+  // Task store (Zustand) - for mutations and admin-only operations
   const {
-    tasks,
     submissions: taskSubmissions,
-    loading: tasksLoading,
     submissionsLoading,
     editingTaskId,
-    fetchTasks,
+    mutationLoading,
     fetchTaskSubmissions,
     createTask,
     updateTask,
@@ -231,11 +233,8 @@ export default function AdminDashboardPage() {
           await fetchSessions();
           break;
         case "tasks":
-          await Promise.all([
-            fetchTasks(),
-            // Also fetch users for assignment dropdown
-            getUsers().then((users) => setUsers(users)),
-          ]);
+          // Tasks are fetched via SWR, just fetch users for assignment dropdown
+          await getUsers().then((users) => setUsers(users));
           break;
         case "announcements":
           const announcementsData = await getAnnouncements();
@@ -588,6 +587,8 @@ export default function AdminDashboardPage() {
       setTaskDueDate("");
       setTaskAssignmentType("all");
       setSelectedUserIds([]);
+      // Invalidate tasks cache to refetch
+      invalidateTasks();
     } catch (error: any) {
       showMessage(
         "error",
@@ -607,6 +608,8 @@ export default function AdminDashboardPage() {
         setExpandedTaskId(null);
         clearSubmissions();
       }
+      // Invalidate tasks cache to refetch
+      invalidateTasks();
     } catch (error: any) {
       showMessage(
         "error",
@@ -656,6 +659,8 @@ export default function AdminDashboardPage() {
       });
       showMessage("success", "Task updated successfully!");
       handleCancelEditTask();
+      // Invalidate tasks cache to refetch
+      invalidateTasks();
     } catch (error: any) {
       showMessage(
         "error",
@@ -1700,8 +1705,8 @@ export default function AdminDashboardPage() {
                       )}
                     </div>
                     
-                    <Button type="submit" disabled={loading || tasksLoading} className="w-full">
-                      {loading || tasksLoading ? "Creating..." : "Create Task"}
+                    <Button type="submit" disabled={loading || mutationLoading} className="w-full">
+                      {loading || mutationLoading ? "Creating..." : "Create Task"}
                     </Button>
                   </form>
                 </CardContent>
@@ -1848,12 +1853,12 @@ export default function AdminDashboardPage() {
                                 </div>
                                 
                                 <div className="flex gap-2 pt-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleSaveEditTask(task.id)}
-                                    disabled={!editTaskTitle || tasksLoading}
-                                    className="gap-1"
-                                  >
+                                                <Button
+                                                  size="sm"
+                                                  onClick={() => handleSaveEditTask(task.id)}
+                                                  disabled={!editTaskTitle || mutationLoading}
+                                                  className="gap-1"
+                                                >
                                     <Check className="h-4 w-4" />
                                     Save
                                   </Button>

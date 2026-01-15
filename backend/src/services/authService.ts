@@ -67,19 +67,15 @@ export const updateUserRole = async (userId: string, role: string) => {
 };
 
 export const login = async (email: string, password: string) => {
-  console.log(`Attempting login for ${email}`);
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
-    console.log("User not found");
     throw new Error("Invalid credentials");
   }
   const ok = await bcrypt.compare(password, user.password);
   if (!ok) {
-    console.log("Password mismatch");
     throw new Error("Invalid credentials");
   }
   if (!user.approved) {
-    console.log("User not approved");
     throw new Error("User not approved yet");
   }
   const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {

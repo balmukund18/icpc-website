@@ -42,12 +42,21 @@ function PendingApprovalContent() {
             router.push("/login");
           }, 3000);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Check if user was deleted (404 means user doesn't exist)
-        if (error.response?.status === 404) {
-          clearInterval(pollInterval);
-          setIsDenied(true);
-          toast.error("Your account request has been denied");
+        if (
+          typeof error === "object" &&
+          error !== null &&
+          "response" in error
+        ) {
+          const err = error as { response?: { status?: number } };
+          if (err.response?.status === 404) {
+            clearInterval(pollInterval);
+            setIsDenied(true);
+            toast.error("Your account request has been denied");
+          } else {
+            console.error("Error checking approval status:", error);
+          }
         } else {
           console.error("Error checking approval status:", error);
         }

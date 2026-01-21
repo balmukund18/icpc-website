@@ -10,6 +10,9 @@ export default function Home() {
       {/* Wave Background */}
       <Waves className="absolute inset-0 h-full w-full" />
       
+      {/* Gradient overlay for text visibility */}
+      <div className="absolute inset-0 z-[5] bg-[radial-gradient(ellipse_at_center,_black_0%,_black_20%,_transparent_60%)]" />
+      
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-20 text-center">
         <h1 className="text-6xl font-bold text-white">

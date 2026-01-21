@@ -116,7 +116,7 @@ export default function MyBlogsPage() {
                 </p>
               </div>
             </div>
-            {(user?.role === "STUDENT" || user?.role === "ALUMNI") && (
+            {(user?.role === "STUDENT" || user?.role === "ALUMNI" || user?.role === "ADMIN") && (
               <Link href="/blog/write">
                 <Button className="gap-2">
                   <PenSquare className="h-4 w-4" />
@@ -195,7 +195,7 @@ export default function MyBlogsPage() {
               <p className="text-muted-foreground mb-4">
                 You haven&apos;t written any blogs yet. Start sharing your knowledge!
               </p>
-              {(user?.role === "STUDENT" || user?.role === "ALUMNI") && (
+              {(user?.role === "STUDENT" || user?.role === "ALUMNI" || user?.role === "ADMIN") && (
                 <Link href="/blog/write">
                   <Button className="gap-2">
                     <PenSquare className="h-4 w-4" />

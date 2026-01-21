@@ -53,11 +53,11 @@ export default function WriteBlogPage() {
   const [customTag, setCustomTag] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Role check - only students and alumni can write blogs
+  // Role check - only students, alumni, and admins can write blogs
   useEffect(() => {
     if (!hasHydrated) return;
-    if (user?.role !== "STUDENT" && user?.role !== "ALUMNI") {
-      toast.error("Only students and alumni can write blogs");
+    if (user?.role !== "STUDENT" && user?.role !== "ALUMNI" && user?.role !== "ADMIN") {
+      toast.error("Only students, alumni, and admins can write blogs");
       router.push("/blog");
     }
   }, [hasHydrated, user, router]);

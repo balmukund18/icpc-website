@@ -97,7 +97,7 @@ export default function BlogListingPage() {
                   My Blogs
                 </Button>
               </Link>
-              {(user?.role === "STUDENT" || user?.role === "ALUMNI") && (
+              {(user?.role === "STUDENT" || user?.role === "ALUMNI" || user?.role === "ADMIN") && (
                 <Link href="/blog/write">
                   <Button className="gap-2">
                     <PenSquare className="h-4 w-4" />
@@ -173,7 +173,7 @@ export default function BlogListingPage() {
                   ? `No blogs found with tag "${selectedTag}"`
                   : "Be the first to share your knowledge!"}
               </p>
-              {(user?.role === "STUDENT" || user?.role === "ALUMNI") && (
+              {(user?.role === "STUDENT" || user?.role === "ALUMNI" || user?.role === "ADMIN") && (
                 <Link href="/blog/write">
                   <Button className="gap-2">
                     <PenSquare className="h-4 w-4" />

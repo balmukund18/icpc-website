@@ -69,7 +69,7 @@ function AuthCallbackContent() {
             );
             router.push("/profile");
           }
-        } catch (error) {
+        } catch {
           // If profile fetch fails, still allow login but redirect to profile
           setHasProfile(false);
           toast.success(

@@ -145,10 +145,15 @@ export default function ContestDetailPage() {
     }
 
     fetchSubmissions();
-    // Poll for submission updates every 5 seconds
-    const interval = setInterval(fetchSubmissions, 5000);
+
+    // Only poll if there are pending submissions
+    const hasPending = submissions.some(s => s.status === "PENDING");
+    if (!hasPending) return;
+
+    // Poll for submission updates every 10 seconds
+    const interval = setInterval(fetchSubmissions, 10000);
     return () => clearInterval(interval);
-  }, [contestId, token]);
+  }, [contestId, token, submissions]);
 
   // Countdown until contest starts
   useEffect(() => {

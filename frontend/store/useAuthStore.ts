@@ -13,6 +13,7 @@ interface AuthState {
   hasProfile: boolean | null; // null = not checked, true/false = checked
   _hasHydrated: boolean;
   login: (user: User, token: string) => void;
+  updateUser: (updates: Partial<User>) => void;
   logout: () => void;
   setHasProfile: (value: boolean) => void;
   setHasHydrated: (state: boolean) => void;
@@ -26,6 +27,10 @@ export const useAuthStore = create<AuthState>()(
       hasProfile: null,
       _hasHydrated: false,
       login: (user, token) => set({ user, token }),
+      updateUser: (updates) =>
+        set((state) =>
+          state.user ? { user: { ...state.user, ...updates } } : state,
+        ),
       logout: () => set({ user: null, token: null, hasProfile: null }),
       setHasProfile: (value) => set({ hasProfile: value }),
       setHasHydrated: (state) => set({ _hasHydrated: state }),
@@ -35,6 +40,6 @@ export const useAuthStore = create<AuthState>()(
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },
-    }
-  )
+    },
+  ),
 );

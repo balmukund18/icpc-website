@@ -11,17 +11,22 @@ interface DashboardLayoutProps {
   requireProfile?: boolean;
 }
 
-export function DashboardLayout({ children, requireProfile = true }: DashboardLayoutProps) {
+export function DashboardLayout({
+  children,
+  requireProfile = true,
+}: DashboardLayoutProps) {
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => !!state.token);
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
   const hasProfile = useAuthStore((state) => state.hasProfile);
+  const updateUser = useAuthStore((state) => state.updateUser);
   const router = useRouter();
-  
+
   const [userName, setUserName] = useState<string>("");
-  
+
   // Compute initial loading state - true until we can verify auth
-  const shouldShowLoading = !hasHydrated || 
+  const shouldShowLoading =
+    !hasHydrated ||
     (hasHydrated && isAuthenticated && requireProfile && hasProfile !== true);
 
   // Auth check - handle redirects
@@ -44,10 +49,12 @@ export function DashboardLayout({ children, requireProfile = true }: DashboardLa
   useEffect(() => {
     const fetchProfile = async () => {
       if (!isAuthenticated || hasProfile !== true) return;
-      
+
       try {
         const res = await api.get("/profile");
-        setUserName(res.data.data?.name || user?.email?.split("@")[0] || "User");
+        setUserName(
+          res.data.data?.name || user?.email?.split("@")[0] || "User",
+        );
       } catch {
         setUserName(user?.email?.split("@")[0] || "User");
       }
@@ -55,6 +62,34 @@ export function DashboardLayout({ children, requireProfile = true }: DashboardLa
 
     fetchProfile();
   }, [isAuthenticated, hasProfile, user?.email]);
+
+  // Sync role changes (e.g., when user is promoted to admin)
+  useEffect(() => {
+    if (!hasHydrated || !isAuthenticated || !user?.id) return;
+
+    const syncRole = async () => {
+      try {
+        const res = await api.get(`/auth/approval-status/${user.id}`);
+        const status = res.data?.data;
+        if (!status) return;
+
+        if (status.role && status.role !== user.role) {
+          updateUser({ role: status.role, email: status.email || user.email });
+        }
+      } catch {
+        // Ignore sync errors to avoid blocking UI
+      }
+    };
+
+    syncRole();
+  }, [
+    hasHydrated,
+    isAuthenticated,
+    user?.id,
+    user?.role,
+    user?.email,
+    updateUser,
+  ]);
 
   // Loading state
   if (shouldShowLoading) {
@@ -71,7 +106,7 @@ export function DashboardLayout({ children, requireProfile = true }: DashboardLa
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
       <AppSidebar userName={userName || user.email?.split("@")[0] || "User"} />
-      
+
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
         <div className="min-h-screen bg-background text-foreground">

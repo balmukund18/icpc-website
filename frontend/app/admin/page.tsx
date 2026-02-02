@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import api from "@/lib/axios";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -68,11 +69,7 @@ import { getContests, Contest } from "@/lib/contestService";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useTaskStore } from "@/store/useTaskStore";
 import { useTasks, invalidateTasks } from "@/lib/hooks/useData";
-import {
-  Task,
-  Submission,
-  getSubmissionStatusColor,
-} from "@/lib/taskService";
+import { Task, Submission, getSubmissionStatusColor } from "@/lib/taskService";
 
 type TabType =
   | "users"
@@ -86,6 +83,7 @@ export default function AdminDashboardPage() {
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => !!state.token);
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
+  const updateUser = useAuthStore((state) => state.updateUser);
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<TabType>("users");
@@ -139,11 +137,14 @@ export default function AdminDashboardPage() {
 
   // Task form state
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
-  const [taskAssignmentType, setTaskAssignmentType] = useState<"all" | "specific">("all");
+  const [taskAssignmentType, setTaskAssignmentType] = useState<
+    "all" | "specific"
+  >("all");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [taskDueDate, setTaskDueDate] = useState("");
   const [verifyModalOpen, setVerifyModalOpen] = useState(false);
-  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [selectedSubmission, setSelectedSubmission] =
+    useState<Submission | null>(null);
   const [verifyPoints, setVerifyPoints] = useState<number>(0);
 
   // Task edit form state
@@ -151,7 +152,9 @@ export default function AdminDashboardPage() {
   const [editTaskDesc, setEditTaskDesc] = useState("");
   const [editTaskPoints, setEditTaskPoints] = useState("");
   const [editTaskDueDate, setEditTaskDueDate] = useState("");
-  const [editTaskAssignmentType, setEditTaskAssignmentType] = useState<"all" | "specific">("all");
+  const [editTaskAssignmentType, setEditTaskAssignmentType] = useState<
+    "all" | "specific"
+  >("all");
   const [editSelectedUserIds, setEditSelectedUserIds] = useState<string[]>([]);
 
   // Form states
@@ -161,15 +164,21 @@ export default function AdminDashboardPage() {
   const [selectedContestId, setSelectedContestId] = useState("");
   const [problemName, setProblemName] = useState("");
   const [problemDescription, setProblemDescription] = useState("");
-  const [problemDifficulty, setProblemDifficulty] = useState<"Easy" | "Medium" | "Hard">("Medium");
+  const [problemDifficulty, setProblemDifficulty] = useState<
+    "Easy" | "Medium" | "Hard"
+  >("Medium");
   const [problemTags, setProblemTags] = useState("");
   const [problemTimeLimit, setProblemTimeLimit] = useState("1");
   const [problemMemoryLimit, setProblemMemoryLimit] = useState("256");
   const [sampleTestCases, setSampleTestCases] = useState("");
-  const [sampleTestCasesError, setSampleTestCasesError] = useState<string | null>(null);
+  const [sampleTestCasesError, setSampleTestCasesError] = useState<
+    string | null
+  >(null);
   const [sampleTestCasesCount, setSampleTestCasesCount] = useState<number>(0);
   const [hiddenTestCases, setHiddenTestCases] = useState("");
-  const [hiddenTestCasesError, setHiddenTestCasesError] = useState<string | null>(null);
+  const [hiddenTestCasesError, setHiddenTestCasesError] = useState<
+    string | null
+  >(null);
   const [hiddenTestCasesCount, setHiddenTestCasesCount] = useState<number>(0);
 
   const [sessionTitle, setSessionTitle] = useState("");
@@ -192,7 +201,9 @@ export default function AdminDashboardPage() {
   const [announcementPinned, setAnnouncementPinned] = useState(false);
 
   // Announcement edit states
-  const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
+  const [editingAnnouncementId, setEditingAnnouncementId] = useState<
+    string | null
+  >(null);
   const [editAnnTitle, setEditAnnTitle] = useState("");
   const [editAnnContent, setEditAnnContent] = useState("");
   const [editAnnPinned, setEditAnnPinned] = useState(false);
@@ -202,10 +213,34 @@ export default function AdminDashboardPage() {
   const [rejectionReason, setRejectionReason] = useState("");
 
   useEffect(() => {
-    if (hasHydrated && isAuthenticated && user?.role !== "ADMIN") {
+    if (!hasHydrated || !isAuthenticated) return;
+    if (user?.role === "ADMIN") return;
+
+    const verifyRole = async () => {
+      try {
+        if (!user?.id) return;
+        const res = await api.get(`/auth/approval-status/${user.id}`);
+        const status = res.data?.data;
+        if (status?.role === "ADMIN") {
+          updateUser({ role: status.role, email: status.email || user.email });
+          return;
+        }
+      } catch {
+        // Ignore errors and fall through to redirect
+      }
       router.push("/dashboard");
-    }
-  }, [isAuthenticated, hasHydrated, user, router]);
+    };
+
+    verifyRole();
+  }, [
+    isAuthenticated,
+    hasHydrated,
+    user?.role,
+    user?.id,
+    user?.email,
+    router,
+    updateUser,
+  ]);
 
   useEffect(() => {
     if (hasHydrated && user?.role === "ADMIN") {
@@ -267,7 +302,7 @@ export default function AdminDashboardPage() {
       const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        err.response?.data?.message || "Failed to approve user"
+        err.response?.data?.message || "Failed to approve user",
       );
     }
   };
@@ -281,19 +316,27 @@ export default function AdminDashboardPage() {
       const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        err.response?.data?.message || "Failed to update role"
+        err.response?.data?.message || "Failed to update role",
       );
     }
   };
 
-  const handleDeleteUser = async (userId: string, userEmail: string, userRole: string) => {
+  const handleDeleteUser = async (
+    userId: string,
+    userEmail: string,
+    userRole: string,
+  ) => {
     // Prevent deleting admins (extra safety - backend also checks)
     if (userRole === "ADMIN") {
       showMessage("error", "Cannot delete admin users");
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete user "${userEmail}"?\n\nThis will permanently delete all their data including:\n- Profile\n- Task submissions\n- Contest submissions\n- Blogs\n\nThis action cannot be undone.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete user "${userEmail}"?\n\nThis will permanently delete all their data including:\n- Profile\n- Task submissions\n- Contest submissions\n- Blogs\n\nThis action cannot be undone.`,
+      )
+    ) {
       return;
     }
 
@@ -305,14 +348,14 @@ export default function AdminDashboardPage() {
       const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        err.response?.data?.message || "Failed to delete user"
+        err.response?.data?.message || "Failed to delete user",
       );
     }
   };
 
   const handleCreateContest = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate required fields
     if (!contestStartTime) {
       showMessage("error", "Please select a start time");
@@ -322,13 +365,13 @@ export default function AdminDashboardPage() {
       showMessage("error", "Please enter a valid duration");
       return;
     }
-    
+
     setLoading(true);
     try {
       // Convert local datetime to UTC ISO string
       const localDate = new Date(contestStartTime);
       const utcISOString = localDate.toISOString();
-      
+
       await createContest({
         title: contestTitle,
         timer: parseInt(contestTimer),
@@ -343,7 +386,7 @@ export default function AdminDashboardPage() {
       const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        err.response?.data?.message || "Failed to create contest"
+        err.response?.data?.message || "Failed to create contest",
       );
     } finally {
       setLoading(false);
@@ -354,7 +397,7 @@ export default function AdminDashboardPage() {
   const validateTestCases = (
     value: string,
     setError: (e: string | null) => void,
-    setCount: (c: number) => void
+    setCount: (c: number) => void,
   ) => {
     if (!value.trim()) {
       setError(null);
@@ -369,8 +412,13 @@ export default function AdminDashboardPage() {
         return;
       }
       for (let i = 0; i < parsed.length; i++) {
-        if (typeof parsed[i].input !== "string" || typeof parsed[i].output !== "string") {
-          setError(`Test case ${i + 1}: must have "input" and "output" as strings`);
+        if (
+          typeof parsed[i].input !== "string" ||
+          typeof parsed[i].output !== "string"
+        ) {
+          setError(
+            `Test case ${i + 1}: must have "input" and "output" as strings`,
+          );
           setCount(0);
           return;
         }
@@ -385,7 +433,7 @@ export default function AdminDashboardPage() {
 
   const formatTestCasesJSON = (
     value: string,
-    setValue: (v: string) => void
+    setValue: (v: string) => void,
   ) => {
     if (!value.trim()) return;
     try {
@@ -418,14 +466,14 @@ export default function AdminDashboardPage() {
     try {
       let sampleTCs: { input: string; output: string }[] = [];
       let hiddenTCs: { input: string; output: string }[] = [];
-      
+
       if (sampleTestCases.trim()) {
         sampleTCs = JSON.parse(sampleTestCases);
       }
       if (hiddenTestCases.trim()) {
         hiddenTCs = JSON.parse(hiddenTestCases);
       }
-      
+
       // Parse tags from comma-separated string
       const tags = problemTags
         .split(",")
@@ -462,7 +510,7 @@ export default function AdminDashboardPage() {
       const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        err.response?.data?.message || "Failed to add problem"
+        err.response?.data?.message || "Failed to add problem",
       );
     } finally {
       setLoading(false);
@@ -485,8 +533,15 @@ export default function AdminDashboardPage() {
       setSessionMeetLink("");
       setSessionDate("");
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { error?: string; message?: string } }; message?: string };
-      const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message || "Failed to create session";
+      const err = error as {
+        response?: { data?: { error?: string; message?: string } };
+        message?: string;
+      };
+      const errorMsg =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to create session";
       showMessage("error", errorMsg);
     } finally {
       setLoading(false);
@@ -502,17 +557,19 @@ export default function AdminDashboardPage() {
       const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        err.response?.data?.message || "Failed to delete session"
+        err.response?.data?.message || "Failed to delete session",
       );
     }
   };
 
-  const handleStartEdit = (session: typeof sessions[0]) => {
+  const handleStartEdit = (session: (typeof sessions)[0]) => {
     setEditingId(session.id);
     setEditTitle(session.title);
     setEditDetails(session.details || "");
     setEditMeetLink(session.meetLink);
-    setEditDate(session.date ? new Date(session.date).toISOString().slice(0, 16) : "");
+    setEditDate(
+      session.date ? new Date(session.date).toISOString().slice(0, 16) : "",
+    );
   };
 
   const handleCancelEdit = () => {
@@ -541,7 +598,7 @@ export default function AdminDashboardPage() {
       const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        err.response?.data?.message || "Failed to update session"
+        err.response?.data?.message || "Failed to update session",
       );
     }
   };
@@ -562,7 +619,7 @@ export default function AdminDashboardPage() {
   const handleDeleteContest = async (contestId: string) => {
     if (
       !confirm(
-        "Are you sure you want to delete this contest? This will also delete all submissions."
+        "Are you sure you want to delete this contest? This will also delete all submissions.",
       )
     )
       return;
@@ -574,7 +631,7 @@ export default function AdminDashboardPage() {
       const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        err.response?.data?.message || "Failed to delete contest"
+        err.response?.data?.message || "Failed to delete contest",
       );
     }
   };
@@ -588,7 +645,8 @@ export default function AdminDashboardPage() {
         description: taskDesc || undefined,
         points: taskPoints ? parseInt(taskPoints) : 0,
         dueDate: taskDueDate || undefined,
-        assignedTo: taskAssignmentType === "specific" ? selectedUserIds : undefined,
+        assignedTo:
+          taskAssignmentType === "specific" ? selectedUserIds : undefined,
       });
       showMessage("success", "Task created successfully!");
       setTaskTitle("");
@@ -600,10 +658,13 @@ export default function AdminDashboardPage() {
       // Invalidate tasks cache to refetch
       invalidateTasks();
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { error?: string } }; message?: string };
+      const err = error as {
+        response?: { data?: { error?: string } };
+        message?: string;
+      };
       showMessage(
         "error",
-        err.response?.data?.error || err.message || "Failed to create task"
+        err.response?.data?.error || err.message || "Failed to create task",
       );
     } finally {
       setLoading(false);
@@ -611,7 +672,12 @@ export default function AdminDashboardPage() {
   };
 
   const handleDeleteTask = async (taskId: string) => {
-    if (!confirm("Are you sure you want to delete this task? This will also delete all submissions.")) return;
+    if (
+      !confirm(
+        "Are you sure you want to delete this task? This will also delete all submissions.",
+      )
+    )
+      return;
     try {
       await removeTask(taskId);
       showMessage("success", "Task deleted successfully!");
@@ -622,10 +688,13 @@ export default function AdminDashboardPage() {
       // Invalidate tasks cache to refetch
       invalidateTasks();
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { error?: string } }; message?: string };
+      const err = error as {
+        response?: { data?: { error?: string } };
+        message?: string;
+      };
       showMessage(
         "error",
-        err.response?.data?.error || err.message || "Failed to delete task"
+        err.response?.data?.error || err.message || "Failed to delete task",
       );
     }
   };
@@ -645,8 +714,12 @@ export default function AdminDashboardPage() {
     setEditTaskTitle(task.title);
     setEditTaskDesc(task.description || "");
     setEditTaskPoints(String(task.points));
-    setEditTaskDueDate(task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 16) : "");
-    setEditTaskAssignmentType(task.assignedTo && task.assignedTo.length > 0 ? "specific" : "all");
+    setEditTaskDueDate(
+      task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 16) : "",
+    );
+    setEditTaskAssignmentType(
+      task.assignedTo && task.assignedTo.length > 0 ? "specific" : "all",
+    );
     setEditSelectedUserIds(task.assignedTo || []);
   };
 
@@ -667,22 +740,29 @@ export default function AdminDashboardPage() {
         description: editTaskDesc || undefined,
         points: editTaskPoints ? parseInt(editTaskPoints) : 0,
         dueDate: editTaskDueDate || null,
-        assignedTo: editTaskAssignmentType === "specific" ? editSelectedUserIds : null,
+        assignedTo:
+          editTaskAssignmentType === "specific" ? editSelectedUserIds : null,
       });
       showMessage("success", "Task updated successfully!");
       handleCancelEditTask();
       // Invalidate tasks cache to refetch
       invalidateTasks();
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { error?: string } }; message?: string };
+      const err = error as {
+        response?: { data?: { error?: string } };
+        message?: string;
+      };
       showMessage(
         "error",
-        err.response?.data?.error || err.message || "Failed to update task"
+        err.response?.data?.error || err.message || "Failed to update task",
       );
     }
   };
 
-  const handleOpenVerifyModal = (submission: Submission, taskPoints: number) => {
+  const handleOpenVerifyModal = (
+    submission: Submission,
+    taskPoints: number,
+  ) => {
     setSelectedSubmission(submission);
     setVerifyPoints(taskPoints);
     setVerifyModalOpen(true);
@@ -692,14 +772,22 @@ export default function AdminDashboardPage() {
     if (!selectedSubmission) return;
     try {
       await verifySubmission(selectedSubmission.id, verifyPoints);
-      showMessage("success", `Submission verified! ${verifyPoints} points awarded.`);
+      showMessage(
+        "success",
+        `Submission verified! ${verifyPoints} points awarded.`,
+      );
       setVerifyModalOpen(false);
       setSelectedSubmission(null);
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { error?: string } }; message?: string };
+      const err = error as {
+        response?: { data?: { error?: string } };
+        message?: string;
+      };
       showMessage(
         "error",
-        err.response?.data?.error || err.message || "Failed to verify submission"
+        err.response?.data?.error ||
+          err.message ||
+          "Failed to verify submission",
       );
     }
   };
@@ -710,10 +798,15 @@ export default function AdminDashboardPage() {
       await rejectSubmission(subId);
       showMessage("success", "Submission rejected.");
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { error?: string } }; message?: string };
+      const err = error as {
+        response?: { data?: { error?: string } };
+        message?: string;
+      };
       showMessage(
         "error",
-        err.response?.data?.error || err.message || "Failed to reject submission"
+        err.response?.data?.error ||
+          err.message ||
+          "Failed to reject submission",
       );
     }
   };
@@ -739,7 +832,7 @@ export default function AdminDashboardPage() {
       const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        err.response?.data?.message || "Failed to create announcement"
+        err.response?.data?.message || "Failed to create announcement",
       );
     } finally {
       setLoading(false);
@@ -774,7 +867,7 @@ export default function AdminDashboardPage() {
       const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        err.response?.data?.message || "Failed to update announcement"
+        err.response?.data?.message || "Failed to update announcement",
       );
     }
   };
@@ -789,21 +882,26 @@ export default function AdminDashboardPage() {
       const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        err.response?.data?.message || "Failed to delete announcement"
+        err.response?.data?.message || "Failed to delete announcement",
       );
     }
   };
 
   const handleTogglePin = async (announcement: Announcement) => {
     try {
-      await updateAnnouncement(announcement.id, { pinned: !announcement.pinned });
-      showMessage("success", announcement.pinned ? "Announcement unpinned" : "Announcement pinned");
+      await updateAnnouncement(announcement.id, {
+        pinned: !announcement.pinned,
+      });
+      showMessage(
+        "success",
+        announcement.pinned ? "Announcement unpinned" : "Announcement pinned",
+      );
       fetchDataForTab("announcements");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        err.response?.data?.message || "Failed to update announcement"
+        err.response?.data?.message || "Failed to update announcement",
       );
     }
   };
@@ -817,7 +915,7 @@ export default function AdminDashboardPage() {
       const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        err.response?.data?.message || "Failed to approve blog"
+        err.response?.data?.message || "Failed to approve blog",
       );
     }
   };
@@ -833,7 +931,7 @@ export default function AdminDashboardPage() {
       const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        err.response?.data?.message || "Failed to reject blog"
+        err.response?.data?.message || "Failed to reject blog",
       );
     }
   };
@@ -1021,7 +1119,9 @@ export default function AdminDashboardPage() {
                                   size="sm"
                                   variant="destructive"
                                   className="h-7 text-xs gap-1"
-                                  onClick={() => handleDeleteUser(u.id, u.email, u.role)}
+                                  onClick={() =>
+                                    handleDeleteUser(u.id, u.email, u.role)
+                                  }
                                 >
                                   <Trash2 className="h-3 w-3" />
                                   Delete
@@ -1146,7 +1246,9 @@ export default function AdminDashboardPage() {
                       <Label>Difficulty</Label>
                       <Select
                         value={problemDifficulty}
-                        onValueChange={(v) => setProblemDifficulty(v as "Easy" | "Medium" | "Hard")}
+                        onValueChange={(v) =>
+                          setProblemDifficulty(v as "Easy" | "Medium" | "Hard")
+                        }
                       >
                         <SelectTrigger className="bg-gray-800 border-gray-700">
                           <SelectValue />
@@ -1220,36 +1322,53 @@ export default function AdminDashboardPage() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => formatTestCasesJSON(sampleTestCases, setSampleTestCases)}
+                        onClick={() =>
+                          formatTestCasesJSON(
+                            sampleTestCases,
+                            setSampleTestCases,
+                          )
+                        }
                         className="h-6 text-xs text-gray-400 hover:text-white"
                       >
                         Format JSON
                       </Button>
                     </div>
                     <p className="text-xs text-gray-500 mb-1">
-                      Visible to users. At least 1 required. Format: {`[{"input": "...", "output": "..."}]`}
+                      Visible to users. At least 1 required. Format:{" "}
+                      {`[{"input": "...", "output": "..."}]`}
                     </p>
                     <textarea
                       placeholder={`[\n  {"input": "5\\n1 2 3 4 5", "output": "15"},\n  {"input": "3\\n1 2 3", "output": "6"}\n]`}
                       value={sampleTestCases}
                       onChange={(e) => {
                         setSampleTestCases(e.target.value);
-                        validateTestCases(e.target.value, setSampleTestCasesError, setSampleTestCasesCount);
+                        validateTestCases(
+                          e.target.value,
+                          setSampleTestCasesError,
+                          setSampleTestCasesCount,
+                        );
                       }}
                       className={`w-full h-24 px-3 py-2 bg-gray-800 border rounded-md text-sm font-mono resize-none ${
-                        sampleTestCasesError 
-                          ? "border-red-500 focus:border-red-500" 
+                        sampleTestCasesError
+                          ? "border-red-500 focus:border-red-500"
                           : sampleTestCases.trim() && !sampleTestCasesError
-                          ? "border-green-500 focus:border-green-500"
-                          : "border-gray-700"
+                            ? "border-green-500 focus:border-green-500"
+                            : "border-gray-700"
                       }`}
                     />
                     {sampleTestCasesError ? (
-                      <p className="text-xs text-red-400">{sampleTestCasesError}</p>
+                      <p className="text-xs text-red-400">
+                        {sampleTestCasesError}
+                      </p>
                     ) : sampleTestCasesCount > 0 ? (
-                      <p className="text-xs text-green-400">Valid JSON - {sampleTestCasesCount} sample test case{sampleTestCasesCount > 1 ? "s" : ""}</p>
+                      <p className="text-xs text-green-400">
+                        Valid JSON - {sampleTestCasesCount} sample test case
+                        {sampleTestCasesCount > 1 ? "s" : ""}
+                      </p>
                     ) : (
-                      <p className="text-xs text-yellow-400">Required: At least 1 sample test case</p>
+                      <p className="text-xs text-yellow-400">
+                        Required: At least 1 sample test case
+                      </p>
                     )}
                   </div>
 
@@ -1261,7 +1380,12 @@ export default function AdminDashboardPage() {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => formatTestCasesJSON(hiddenTestCases, setHiddenTestCases)}
+                        onClick={() =>
+                          formatTestCasesJSON(
+                            hiddenTestCases,
+                            setHiddenTestCases,
+                          )
+                        }
                         className="h-6 text-xs text-gray-400 hover:text-white"
                       >
                         Format JSON
@@ -1275,24 +1399,42 @@ export default function AdminDashboardPage() {
                       value={hiddenTestCases}
                       onChange={(e) => {
                         setHiddenTestCases(e.target.value);
-                        validateTestCases(e.target.value, setHiddenTestCasesError, setHiddenTestCasesCount);
+                        validateTestCases(
+                          e.target.value,
+                          setHiddenTestCasesError,
+                          setHiddenTestCasesCount,
+                        );
                       }}
                       className={`w-full h-24 px-3 py-2 bg-gray-800 border rounded-md text-sm font-mono resize-none ${
-                        hiddenTestCasesError 
-                          ? "border-red-500 focus:border-red-500" 
+                        hiddenTestCasesError
+                          ? "border-red-500 focus:border-red-500"
                           : hiddenTestCases.trim() && !hiddenTestCasesError
-                          ? "border-green-500 focus:border-green-500"
-                          : "border-gray-700"
+                            ? "border-green-500 focus:border-green-500"
+                            : "border-gray-700"
                       }`}
                     />
                     {hiddenTestCasesError ? (
-                      <p className="text-xs text-red-400">{hiddenTestCasesError}</p>
+                      <p className="text-xs text-red-400">
+                        {hiddenTestCasesError}
+                      </p>
                     ) : hiddenTestCasesCount > 0 ? (
-                      <p className="text-xs text-green-400">Valid JSON - {hiddenTestCasesCount} hidden test case{hiddenTestCasesCount > 1 ? "s" : ""}</p>
+                      <p className="text-xs text-green-400">
+                        Valid JSON - {hiddenTestCasesCount} hidden test case
+                        {hiddenTestCasesCount > 1 ? "s" : ""}
+                      </p>
                     ) : null}
                   </div>
 
-                  <Button type="submit" disabled={loading || !!sampleTestCasesError || !!hiddenTestCasesError || sampleTestCasesCount === 0} className="w-full">
+                  <Button
+                    type="submit"
+                    disabled={
+                      loading ||
+                      !!sampleTestCasesError ||
+                      !!hiddenTestCasesError ||
+                      sampleTestCasesCount === 0
+                    }
+                    className="w-full"
+                  >
                     {loading ? "Adding..." : "Add Problem"}
                   </Button>
                 </form>
@@ -1310,68 +1452,76 @@ export default function AdminDashboardPage() {
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
                 ) : (
-                <div className="space-y-3">
-                  {contests.length === 0 ? (
-                    <p className="text-gray-500 text-center py-4">
-                      No contests yet
-                    </p>
-                  ) : (
-                    contests.map((c) => {
-                      const startTime = new Date(c.startTime);
-                      const now = new Date();
-                      const isUpcoming = startTime > now;
-                      const endTime = new Date(startTime.getTime() + c.timer * 60 * 1000);
-                      const isEnded = now > endTime;
-                      const status = isUpcoming ? "upcoming" : isEnded ? "ended" : "active";
-                      
-                      return (
-                        <div
-                          key={c.id}
-                          className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg"
-                        >
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium">{c.title}</p>
-                              <span
-                                className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                  status === "active"
-                                    ? "bg-green-500/20 text-green-400"
-                                    : status === "upcoming"
-                                    ? "bg-yellow-500/20 text-yellow-400"
-                                    : "bg-gray-500/20 text-gray-400"
-                                }`}
-                              >
-                                {status.charAt(0).toUpperCase() + status.slice(1)}
-                              </span>
+                  <div className="space-y-3">
+                    {contests.length === 0 ? (
+                      <p className="text-gray-500 text-center py-4">
+                        No contests yet
+                      </p>
+                    ) : (
+                      contests.map((c) => {
+                        const startTime = new Date(c.startTime);
+                        const now = new Date();
+                        const isUpcoming = startTime > now;
+                        const endTime = new Date(
+                          startTime.getTime() + c.timer * 60 * 1000,
+                        );
+                        const isEnded = now > endTime;
+                        const status = isUpcoming
+                          ? "upcoming"
+                          : isEnded
+                            ? "ended"
+                            : "active";
+
+                        return (
+                          <div
+                            key={c.id}
+                            className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg"
+                          >
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{c.title}</p>
+                                <span
+                                  className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                    status === "active"
+                                      ? "bg-green-500/20 text-green-400"
+                                      : status === "upcoming"
+                                        ? "bg-yellow-500/20 text-yellow-400"
+                                        : "bg-gray-500/20 text-gray-400"
+                                  }`}
+                                >
+                                  {status.charAt(0).toUpperCase() +
+                                    status.slice(1)}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-400">
+                                {c.problems?.length || 0} problems • {c.timer}{" "}
+                                min
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Starts: {startTime.toLocaleString()}
+                              </p>
                             </div>
-                            <p className="text-sm text-gray-400">
-                              {c.problems?.length || 0} problems • {c.timer} min
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Starts: {startTime.toLocaleString()}
-                            </p>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => router.push(`/contests/${c.id}`)}
+                              >
+                                View
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteContest(c.id)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => router.push(`/contests/${c.id}`)}
-                            >
-                              View
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDeleteContest(c.id)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
+                        );
+                      })
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -1435,8 +1585,14 @@ export default function AdminDashboardPage() {
                       className="bg-gray-800 border-gray-700"
                     />
                   </div>
-                  <Button type="submit" disabled={loading || sessionsLoading} className="w-full">
-                    {loading || sessionsLoading ? "Creating..." : "Create Session"}
+                  <Button
+                    type="submit"
+                    disabled={loading || sessionsLoading}
+                    className="w-full"
+                  >
+                    {loading || sessionsLoading
+                      ? "Creating..."
+                      : "Create Session"}
                   </Button>
                 </form>
               </CardContent>
@@ -1452,137 +1608,155 @@ export default function AdminDashboardPage() {
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
                 ) : (
-                <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                  {sessions.length === 0 ? (
-                    <p className="text-gray-500 text-center py-4">
-                      No sessions yet
-                    </p>
-                  ) : (
-                    sessions.map((s) => (
-                      <div
-                        key={s.id}
-                        className="p-4 bg-gray-800/50 rounded-lg"
-                      >
-                        {editingId === s.id ? (
-                          // Edit Mode
-                          <div className="space-y-3">
-                            <div className="space-y-2">
-                              <Label className="text-xs text-gray-400">Title *</Label>
-                              <Input
-                                value={editTitle}
-                                onChange={(e) => setEditTitle(e.target.value)}
-                                className="bg-gray-800 border-gray-700 h-9"
-                                required
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label className="text-xs text-gray-400">Details</Label>
-                              <textarea
-                                value={editDetails}
-                                onChange={(e) => setEditDetails(e.target.value)}
-                                className="w-full h-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label className="text-xs text-gray-400">Meeting Link *</Label>
-                              <Input
-                                type="url"
-                                value={editMeetLink}
-                                onChange={(e) => setEditMeetLink(e.target.value)}
-                                className="bg-gray-800 border-gray-700 h-9"
-                                required
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label className="text-xs text-gray-400">Date & Time</Label>
-                              <Input
-                                type="datetime-local"
-                                value={editDate}
-                                onChange={(e) => setEditDate(e.target.value)}
-                                className="bg-gray-800 border-gray-700 h-9"
-                              />
-                            </div>
-                            <div className="flex gap-2 pt-2">
-                              <Button
-                                size="sm"
-                                onClick={() => handleSaveEdit(s.id)}
-                                disabled={!editTitle || !editMeetLink || sessionsLoading}
-                                className="gap-1"
-                              >
-                                <Check className="h-4 w-4" />
-                                Save
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleCancelEdit}
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          // View Mode
-                          <div className="space-y-3">
-                            <div>
-                              <p className="font-medium text-white">{s.title}</p>
-                              {s.details && (
-                                <p className="text-sm text-gray-400 mt-1 line-clamp-2">
-                                  {s.details}
-                                </p>
-                              )}
-                              <p className="text-sm text-gray-500 mt-1">
-                                {s.date
-                                  ? new Date(s.date).toLocaleString()
-                                  : "No date set"}
-                              </p>
-                              <div className="flex items-center gap-1 mt-2 text-sm text-blue-400">
-                                <Link2 className="h-3 w-3" />
-                                <span className="truncate max-w-[200px]">
-                                  {s.meetLink}
-                                </span>
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                    {sessions.length === 0 ? (
+                      <p className="text-gray-500 text-center py-4">
+                        No sessions yet
+                      </p>
+                    ) : (
+                      sessions.map((s) => (
+                        <div
+                          key={s.id}
+                          className="p-4 bg-gray-800/50 rounded-lg"
+                        >
+                          {editingId === s.id ? (
+                            // Edit Mode
+                            <div className="space-y-3">
+                              <div className="space-y-2">
+                                <Label className="text-xs text-gray-400">
+                                  Title *
+                                </Label>
+                                <Input
+                                  value={editTitle}
+                                  onChange={(e) => setEditTitle(e.target.value)}
+                                  className="bg-gray-800 border-gray-700 h-9"
+                                  required
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-xs text-gray-400">
+                                  Details
+                                </Label>
+                                <textarea
+                                  value={editDetails}
+                                  onChange={(e) =>
+                                    setEditDetails(e.target.value)
+                                  }
+                                  className="w-full h-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-xs text-gray-400">
+                                  Meeting Link *
+                                </Label>
+                                <Input
+                                  type="url"
+                                  value={editMeetLink}
+                                  onChange={(e) =>
+                                    setEditMeetLink(e.target.value)
+                                  }
+                                  className="bg-gray-800 border-gray-700 h-9"
+                                  required
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-xs text-gray-400">
+                                  Date & Time
+                                </Label>
+                                <Input
+                                  type="datetime-local"
+                                  value={editDate}
+                                  onChange={(e) => setEditDate(e.target.value)}
+                                  className="bg-gray-800 border-gray-700 h-9"
+                                />
+                              </div>
+                              <div className="flex gap-2 pt-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleSaveEdit(s.id)}
+                                  disabled={
+                                    !editTitle ||
+                                    !editMeetLink ||
+                                    sessionsLoading
+                                  }
+                                  className="gap-1"
+                                >
+                                  <Check className="h-4 w-4" />
+                                  Save
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={handleCancelEdit}
+                                >
+                                  Cancel
+                                </Button>
                               </div>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                size="sm"
-                                onClick={() => handleJoinMeeting(s.meetLink)}
-                                className="gap-1"
-                              >
-                                <ExternalLink className="h-4 w-4" />
-                                Join
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleCopyLink(s.meetLink)}
-                                className="gap-1"
-                              >
-                                <Copy className="h-4 w-4" />
-                                Copy Link
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleStartEdit(s)}
-                                className="gap-1"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleDeleteSession(s.id)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
+                          ) : (
+                            // View Mode
+                            <div className="space-y-3">
+                              <div>
+                                <p className="font-medium text-white">
+                                  {s.title}
+                                </p>
+                                {s.details && (
+                                  <p className="text-sm text-gray-400 mt-1 line-clamp-2">
+                                    {s.details}
+                                  </p>
+                                )}
+                                <p className="text-sm text-gray-500 mt-1">
+                                  {s.date
+                                    ? new Date(s.date).toLocaleString()
+                                    : "No date set"}
+                                </p>
+                                <div className="flex items-center gap-1 mt-2 text-sm text-blue-400">
+                                  <Link2 className="h-3 w-3" />
+                                  <span className="truncate max-w-[200px]">
+                                    {s.meetLink}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleJoinMeeting(s.meetLink)}
+                                  className="gap-1"
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                  Join
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleCopyLink(s.meetLink)}
+                                  className="gap-1"
+                                >
+                                  <Copy className="h-4 w-4" />
+                                  Copy Link
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleStartEdit(s)}
+                                  className="gap-1"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleDeleteSession(s.id)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -1597,7 +1771,9 @@ export default function AdminDashboardPage() {
               <Card className="bg-gray-900 border-gray-800">
                 <CardHeader>
                   <CardTitle className="text-white">Create Task</CardTitle>
-                  <CardDescription>Create a new task for students</CardDescription>
+                  <CardDescription>
+                    Create a new task for students
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleCreateTask} className="space-y-4">
@@ -1643,7 +1819,7 @@ export default function AdminDashboardPage() {
                         />
                       </div>
                     </div>
-                    
+
                     {/* Assignment Type */}
                     <div className="space-y-3">
                       <Label>Assign To</Label>
@@ -1674,15 +1850,19 @@ export default function AdminDashboardPage() {
                           <span className="text-sm">Specific Users</span>
                         </label>
                       </div>
-                      
+
                       {taskAssignmentType === "specific" && (
                         <div className="space-y-2">
                           <div className="flex flex-wrap gap-2 p-2 bg-gray-800 border border-gray-700 rounded-md min-h-[40px]">
                             {selectedUserIds.length === 0 ? (
-                              <span className="text-sm text-gray-500">No users selected</span>
+                              <span className="text-sm text-gray-500">
+                                No users selected
+                              </span>
                             ) : (
                               selectedUserIds.map((userId) => {
-                                const u = studentUsers.find((su) => su.id === userId);
+                                const u = studentUsers.find(
+                                  (su) => su.id === userId,
+                                );
                                 return (
                                   <span
                                     key={userId}
@@ -1691,7 +1871,13 @@ export default function AdminDashboardPage() {
                                     {u?.email || userId}
                                     <button
                                       type="button"
-                                      onClick={() => setSelectedUserIds(selectedUserIds.filter((id) => id !== userId))}
+                                      onClick={() =>
+                                        setSelectedUserIds(
+                                          selectedUserIds.filter(
+                                            (id) => id !== userId,
+                                          ),
+                                        )
+                                      }
                                       className="hover:text-blue-300"
                                     >
                                       <X className="h-3 w-3" />
@@ -1705,7 +1891,10 @@ export default function AdminDashboardPage() {
                             value=""
                             onValueChange={(userId) => {
                               if (!selectedUserIds.includes(userId)) {
-                                setSelectedUserIds([...selectedUserIds, userId]);
+                                setSelectedUserIds([
+                                  ...selectedUserIds,
+                                  userId,
+                                ]);
                               }
                             }}
                           >
@@ -1725,9 +1914,15 @@ export default function AdminDashboardPage() {
                         </div>
                       )}
                     </div>
-                    
-                    <Button type="submit" disabled={loading || mutationLoading} className="w-full">
-                      {loading || mutationLoading ? "Creating..." : "Create Task"}
+
+                    <Button
+                      type="submit"
+                      disabled={loading || mutationLoading}
+                      className="w-full"
+                    >
+                      {loading || mutationLoading
+                        ? "Creating..."
+                        : "Create Task"}
                     </Button>
                   </form>
                 </CardContent>
@@ -1737,7 +1932,9 @@ export default function AdminDashboardPage() {
               <Card className="bg-gray-900 border-gray-800">
                 <CardHeader>
                   <CardTitle className="text-white">Existing Tasks</CardTitle>
-                  <CardDescription>{tasks.length} task{tasks.length !== 1 ? "s" : ""} created</CardDescription>
+                  <CardDescription>
+                    {tasks.length} task{tasks.length !== 1 ? "s" : ""} created
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {tabLoading ? (
@@ -1745,335 +1942,450 @@ export default function AdminDashboardPage() {
                       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
                   ) : (
-                  <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                    {tasksLoading ? (
-                      <p className="text-gray-500 text-center py-4">Loading...</p>
-                    ) : tasks.length === 0 ? (
-                      <p className="text-gray-500 text-center py-4">No tasks yet</p>
-                    ) : (
-                      tasks.map((task) => {
-                        const isExpanded = expandedTaskId === task.id;
-                        const isEditing = editingTaskId === task.id;
-                        const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
-                        
-                        return (
-                          <div key={task.id} className="bg-gray-800/50 rounded-lg overflow-hidden">
-                            {isEditing ? (
-                              // Edit Mode
-                              <div className="p-4 space-y-3">
-                                <div className="space-y-2">
-                                  <Label className="text-xs text-gray-400">Title *</Label>
-                                  <Input
-                                    value={editTaskTitle}
-                                    onChange={(e) => setEditTaskTitle(e.target.value)}
-                                    className="bg-gray-800 border-gray-700 h-9"
-                                    required
-                                  />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label className="text-xs text-gray-400">Description</Label>
-                                  <textarea
-                                    value={editTaskDesc}
-                                    onChange={(e) => setEditTaskDesc(e.target.value)}
-                                    className="w-full h-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none"
-                                  />
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                      {tasksLoading ? (
+                        <p className="text-gray-500 text-center py-4">
+                          Loading...
+                        </p>
+                      ) : tasks.length === 0 ? (
+                        <p className="text-gray-500 text-center py-4">
+                          No tasks yet
+                        </p>
+                      ) : (
+                        tasks.map((task) => {
+                          const isExpanded = expandedTaskId === task.id;
+                          const isEditing = editingTaskId === task.id;
+                          const isOverdue =
+                            task.dueDate && new Date(task.dueDate) < new Date();
+
+                          return (
+                            <div
+                              key={task.id}
+                              className="bg-gray-800/50 rounded-lg overflow-hidden"
+                            >
+                              {isEditing ? (
+                                // Edit Mode
+                                <div className="p-4 space-y-3">
                                   <div className="space-y-2">
-                                    <Label className="text-xs text-gray-400">Points</Label>
+                                    <Label className="text-xs text-gray-400">
+                                      Title *
+                                    </Label>
                                     <Input
-                                      type="number"
-                                      min="0"
-                                      value={editTaskPoints}
-                                      onChange={(e) => setEditTaskPoints(e.target.value)}
+                                      value={editTaskTitle}
+                                      onChange={(e) =>
+                                        setEditTaskTitle(e.target.value)
+                                      }
                                       className="bg-gray-800 border-gray-700 h-9"
+                                      required
                                     />
                                   </div>
                                   <div className="space-y-2">
-                                    <Label className="text-xs text-gray-400">Due Date</Label>
-                                    <Input
-                                      type="datetime-local"
-                                      value={editTaskDueDate}
-                                      onChange={(e) => setEditTaskDueDate(e.target.value)}
-                                      className="bg-gray-800 border-gray-700 h-9"
+                                    <Label className="text-xs text-gray-400">
+                                      Description
+                                    </Label>
+                                    <textarea
+                                      value={editTaskDesc}
+                                      onChange={(e) =>
+                                        setEditTaskDesc(e.target.value)
+                                      }
+                                      className="w-full h-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none"
                                     />
                                   </div>
-                                </div>
-                                
-                                {/* Edit Assignment Type */}
-                                <div className="space-y-2">
-                                  <Label className="text-xs text-gray-400">Assign To</Label>
-                                  <div className="flex gap-4">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                      <input
-                                        type="radio"
-                                        checked={editTaskAssignmentType === "all"}
-                                        onChange={() => {
-                                          setEditTaskAssignmentType("all");
-                                          setEditSelectedUserIds([]);
-                                        }}
-                                        className="text-blue-500"
-                                      />
-                                      <span className="text-xs">All</span>
-                                    </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                      <input
-                                        type="radio"
-                                        checked={editTaskAssignmentType === "specific"}
-                                        onChange={() => setEditTaskAssignmentType("specific")}
-                                        className="text-blue-500"
-                                      />
-                                      <span className="text-xs">Specific</span>
-                                    </label>
-                                  </div>
-                                  {editTaskAssignmentType === "specific" && (
-                                    <Select
-                                      value=""
-                                      onValueChange={(userId) => {
-                                        if (!editSelectedUserIds.includes(userId)) {
-                                          setEditSelectedUserIds([...editSelectedUserIds, userId]);
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                      <Label className="text-xs text-gray-400">
+                                        Points
+                                      </Label>
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        value={editTaskPoints}
+                                        onChange={(e) =>
+                                          setEditTaskPoints(e.target.value)
                                         }
-                                      }}
-                                    >
-                                      <SelectTrigger className="bg-gray-800 border-gray-700 h-8 text-xs">
-                                        <SelectValue placeholder="Add user..." />
-                                      </SelectTrigger>
-                                      <SelectContent className="bg-gray-800 border-gray-700 max-h-32">
-                                        {studentUsers
-                                          .filter((u) => !editSelectedUserIds.includes(u.id))
-                                          .map((u) => (
-                                            <SelectItem key={u.id} value={u.id} className="text-xs">
-                                              {u.email}
-                                            </SelectItem>
-                                          ))}
-                                      </SelectContent>
-                                    </Select>
-                                  )}
-                                  {editTaskAssignmentType === "specific" && editSelectedUserIds.length > 0 && (
-                                    <div className="flex flex-wrap gap-1">
-                                      {editSelectedUserIds.map((userId) => {
-                                        const u = studentUsers.find((su) => su.id === userId);
-                                        return (
-                                          <span
-                                            key={userId}
-                                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs"
-                                          >
-                                            {u?.email?.split("@")[0] || userId.slice(0, 8)}
-                                            <button
-                                              type="button"
-                                              onClick={() => setEditSelectedUserIds(editSelectedUserIds.filter((id) => id !== userId))}
-                                              className="hover:text-blue-300"
-                                            >
-                                              <X className="h-3 w-3" />
-                                            </button>
-                                          </span>
-                                        );
-                                      })}
+                                        className="bg-gray-800 border-gray-700 h-9"
+                                      />
                                     </div>
-                                  )}
-                                </div>
-                                
-                                <div className="flex gap-2 pt-2">
-                                                <Button
-                                                  size="sm"
-                                                  onClick={() => handleSaveEditTask(task.id)}
-                                                  disabled={!editTaskTitle || mutationLoading}
-                                                  className="gap-1"
-                                                >
-                                    <Check className="h-4 w-4" />
-                                    Save
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={handleCancelEditTask}
-                                  >
-                                    Cancel
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              // View Mode
-                              <>
-                                <div className="p-4">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 flex-wrap">
-                                        <p className="font-medium text-white truncate">{task.title}</p>
-                                        <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded text-xs font-medium">
-                                          {task.points} pts
-                                        </span>
-                                        {task.assignedTo && task.assignedTo.length > 0 ? (
-                                          <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs">
-                                            {task.assignedTo.length} user{task.assignedTo.length !== 1 ? "s" : ""}
-                                          </span>
-                                        ) : (
-                                          <span className="px-2 py-0.5 bg-green-500/20 text-green-400 rounded text-xs">
-                                            All
-                                          </span>
-                                        )}
-                                      </div>
-                                      {task.description && (
-                                        <p className="text-sm text-gray-400 mt-1 line-clamp-2">
-                                          {task.description}
-                                        </p>
-                                      )}
-                                      <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-                                        {task.dueDate && (
-                                          <span className={isOverdue ? "text-red-400" : ""}>
-                                            Due: {new Date(task.dueDate).toLocaleString()}
-                                            {isOverdue && " (Overdue)"}
-                                          </span>
-                                        )}
-                                        <span>
-                                          Created: {new Date(task.createdAt).toLocaleDateString()}
-                                        </span>
-                                      </div>
-                                    </div>
-                                    <div className="flex gap-1">
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handleToggleSubmissions(task.id)}
-                                        className="h-8 w-8 p-0"
-                                        title="View Submissions"
-                                      >
-                                        {isExpanded ? (
-                                          <ChevronUp className="h-4 w-4" />
-                                        ) : (
-                                          <ChevronDown className="h-4 w-4" />
-                                        )}
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handleStartEditTask(task)}
-                                        className="h-8 w-8 p-0"
-                                        title="Edit"
-                                      >
-                                        <Pencil className="h-4 w-4" />
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => handleDeleteTask(task.id)}
-                                        className="h-8 w-8 p-0 text-red-400 hover:text-red-300"
-                                        title="Delete"
-                                      >
-                                        <X className="h-4 w-4" />
-                                      </Button>
+                                    <div className="space-y-2">
+                                      <Label className="text-xs text-gray-400">
+                                        Due Date
+                                      </Label>
+                                      <Input
+                                        type="datetime-local"
+                                        value={editTaskDueDate}
+                                        onChange={(e) =>
+                                          setEditTaskDueDate(e.target.value)
+                                        }
+                                        className="bg-gray-800 border-gray-700 h-9"
+                                      />
                                     </div>
                                   </div>
-                                </div>
-                                
-                                {/* Submissions Panel */}
-                                {isExpanded && (
-                                  <div className="border-t border-gray-700 bg-gray-900/50 p-4">
-                                    <h4 className="text-sm font-medium text-gray-300 mb-3">
-                                      Submissions ({taskSubmissions.length})
-                                    </h4>
-                                    {submissionsLoading ? (
-                                      <p className="text-sm text-gray-500">Loading submissions...</p>
-                                    ) : taskSubmissions.length === 0 ? (
-                                      <p className="text-sm text-gray-500">No submissions yet</p>
-                                    ) : (
-                                      <div className="space-y-2">
-                                        {taskSubmissions.map((sub) => {
-                                          const isLate = task.dueDate && new Date(sub.createdAt) > new Date(task.dueDate);
-                                          return (
-                                            <div
-                                              key={sub.id}
-                                              className="flex items-center justify-between gap-2 p-2 bg-gray-800 rounded text-sm"
-                                            >
-                                              <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                  <span className="text-gray-300 truncate">
-                                                    {sub.user?.email || sub.userId}
-                                                  </span>
-                                                  <span
-                                                    className={`px-2 py-0.5 rounded text-xs font-medium ${getSubmissionStatusColor(sub.status)}`}
-                                                  >
-                                                    {sub.status}
-                                                  </span>
-                                                  {sub.status === "VERIFIED" && (
-                                                    <span className="text-xs text-purple-400">
-                                                      +{sub.points} pts
-                                                    </span>
-                                                  )}
-                                                  {isLate && (
-                                                    <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded text-xs">
-                                                      Late
-                                                    </span>
-                                                  )}
-                                                </div>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                  <a
-                                                    href={sub.link}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-xs text-blue-400 hover:underline truncate max-w-[200px]"
-                                                  >
-                                                    {sub.link}
-                                                  </a>
-                                                  <span className="text-xs text-gray-500">
-                                                    {new Date(sub.createdAt).toLocaleString()}
-                                                  </span>
-                                                </div>
-                                              </div>
-                                              {sub.status === "PENDING" && (
-                                                <div className="flex gap-1">
-                                                  <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => handleOpenVerifyModal(sub, task.points)}
-                                                    className="h-7 text-xs gap-1 text-green-400 border-green-400/50 hover:bg-green-400/10"
-                                                  >
-                                                    <Check className="h-3 w-3" />
-                                                    Verify
-                                                  </Button>
-                                                  <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => handleRejectSubmission(sub.id)}
-                                                    className="h-7 text-xs gap-1 text-red-400 border-red-400/50 hover:bg-red-400/10"
-                                                  >
-                                                    <X className="h-3 w-3" />
-                                                    Reject
-                                                  </Button>
-                                                </div>
-                                              )}
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
+
+                                  {/* Edit Assignment Type */}
+                                  <div className="space-y-2">
+                                    <Label className="text-xs text-gray-400">
+                                      Assign To
+                                    </Label>
+                                    <div className="flex gap-4">
+                                      <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                          type="radio"
+                                          checked={
+                                            editTaskAssignmentType === "all"
+                                          }
+                                          onChange={() => {
+                                            setEditTaskAssignmentType("all");
+                                            setEditSelectedUserIds([]);
+                                          }}
+                                          className="text-blue-500"
+                                        />
+                                        <span className="text-xs">All</span>
+                                      </label>
+                                      <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                          type="radio"
+                                          checked={
+                                            editTaskAssignmentType ===
+                                            "specific"
+                                          }
+                                          onChange={() =>
+                                            setEditTaskAssignmentType(
+                                              "specific",
+                                            )
+                                          }
+                                          className="text-blue-500"
+                                        />
+                                        <span className="text-xs">
+                                          Specific
+                                        </span>
+                                      </label>
+                                    </div>
+                                    {editTaskAssignmentType === "specific" && (
+                                      <Select
+                                        value=""
+                                        onValueChange={(userId) => {
+                                          if (
+                                            !editSelectedUserIds.includes(
+                                              userId,
+                                            )
+                                          ) {
+                                            setEditSelectedUserIds([
+                                              ...editSelectedUserIds,
+                                              userId,
+                                            ]);
+                                          }
+                                        }}
+                                      >
+                                        <SelectTrigger className="bg-gray-800 border-gray-700 h-8 text-xs">
+                                          <SelectValue placeholder="Add user..." />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-gray-800 border-gray-700 max-h-32">
+                                          {studentUsers
+                                            .filter(
+                                              (u) =>
+                                                !editSelectedUserIds.includes(
+                                                  u.id,
+                                                ),
+                                            )
+                                            .map((u) => (
+                                              <SelectItem
+                                                key={u.id}
+                                                value={u.id}
+                                                className="text-xs"
+                                              >
+                                                {u.email}
+                                              </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                      </Select>
                                     )}
+                                    {editTaskAssignmentType === "specific" &&
+                                      editSelectedUserIds.length > 0 && (
+                                        <div className="flex flex-wrap gap-1">
+                                          {editSelectedUserIds.map((userId) => {
+                                            const u = studentUsers.find(
+                                              (su) => su.id === userId,
+                                            );
+                                            return (
+                                              <span
+                                                key={userId}
+                                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs"
+                                              >
+                                                {u?.email?.split("@")[0] ||
+                                                  userId.slice(0, 8)}
+                                                <button
+                                                  type="button"
+                                                  onClick={() =>
+                                                    setEditSelectedUserIds(
+                                                      editSelectedUserIds.filter(
+                                                        (id) => id !== userId,
+                                                      ),
+                                                    )
+                                                  }
+                                                  className="hover:text-blue-300"
+                                                >
+                                                  <X className="h-3 w-3" />
+                                                </button>
+                                              </span>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
                                   </div>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
+
+                                  <div className="flex gap-2 pt-2">
+                                    <Button
+                                      size="sm"
+                                      onClick={() =>
+                                        handleSaveEditTask(task.id)
+                                      }
+                                      disabled={
+                                        !editTaskTitle || mutationLoading
+                                      }
+                                      className="gap-1"
+                                    >
+                                      <Check className="h-4 w-4" />
+                                      Save
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={handleCancelEditTask}
+                                    >
+                                      Cancel
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                // View Mode
+                                <>
+                                  <div className="p-4">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <p className="font-medium text-white truncate">
+                                            {task.title}
+                                          </p>
+                                          <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded text-xs font-medium">
+                                            {task.points} pts
+                                          </span>
+                                          {task.assignedTo &&
+                                          task.assignedTo.length > 0 ? (
+                                            <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs">
+                                              {task.assignedTo.length} user
+                                              {task.assignedTo.length !== 1
+                                                ? "s"
+                                                : ""}
+                                            </span>
+                                          ) : (
+                                            <span className="px-2 py-0.5 bg-green-500/20 text-green-400 rounded text-xs">
+                                              All
+                                            </span>
+                                          )}
+                                        </div>
+                                        {task.description && (
+                                          <p className="text-sm text-gray-400 mt-1 line-clamp-2">
+                                            {task.description}
+                                          </p>
+                                        )}
+                                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                                          {task.dueDate && (
+                                            <span
+                                              className={
+                                                isOverdue ? "text-red-400" : ""
+                                              }
+                                            >
+                                              Due:{" "}
+                                              {new Date(
+                                                task.dueDate,
+                                              ).toLocaleString()}
+                                              {isOverdue && " (Overdue)"}
+                                            </span>
+                                          )}
+                                          <span>
+                                            Created:{" "}
+                                            {new Date(
+                                              task.createdAt,
+                                            ).toLocaleDateString()}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-1">
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() =>
+                                            handleToggleSubmissions(task.id)
+                                          }
+                                          className="h-8 w-8 p-0"
+                                          title="View Submissions"
+                                        >
+                                          {isExpanded ? (
+                                            <ChevronUp className="h-4 w-4" />
+                                          ) : (
+                                            <ChevronDown className="h-4 w-4" />
+                                          )}
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() =>
+                                            handleStartEditTask(task)
+                                          }
+                                          className="h-8 w-8 p-0"
+                                          title="Edit"
+                                        >
+                                          <Pencil className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() =>
+                                            handleDeleteTask(task.id)
+                                          }
+                                          className="h-8 w-8 p-0 text-red-400 hover:text-red-300"
+                                          title="Delete"
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Submissions Panel */}
+                                  {isExpanded && (
+                                    <div className="border-t border-gray-700 bg-gray-900/50 p-4">
+                                      <h4 className="text-sm font-medium text-gray-300 mb-3">
+                                        Submissions ({taskSubmissions.length})
+                                      </h4>
+                                      {submissionsLoading ? (
+                                        <p className="text-sm text-gray-500">
+                                          Loading submissions...
+                                        </p>
+                                      ) : taskSubmissions.length === 0 ? (
+                                        <p className="text-sm text-gray-500">
+                                          No submissions yet
+                                        </p>
+                                      ) : (
+                                        <div className="space-y-2">
+                                          {taskSubmissions.map((sub) => {
+                                            const isLate =
+                                              task.dueDate &&
+                                              new Date(sub.createdAt) >
+                                                new Date(task.dueDate);
+                                            return (
+                                              <div
+                                                key={sub.id}
+                                                className="flex items-center justify-between gap-2 p-2 bg-gray-800 rounded text-sm"
+                                              >
+                                                <div className="flex-1 min-w-0">
+                                                  <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="text-gray-300 truncate">
+                                                      {sub.user?.email ||
+                                                        sub.userId}
+                                                    </span>
+                                                    <span
+                                                      className={`px-2 py-0.5 rounded text-xs font-medium ${getSubmissionStatusColor(sub.status)}`}
+                                                    >
+                                                      {sub.status}
+                                                    </span>
+                                                    {sub.status ===
+                                                      "VERIFIED" && (
+                                                      <span className="text-xs text-purple-400">
+                                                        +{sub.points} pts
+                                                      </span>
+                                                    )}
+                                                    {isLate && (
+                                                      <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded text-xs">
+                                                        Late
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                  <div className="flex items-center gap-2 mt-1">
+                                                    <a
+                                                      href={sub.link}
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                      className="text-xs text-blue-400 hover:underline truncate max-w-[200px]"
+                                                    >
+                                                      {sub.link}
+                                                    </a>
+                                                    <span className="text-xs text-gray-500">
+                                                      {new Date(
+                                                        sub.createdAt,
+                                                      ).toLocaleString()}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                                {sub.status === "PENDING" && (
+                                                  <div className="flex gap-1">
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={() =>
+                                                        handleOpenVerifyModal(
+                                                          sub,
+                                                          task.points,
+                                                        )
+                                                      }
+                                                      className="h-7 text-xs gap-1 text-green-400 border-green-400/50 hover:bg-green-400/10"
+                                                    >
+                                                      <Check className="h-3 w-3" />
+                                                      Verify
+                                                    </Button>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={() =>
+                                                        handleRejectSubmission(
+                                                          sub.id,
+                                                        )
+                                                      }
+                                                      className="h-7 text-xs gap-1 text-red-400 border-red-400/50 hover:bg-red-400/10"
+                                                    >
+                                                      <X className="h-3 w-3" />
+                                                      Reject
+                                                    </Button>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
                   )}
                 </CardContent>
               </Card>
             </div>
-            
+
             {/* Verify Modal */}
             {verifyModalOpen && selectedSubmission && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                 <Card className="bg-gray-900 border-gray-700 w-full max-w-md mx-4">
                   <CardHeader>
-                    <CardTitle className="text-white">Verify Submission</CardTitle>
+                    <CardTitle className="text-white">
+                      Verify Submission
+                    </CardTitle>
                     <CardDescription>
                       Award points for this submission
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="text-sm text-gray-400">
-                      <p><strong>User:</strong> {selectedSubmission.user?.email || selectedSubmission.userId}</p>
+                      <p>
+                        <strong>User:</strong>{" "}
+                        {selectedSubmission.user?.email ||
+                          selectedSubmission.userId}
+                      </p>
                       <p className="mt-1">
                         <strong>Link:</strong>{" "}
                         <a
@@ -2092,7 +2404,9 @@ export default function AdminDashboardPage() {
                         type="number"
                         min="0"
                         value={verifyPoints}
-                        onChange={(e) => setVerifyPoints(Number(e.target.value))}
+                        onChange={(e) =>
+                          setVerifyPoints(Number(e.target.value))
+                        }
                         className="bg-gray-800 border-gray-700"
                       />
                       <p className="text-xs text-gray-500">
@@ -2166,7 +2480,10 @@ export default function AdminDashboardPage() {
                       onChange={(e) => setAnnouncementPinned(e.target.checked)}
                       className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-yellow-500 focus:ring-yellow-500"
                     />
-                    <Label htmlFor="pinned" className="flex items-center gap-1 cursor-pointer">
+                    <Label
+                      htmlFor="pinned"
+                      className="flex items-center gap-1 cursor-pointer"
+                    >
                       <Pin className="h-4 w-4 text-yellow-500" />
                       Pin this announcement
                     </Label>
@@ -2180,11 +2497,10 @@ export default function AdminDashboardPage() {
 
             <Card className="bg-gray-900 border-gray-800">
               <CardHeader>
-                <CardTitle className="text-white">
-                  All Announcements
-                </CardTitle>
+                <CardTitle className="text-white">All Announcements</CardTitle>
                 <CardDescription>
-                  {announcements.length} announcement{announcements.length !== 1 ? "s" : ""}
+                  {announcements.length} announcement
+                  {announcements.length !== 1 ? "s" : ""}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -2193,134 +2509,157 @@ export default function AdminDashboardPage() {
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
                 ) : (
-                <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                  {announcements.length === 0 ? (
-                    <p className="text-gray-500 text-center py-4">
-                      No announcements yet
-                    </p>
-                  ) : (
-                    announcements.map((a) => {
-                      const isEditing = editingAnnouncementId === a.id;
-                      
-                      return (
-                        <div
-                          key={a.id}
-                          className={`p-4 rounded-lg ${
-                            a.pinned
-                              ? "bg-yellow-500/10 border-l-4 border-yellow-500"
-                              : "bg-gray-800/50"
-                          }`}
-                        >
-                          {isEditing ? (
-                            // Edit Mode
-                            <div className="space-y-3">
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                    {announcements.length === 0 ? (
+                      <p className="text-gray-500 text-center py-4">
+                        No announcements yet
+                      </p>
+                    ) : (
+                      announcements.map((a) => {
+                        const isEditing = editingAnnouncementId === a.id;
+
+                        return (
+                          <div
+                            key={a.id}
+                            className={`p-4 rounded-lg ${
+                              a.pinned
+                                ? "bg-yellow-500/10 border-l-4 border-yellow-500"
+                                : "bg-gray-800/50"
+                            }`}
+                          >
+                            {isEditing ? (
+                              // Edit Mode
+                              <div className="space-y-3">
+                                <div className="space-y-2">
+                                  <Label className="text-xs text-gray-400">
+                                    Title *
+                                  </Label>
+                                  <Input
+                                    value={editAnnTitle}
+                                    onChange={(e) =>
+                                      setEditAnnTitle(e.target.value)
+                                    }
+                                    className="bg-gray-800 border-gray-700 h-9"
+                                    required
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label className="text-xs text-gray-400">
+                                    Content *
+                                  </Label>
+                                  <textarea
+                                    value={editAnnContent}
+                                    onChange={(e) =>
+                                      setEditAnnContent(e.target.value)
+                                    }
+                                    className="w-full h-24 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none"
+                                    required
+                                  />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    id={`edit-pinned-${a.id}`}
+                                    checked={editAnnPinned}
+                                    onChange={(e) =>
+                                      setEditAnnPinned(e.target.checked)
+                                    }
+                                    className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-yellow-500 focus:ring-yellow-500"
+                                  />
+                                  <Label
+                                    htmlFor={`edit-pinned-${a.id}`}
+                                    className="flex items-center gap-1 cursor-pointer text-sm"
+                                  >
+                                    <Pin className="h-3 w-3 text-yellow-500" />
+                                    Pinned
+                                  </Label>
+                                </div>
+                                <div className="flex gap-2 pt-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() =>
+                                      handleSaveEditAnnouncement(a.id)
+                                    }
+                                    disabled={!editAnnTitle || !editAnnContent}
+                                    className="gap-1"
+                                  >
+                                    <Check className="h-4 w-4" />
+                                    Save
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={handleCancelEditAnnouncement}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              // View Mode
                               <div className="space-y-2">
-                                <Label className="text-xs text-gray-400">Title *</Label>
-                                <Input
-                                  value={editAnnTitle}
-                                  onChange={(e) => setEditAnnTitle(e.target.value)}
-                                  className="bg-gray-800 border-gray-700 h-9"
-                                  required
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label className="text-xs text-gray-400">Content *</Label>
-                                <textarea
-                                  value={editAnnContent}
-                                  onChange={(e) => setEditAnnContent(e.target.value)}
-                                  className="w-full h-24 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none"
-                                  required
-                                />
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  id={`edit-pinned-${a.id}`}
-                                  checked={editAnnPinned}
-                                  onChange={(e) => setEditAnnPinned(e.target.checked)}
-                                  className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-yellow-500 focus:ring-yellow-500"
-                                />
-                                <Label htmlFor={`edit-pinned-${a.id}`} className="flex items-center gap-1 cursor-pointer text-sm">
-                                  <Pin className="h-3 w-3 text-yellow-500" />
-                                  Pinned
-                                </Label>
-                              </div>
-                              <div className="flex gap-2 pt-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleSaveEditAnnouncement(a.id)}
-                                  disabled={!editAnnTitle || !editAnnContent}
-                                  className="gap-1"
-                                >
-                                  <Check className="h-4 w-4" />
-                                  Save
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={handleCancelEditAnnouncement}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            // View Mode
-                            <div className="space-y-2">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    {a.pinned && (
-                                      <Pin className="h-4 w-4 text-yellow-500 flex-shrink-0" />
-                                    )}
-                                    <p className="font-medium text-white">{a.title}</p>
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      {a.pinned && (
+                                        <Pin className="h-4 w-4 text-yellow-500 flex-shrink-0" />
+                                      )}
+                                      <p className="font-medium text-white">
+                                        {a.title}
+                                      </p>
+                                    </div>
+                                    <p className="text-sm text-gray-400 mt-1 whitespace-pre-wrap">
+                                      {a.content}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-2">
+                                      {new Date(a.createdAt).toLocaleString()}
+                                    </p>
                                   </div>
-                                  <p className="text-sm text-gray-400 mt-1 whitespace-pre-wrap">
-                                    {a.content}
-                                  </p>
-                                  <p className="text-xs text-gray-500 mt-2">
-                                    {new Date(a.createdAt).toLocaleString()}
-                                  </p>
-                                </div>
-                                <div className="flex gap-1 flex-shrink-0">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleTogglePin(a)}
-                                    className={`h-8 w-8 p-0 ${
-                                      a.pinned ? "text-yellow-500 hover:text-yellow-400" : "text-gray-400 hover:text-yellow-500"
-                                    }`}
-                                    title={a.pinned ? "Unpin" : "Pin"}
-                                  >
-                                    <Pin className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleStartEditAnnouncement(a)}
-                                    className="h-8 w-8 p-0"
-                                    title="Edit"
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleDeleteAnnouncement(a.id)}
-                                    className="h-8 w-8 p-0 text-red-400 hover:text-red-300"
-                                    title="Delete"
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
+                                  <div className="flex gap-1 flex-shrink-0">
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleTogglePin(a)}
+                                      className={`h-8 w-8 p-0 ${
+                                        a.pinned
+                                          ? "text-yellow-500 hover:text-yellow-400"
+                                          : "text-gray-400 hover:text-yellow-500"
+                                      }`}
+                                      title={a.pinned ? "Unpin" : "Pin"}
+                                    >
+                                      <Pin className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() =>
+                                        handleStartEditAnnouncement(a)
+                                      }
+                                      className="h-8 w-8 p-0"
+                                      title="Edit"
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() =>
+                                        handleDeleteAnnouncement(a.id)
+                                      }
+                                      className="h-8 w-8 p-0 text-red-400 hover:text-red-300"
+                                      title="Delete"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -2344,127 +2683,139 @@ export default function AdminDashboardPage() {
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
               ) : (
-              <div className="space-y-4">
-                {pendingBlogs.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">
-                    No pending blogs to review
-                  </p>
-                ) : (
-                  pendingBlogs.map((blog) => {
-                    const isRejecting = rejectingBlogId === blog.id;
-                    
-                    return (
-                      <div
-                        key={blog.id}
-                        className="p-4 bg-gray-800/50 rounded-lg space-y-3"
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-white">{blog.title}</h3>
-                            <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
-                              <span>By: {blog.author?.name || blog.authorId}</span>
-                              <span>•</span>
-                              <span>{new Date(blog.createdAt).toLocaleDateString()}</span>
+                <div className="space-y-4">
+                  {pendingBlogs.length === 0 ? (
+                    <p className="text-gray-500 text-center py-8">
+                      No pending blogs to review
+                    </p>
+                  ) : (
+                    pendingBlogs.map((blog) => {
+                      const isRejecting = rejectingBlogId === blog.id;
+
+                      return (
+                        <div
+                          key={blog.id}
+                          className="p-4 bg-gray-800/50 rounded-lg space-y-3"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-medium text-white">
+                                {blog.title}
+                              </h3>
+                              <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
+                                <span>
+                                  By: {blog.author?.name || blog.authorId}
+                                </span>
+                                <span>•</span>
+                                <span>
+                                  {new Date(
+                                    blog.createdAt,
+                                  ).toLocaleDateString()}
+                                </span>
+                              </div>
+                              {blog.tags && blog.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {blog.tags.slice(0, 5).map((tag) => (
+                                    <span
+                                      key={tag}
+                                      className="px-2 py-0.5 text-xs rounded-full bg-white/10 text-white/70"
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
+                                  {blog.tags.length > 5 && (
+                                    <span className="px-2 py-0.5 text-xs rounded-full bg-white/10 text-white/70">
+                                      +{blog.tags.length - 5}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                            {blog.tags && blog.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {blog.tags.slice(0, 5).map((tag) => (
-                                  <span
-                                    key={tag}
-                                    className="px-2 py-0.5 text-xs rounded-full bg-white/10 text-white/70"
-                                  >
-                                    {tag}
-                                  </span>
-                                ))}
-                                {blog.tags.length > 5 && (
-                                  <span className="px-2 py-0.5 text-xs rounded-full bg-white/10 text-white/70">
-                                    +{blog.tags.length - 5}
-                                  </span>
-                                )}
+                            {!isRejecting && (
+                              <div className="flex gap-2 flex-shrink-0">
+                                <Button
+                                  size="sm"
+                                  className="gap-1"
+                                  onClick={() => handleApproveBlog(blog.id)}
+                                >
+                                  <Check className="h-4 w-4" />
+                                  Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  className="gap-1"
+                                  onClick={() => setRejectingBlogId(blog.id)}
+                                >
+                                  <X className="h-4 w-4" />
+                                  Reject
+                                </Button>
                               </div>
                             )}
                           </div>
-                          {!isRejecting && (
-                            <div className="flex gap-2 flex-shrink-0">
-                              <Button
-                                size="sm"
-                                className="gap-1"
-                                onClick={() => handleApproveBlog(blog.id)}
-                              >
-                                <Check className="h-4 w-4" />
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                className="gap-1"
-                                onClick={() => setRejectingBlogId(blog.id)}
-                              >
-                                <X className="h-4 w-4" />
-                                Reject
-                              </Button>
+
+                          {/* Blog content preview */}
+                          <div
+                            className="text-sm text-gray-300 line-clamp-3 prose prose-invert prose-sm max-w-none"
+                            dangerouslySetInnerHTML={{ __html: blog.content }}
+                          />
+
+                          {/* View full blog link */}
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="p-0 h-auto text-blue-400 hover:text-blue-300"
+                            onClick={() =>
+                              window.open(`/blog/${blog.id}`, "_blank")
+                            }
+                          >
+                            View full blog →
+                          </Button>
+
+                          {/* Rejection form */}
+                          {isRejecting && (
+                            <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg space-y-3">
+                              <div className="space-y-2">
+                                <Label className="text-sm text-red-400">
+                                  Rejection Reason (optional)
+                                </Label>
+                                <textarea
+                                  value={rejectionReason}
+                                  onChange={(e) =>
+                                    setRejectionReason(e.target.value)
+                                  }
+                                  placeholder="Provide feedback to help the author improve their blog..."
+                                  className="w-full h-20 px-3 py-2 bg-gray-800 border border-red-500/30 rounded-md text-sm resize-none text-white placeholder:text-gray-500"
+                                />
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleRejectBlog(blog.id)}
+                                  className="gap-1"
+                                >
+                                  <X className="h-4 w-4" />
+                                  Confirm Rejection
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setRejectingBlogId(null);
+                                    setRejectionReason("");
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
                             </div>
                           )}
                         </div>
-                        
-                        {/* Blog content preview */}
-                        <div 
-                          className="text-sm text-gray-300 line-clamp-3 prose prose-invert prose-sm max-w-none"
-                          dangerouslySetInnerHTML={{ __html: blog.content }}
-                        />
-                        
-                        {/* View full blog link */}
-                        <Button
-                          variant="link"
-                          size="sm"
-                          className="p-0 h-auto text-blue-400 hover:text-blue-300"
-                          onClick={() => window.open(`/blog/${blog.id}`, '_blank')}
-                        >
-                          View full blog →
-                        </Button>
-                        
-                        {/* Rejection form */}
-                        {isRejecting && (
-                          <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg space-y-3">
-                            <div className="space-y-2">
-                              <Label className="text-sm text-red-400">
-                                Rejection Reason (optional)
-                              </Label>
-                              <textarea
-                                value={rejectionReason}
-                                onChange={(e) => setRejectionReason(e.target.value)}
-                                placeholder="Provide feedback to help the author improve their blog..."
-                                className="w-full h-20 px-3 py-2 bg-gray-800 border border-red-500/30 rounded-md text-sm resize-none text-white placeholder:text-gray-500"
-                              />
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleRejectBlog(blog.id)}
-                                className="gap-1"
-                              >
-                                <X className="h-4 w-4" />
-                                Confirm Rejection
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setRejectingBlogId(null);
-                                  setRejectionReason("");
-                                }}
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+                      );
+                    })
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>

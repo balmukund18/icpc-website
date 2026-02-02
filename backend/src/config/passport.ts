@@ -15,7 +15,7 @@ const GOOGLE_CALLBACK_URL =
 if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
   console.warn(
     "Warning: Google OAuth credentials (GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET) are not configured. " +
-      "Google authentication will not work until these are set in the environment."
+      "Google authentication will not work until these are set in the environment.",
   );
 }
 
@@ -34,13 +34,13 @@ passport.use(
       _refreshToken: string,
       _params: any,
       profile: Profile,
-      done: (err: Error | null, user?: User) => void
+      done: (err: Error | null, user?: User) => void,
     ) => {
       findOrCreateGoogleUser(profile as GoogleProfile)
         .then((user) => done(null, user))
         .catch((error) => done(error));
-    }
-  )
+    },
+  ),
 );
 
 // Serialize user for session

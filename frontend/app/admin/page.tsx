@@ -922,7 +922,8 @@ export default function AdminDashboardPage() {
               </div>
             ) : (
               <div className="bg-card rounded-lg border border-border overflow-hidden">
-                <table className="w-full">
+                {/* Desktop table - hidden on mobile */}
+                <table className="w-full hidden md:table">
                   <thead className="bg-muted">
                     <tr>
                       <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
@@ -940,7 +941,7 @@ export default function AdminDashboardPage() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-800">
+                  <tbody className="divide-y divide-border">
                     {displayedUsers.length === 0 ? (
                       <tr>
                         <td
@@ -998,6 +999,56 @@ export default function AdminDashboardPage() {
                     )}
                   </tbody>
                 </table>
+
+                {/* Mobile card view - visible only on mobile */}
+                <div className="md:hidden divide-y divide-border">
+                  {displayedUsers.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-muted-foreground">
+                      No users found
+                    </div>
+                  ) : (
+                    displayedUsers.map((u) => (
+                      <div key={u.id} className="p-4 space-y-3">
+                        <p className="text-sm font-medium break-all">{u.email}</p>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <Select
+                              value={u.role}
+                              onValueChange={(role) =>
+                                handleUpdateRole(u.id, role)
+                              }
+                            >
+                              <SelectTrigger className="w-28 h-8 bg-muted border-border text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-muted border-border">
+                                <SelectItem value="STUDENT">Student</SelectItem>
+                                <SelectItem value="ADMIN">Admin</SelectItem>
+                                <SelectItem value="ALUMNI">Alumni</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(u.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          {u.role !== "ADMIN" && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="h-7 text-xs gap-1"
+                              onClick={() =>
+                                handleDeleteUser(u.id, u.email, u.role)
+                              }
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Delete
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             )}
           </div>

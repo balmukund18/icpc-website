@@ -129,10 +129,10 @@ export function ChatWidget() {
 
     // Size classes
     const sizeClasses: Record<WidgetSize, string> = {
-        default: "w-[380px] max-h-[500px] bottom-6 right-6 rounded-2xl",
-        expanded: "w-[520px] max-h-[700px] bottom-6 right-6 rounded-2xl",
+        default: "left-3 right-3 bottom-3 sm:left-auto sm:w-[380px] max-h-[85vh] sm:max-h-[500px] sm:bottom-6 sm:right-6 rounded-2xl",
+        expanded: "left-3 right-3 bottom-3 sm:left-auto sm:w-[520px] max-h-[90vh] sm:max-h-[700px] sm:bottom-6 sm:right-6 rounded-2xl",
         fullscreen:
-            "inset-4 sm:inset-6 md:inset-10 lg:inset-16 w-auto max-h-none rounded-2xl",
+            "inset-2 sm:inset-4 md:inset-6 lg:inset-10 w-auto max-h-none rounded-2xl",
     };
 
     const messageAreaClasses: Record<WidgetSize, string> = {

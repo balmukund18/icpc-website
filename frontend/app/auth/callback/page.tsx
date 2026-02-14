@@ -19,6 +19,8 @@ function AuthCallbackContent() {
       try {
         const token = searchParams.get("token");
         const userId = searchParams.get("userId");
+        const email = searchParams.get("email") || "";
+        const role = searchParams.get("role") || "STUDENT";
 
         if (!token || !userId) {
           setStatus("error");
@@ -27,15 +29,15 @@ function AuthCallbackContent() {
           return;
         }
 
-        // Store token temporarily to make API calls
-        const tempUser = {
+        // Store user with info from URL params (email & role from backend)
+        const userData = {
           id: userId,
-          email: "",
-          role: "STUDENT",
+          email: email,
+          role: role,
         };
-        login(tempUser, token);
+        login(userData, token);
 
-        // Fetch user profile to get email and role
+        // Fetch user profile to check if it exists
         try {
           const response = await fetch(
             `${process.env.NEXT_PUBLIC_API_URL}/profile`,
@@ -47,16 +49,6 @@ function AuthCallbackContent() {
           );
 
           if (response.ok) {
-            const data = await response.json();
-            const profileData = data.data;
-
-            // Update with full user info from backend
-            const fullUser = {
-              id: userId,
-              email: profileData.user?.email || "",
-              role: profileData.user?.role || "STUDENT",
-            };
-            login(fullUser, token);
             setHasProfile(true);
 
             toast.success("Logged in successfully with Google");

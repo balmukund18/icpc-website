@@ -111,9 +111,9 @@ export const googleCallback = async (req: Request, res: Response) => {
     // Generate JWT token for user (no approval needed)
     const token = googleAuthService.generateToken(user.id, user.role);
 
-    // Redirect to frontend with token
+    // Redirect to frontend with token and user info
     res.redirect(
-      `${frontendUrl}/auth/callback?token=${token}&userId=${user.id}`
+      `${frontendUrl}/auth/callback?token=${token}&userId=${user.id}&email=${encodeURIComponent(user.email)}&role=${user.role}`
     );
   } catch (err: any) {
     fail(res, err.message, 401);

@@ -109,8 +109,8 @@ export default function AlumniNetworkPage() {
 
   if (!hasHydrated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -143,27 +143,27 @@ export default function AlumniNetworkPage() {
 
         {/* Stats */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-card border-border">
             <CardContent className="pt-5 pb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-purple-500/20 rounded-lg">
                   <Users className="h-5 w-5 text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">Total Alumni</p>
+                  <p className="text-xs text-muted-foreground">Total Alumni</p>
                   <p className="text-xl font-bold">{alumni.length}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-card border-border">
             <CardContent className="pt-5 pb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-blue-500/20 rounded-lg">
                   <Building2 className="h-5 w-5 text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">Companies</p>
+                  <p className="text-xs text-muted-foreground">Companies</p>
                   <p className="text-xl font-bold">
                     {new Set(alumni.map((a) => a.profile?.company).filter(Boolean)).size}
                   </p>
@@ -171,14 +171,14 @@ export default function AlumniNetworkPage() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gray-900 border-gray-800 col-span-2 lg:col-span-1">
+          <Card className="bg-card border-border col-span-2 lg:col-span-1">
             <CardContent className="pt-5 pb-4">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-green-500/20 rounded-lg">
                   <Linkedin className="h-5 w-5 text-green-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">On LinkedIn</p>
+                  <p className="text-xs text-muted-foreground">On LinkedIn</p>
                   <p className="text-xl font-bold">
                     {alumni.filter((a) => a.profile?.linkedIn).length}
                   </p>
@@ -190,28 +190,28 @@ export default function AlumniNetworkPage() {
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by name, company, position, or branch..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-gray-900 border-gray-800 pl-10"
+            className="bg-card border-border pl-10"
           />
         </div>
 
         {/* Alumni Cards Grid */}
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : filteredAlumni.length === 0 ? (
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-card border-border">
             <CardContent className="py-12 text-center">
-              <GraduationCap className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 text-lg">
+              <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground text-lg">
                 {searchQuery ? "No alumni match your search" : "No alumni profiles available yet"}
               </p>
-              <p className="text-gray-500 text-sm mt-1">
+              <p className="text-muted-foreground text-sm mt-1">
                 {searchQuery ? "Try a different search term" : "Check back later"}
               </p>
             </CardContent>
@@ -222,17 +222,17 @@ export default function AlumniNetworkPage() {
               {filteredAlumni.map((alumnus) => (
                 <Card
                   key={alumnus.id}
-                  className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-colors group"
+                  className="bg-card border-border hover:border-border transition-colors group"
                 >
                   <CardContent className="p-5">
                     {/* Name & Branch */}
                     <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-white group-hover:text-purple-300 transition-colors">
+                      <h3 className="text-lg font-semibold text-foreground transition-colors">
                         {alumnus.profile?.name || "Unknown"}
                       </h3>
                       <div className="flex flex-wrap items-center gap-2 mt-1">
                         {alumnus.profile?.branch && (
-                          <span className="text-xs px-2 py-0.5 bg-gray-800 text-gray-400 rounded-full">
+                          <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded-full">
                             {alumnus.profile.branch}
                           </span>
                         )}
@@ -250,10 +250,10 @@ export default function AlumniNetworkPage() {
                         <Briefcase className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
                         <div className="text-sm">
                           {alumnus.profile?.position && (
-                            <span className="text-gray-200">{alumnus.profile.position}</span>
+                            <span className="text-foreground">{alumnus.profile.position}</span>
                           )}
                           {alumnus.profile?.position && alumnus.profile?.company && (
-                            <span className="text-gray-500"> at </span>
+                            <span className="text-muted-foreground"> at </span>
                           )}
                           {alumnus.profile?.company && (
                             <span className="text-blue-400 font-medium">{alumnus.profile.company}</span>
@@ -266,13 +266,13 @@ export default function AlumniNetworkPage() {
                     {alumnus.profile?.location && (
                       <div className="flex items-center gap-2 mb-3">
                         <MapPin className="h-4 w-4 text-green-400 flex-shrink-0" />
-                        <span className="text-sm text-gray-400">{alumnus.profile.location}</span>
+                        <span className="text-sm text-muted-foreground">{alumnus.profile.location}</span>
                       </div>
                     )}
 
                     {/* Bio */}
                     {alumnus.profile?.bio && (
-                      <p className="text-sm text-gray-400 mb-4 line-clamp-2 leading-relaxed">
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2 leading-relaxed">
                         {alumnus.profile.bio}
                       </p>
                     )}
@@ -289,11 +289,11 @@ export default function AlumniNetworkPage() {
                               href={getPlatformUrl(platform.key, handle)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs text-gray-300 transition-colors"
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-muted hover:bg-muted rounded text-xs text-muted-foreground transition-colors"
                               onClick={(e) => e.stopPropagation()}
                             >
                               {platform.label}
-                              <ExternalLink className="h-3 w-3 text-gray-500" />
+                              <ExternalLink className="h-3 w-3 text-muted-foreground" />
                             </a>
                           );
                         })}
@@ -301,7 +301,7 @@ export default function AlumniNetworkPage() {
                     )}
 
                     {/* Divider */}
-                    <div className="border-t border-gray-800 pt-3 mt-auto">
+                    <div className="border-t border-border pt-3 mt-auto">
                       {/* Contact Actions */}
                       <div className="flex flex-wrap gap-2">
                         {alumnus.profile?.linkedIn && (
@@ -324,7 +324,7 @@ export default function AlumniNetworkPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="gap-1.5 text-xs h-8 bg-gray-800 border-gray-700 hover:bg-gray-700"
+                            className="gap-1.5 text-xs h-8 bg-muted border-border hover:bg-muted"
                           >
                             <Mail className="h-3.5 w-3.5" />
                             Email
@@ -335,7 +335,7 @@ export default function AlumniNetworkPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="gap-1.5 text-xs h-8 bg-gray-800 border-gray-700 hover:bg-gray-700"
+                              className="gap-1.5 text-xs h-8 bg-muted border-border hover:bg-muted"
                             >
                               <Phone className="h-3.5 w-3.5" />
                               Call
@@ -350,7 +350,7 @@ export default function AlumniNetworkPage() {
             </div>
 
             {/* Results count */}
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               Showing {filteredAlumni.length} of {alumni.length} alumni
             </p>
           </>

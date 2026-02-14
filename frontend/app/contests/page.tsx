@@ -43,7 +43,7 @@ export default function ContestsPage() {
       case "upcoming":
         return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
       case "ended":
-        return "bg-gray-500/20 text-gray-400 border-gray-500/30";
+        return "bg-gray-500/20 text-muted-foreground border-gray-500/30";
       default:
         return "";
     }
@@ -73,11 +73,11 @@ export default function ContestsPage() {
         </div>
 
         {contests.length === 0 ? (
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-card border-border">
             <CardContent className="py-12 text-center">
-              <Trophy className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 text-lg">No contests available yet</p>
-              <p className="text-gray-500 text-sm mt-1">
+              <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground text-lg">No contests available yet</p>
+              <p className="text-muted-foreground text-sm mt-1">
                 Check back later for upcoming contests
               </p>
             </CardContent>
@@ -92,7 +92,7 @@ export default function ContestsPage() {
               return (
                 <Card
                   key={contest.id}
-                  className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-colors"
+                  className="bg-card border-border hover:border-border transition-colors"
                 >
                   <CardContent className="py-5">
                     <div className="flex items-start justify-between gap-4">
@@ -113,7 +113,7 @@ export default function ContestsPage() {
                           )}
                         </div>
 
-                        <div className="flex items-center gap-4 text-sm text-gray-400">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3.5 w-3.5" />
                             {startTime.toLocaleDateString(undefined, {

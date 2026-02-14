@@ -45,7 +45,7 @@ const statusConfig: Record<
   },
   ended: {
     label: "Ended",
-    className: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+    className: "bg-gray-500/20 text-muted-foreground border-gray-500/30",
   },
 };
 

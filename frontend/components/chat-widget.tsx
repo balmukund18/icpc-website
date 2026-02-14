@@ -150,7 +150,7 @@ export function ChatWidget() {
                 aria-label="Open AI Chat"
             >
                 <MessageSquare className="h-6 w-6 group-hover:scale-110 transition-transform" />
-                <span className="absolute -top-1 -right-1 h-3 w-3 bg-green-400 rounded-full border-2 border-gray-900 animate-pulse" />
+                <span className="absolute -top-1 -right-1 h-3 w-3 bg-green-400 rounded-full border-2 border-background animate-pulse" />
             </button>
         );
     }
@@ -166,19 +166,19 @@ export function ChatWidget() {
             )}
 
             <div
-                className={`fixed z-50 flex flex-col border border-gray-700/50 bg-gray-900/95 backdrop-blur-xl shadow-2xl shadow-black/50 overflow-hidden transition-all duration-300 ease-in-out ${sizeClasses[size]}`}
+                className={`fixed z-50 flex flex-col border border-border bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden transition-all duration-300 ease-in-out ${sizeClasses[size]}`}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-600/20 to-indigo-600/20 border-b border-gray-700/50 shrink-0">
+                <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-600/20 to-indigo-600/20 border-b border-border shrink-0">
                     <div className="flex items-center gap-2.5">
                         <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center shrink-0">
                             <Sparkles className="h-4 w-4 text-white" />
                         </div>
                         <div className="min-w-0">
-                            <h3 className="text-sm font-semibold text-white truncate">
+                            <h3 className="text-sm font-semibold text-foreground truncate">
                                 ICPC AI Assistant
                             </h3>
-                            <p className="text-[10px] text-gray-400">Powered by Groq</p>
+                            <p className="text-[10px] text-muted-foreground">Powered by Groq</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-0.5 shrink-0">
@@ -187,7 +187,7 @@ export function ChatWidget() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={handleClearChat}
-                                className="h-7 w-7 text-gray-400 hover:text-white"
+                                className="h-7 w-7 text-muted-foreground hover:text-foreground"
                                 title="Clear chat"
                             >
                                 <RotateCcw className="h-3.5 w-3.5" />
@@ -197,7 +197,7 @@ export function ChatWidget() {
                             variant="ghost"
                             size="icon"
                             onClick={cycleSize}
-                            className="h-7 w-7 text-gray-400 hover:text-white"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
                             title={
                                 size === "fullscreen"
                                     ? "Minimize"
@@ -219,7 +219,7 @@ export function ChatWidget() {
                                 setIsOpen(false);
                                 setSize("default");
                             }}
-                            className="h-7 w-7 text-gray-400 hover:text-white"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
                             title="Close"
                         >
                             <X className="h-3.5 w-3.5" />
@@ -232,7 +232,6 @@ export function ChatWidget() {
                     className={`flex-1 overflow-y-auto px-4 py-3 space-y-4 ${messageAreaClasses[size]}`}
                     style={{
                         scrollbarWidth: "thin",
-                        scrollbarColor: "#4b5563 transparent",
                     }}
                 >
                     {messages.length === 0 ? (
@@ -240,10 +239,10 @@ export function ChatWidget() {
                             <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20 flex items-center justify-center mb-4">
                                 <Bot className="h-7 w-7 text-purple-400" />
                             </div>
-                            <p className="text-sm text-gray-300 font-medium mb-1">
+                            <p className="text-sm text-foreground font-medium mb-1">
                                 Hi! I&apos;m your ICPC AI assistant
                             </p>
-                            <p className="text-xs text-gray-500 mb-5 max-w-[260px]">
+                            <p className="text-xs text-muted-foreground mb-5 max-w-[260px]">
                                 Ask me about algorithms, data structures, or contest prep
                             </p>
                             <div
@@ -253,7 +252,7 @@ export function ChatWidget() {
                                     <button
                                         key={s}
                                         onClick={() => handleSend(s)}
-                                        className="text-left text-[11px] px-3 py-2.5 rounded-lg bg-gray-800/80 text-gray-300 hover:bg-gray-700/80 hover:text-white border border-gray-700/50 transition-colors leading-tight"
+                                        className="text-left text-[11px] px-3 py-2.5 rounded-lg bg-muted text-muted-foreground hover:bg-accent hover:text-foreground border border-border transition-colors leading-tight"
                                     >
                                         {s}
                                     </button>
@@ -267,7 +266,7 @@ export function ChatWidget() {
                                 className={`flex gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
                             >
                                 <div
-                                    className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${msg.role === "user" ? "bg-purple-500/20" : "bg-gray-700/50"
+                                    className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${msg.role === "user" ? "bg-purple-500/20" : "bg-muted"
                                         }`}
                                 >
                                     {msg.role === "user" ? (
@@ -278,12 +277,12 @@ export function ChatWidget() {
                                 </div>
                                 <div
                                     className={`rounded-xl px-3.5 py-2.5 text-sm leading-relaxed overflow-hidden ${msg.role === "user"
-                                            ? "bg-purple-600/30 text-white max-w-[75%]"
-                                            : "bg-gray-800/80 text-gray-200 max-w-[85%]"
+                                        ? "bg-purple-600/30 text-foreground max-w-[75%]"
+                                        : "bg-muted text-foreground max-w-[85%]"
                                         }`}
                                 >
                                     {msg.role === "assistant" ? (
-                                        <div className="prose prose-invert prose-sm max-w-none break-words [&>p]:my-1.5 [&>ul]:my-1.5 [&>ol]:my-1.5 [&>h1]:text-base [&>h2]:text-sm [&>h3]:text-sm [&>h1]:mt-3 [&>h2]:mt-2.5 [&>h3]:mt-2 [&>pre]:my-2 [&>pre]:bg-gray-900/80 [&>pre]:border [&>pre]:border-gray-700/50 [&>pre]:rounded-lg [&>pre]:p-3 [&>pre]:overflow-x-auto [&>pre]:text-xs [&_code]:text-purple-300 [&_code]:text-xs [&>p>code]:bg-gray-900/60 [&>p>code]:px-1.5 [&>p>code]:py-0.5 [&>p>code]:rounded [&>p>code]:text-[11px] [&_pre_code]:bg-transparent [&_pre_code]:p-0">
+                                        <div className="prose dark:prose-invert prose-sm max-w-none break-words [&>p]:my-1.5 [&>ul]:my-1.5 [&>ol]:my-1.5 [&>h1]:text-base [&>h2]:text-sm [&>h3]:text-sm [&>h1]:mt-3 [&>h2]:mt-2.5 [&>h3]:mt-2 [&>pre]:my-2 [&>pre]:bg-card [&>pre]:border [&>pre]:border-border [&>pre]:rounded-lg [&>pre]:p-3 [&>pre]:overflow-x-auto [&>pre]:text-xs [&_code]:text-purple-500 dark:[&_code]:text-purple-300 [&_code]:text-xs [&>p>code]:bg-muted [&>p>code]:px-1.5 [&>p>code]:py-0.5 [&>p>code]:rounded [&>p>code]:text-[11px] [&_pre_code]:bg-transparent [&_pre_code]:p-0">
                                             <ReactMarkdown>{msg.content}</ReactMarkdown>
                                         </div>
                                     ) : (
@@ -295,14 +294,14 @@ export function ChatWidget() {
                     )}
                     {loading && (
                         <div className="flex gap-2.5">
-                            <div className="h-7 w-7 rounded-lg bg-gray-700/50 flex items-center justify-center shrink-0">
+                            <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center shrink-0">
                                 <Bot className="h-3.5 w-3.5 text-indigo-400" />
                             </div>
-                            <div className="bg-gray-800/80 rounded-xl px-4 py-3">
+                            <div className="bg-muted rounded-xl px-4 py-3">
                                 <div className="flex gap-1.5">
-                                    <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce [animation-delay:0ms]" />
-                                    <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce [animation-delay:150ms]" />
-                                    <span className="h-2 w-2 bg-gray-500 rounded-full animate-bounce [animation-delay:300ms]" />
+                                    <span className="h-2 w-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:0ms]" />
+                                    <span className="h-2 w-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:150ms]" />
+                                    <span className="h-2 w-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:300ms]" />
                                 </div>
                             </div>
                         </div>
@@ -311,7 +310,7 @@ export function ChatWidget() {
                 </div>
 
                 {/* Input */}
-                <div className="px-3 py-3 border-t border-gray-700/50 bg-gray-900/80 shrink-0">
+                <div className="px-3 py-3 border-t border-border bg-card shrink-0">
                     <div className="flex gap-2">
                         <Input
                             ref={inputRef}
@@ -319,14 +318,14 @@ export function ChatWidget() {
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder="Ask about algorithms, DSA..."
-                            className="bg-gray-800/60 border-gray-700/50 text-sm placeholder:text-gray-500 focus-visible:ring-purple-500/30"
+                            className="bg-muted border-border text-sm placeholder:text-muted-foreground focus-visible:ring-purple-500/30"
                             disabled={loading}
                         />
                         <Button
                             onClick={() => handleSend()}
                             disabled={!input.trim() || loading}
                             size="icon"
-                            className="bg-purple-600 hover:bg-purple-700 shrink-0 h-9 w-9"
+                            className="bg-purple-600 hover:bg-purple-700 text-white shrink-0 h-9 w-9"
                         >
                             {loading ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -335,7 +334,7 @@ export function ChatWidget() {
                             )}
                         </Button>
                     </div>
-                    <p className="text-[9px] text-gray-600 text-center mt-1.5">
+                    <p className="text-[9px] text-muted-foreground text-center mt-1.5">
                         Press Esc to {size === "fullscreen" ? "shrink" : "close"} · Click
                         expand to resize
                     </p>
@@ -344,3 +343,4 @@ export function ChatWidget() {
         </>
     );
 }
+

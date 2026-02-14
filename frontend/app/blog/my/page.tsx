@@ -244,13 +244,13 @@ export default function MyBlogsPage() {
                               {blog.tags.slice(0, 4).map((tag) => (
                                 <span
                                   key={tag}
-                                  className="px-2 py-0.5 text-xs rounded-full bg-white/10 text-white/70"
+                                  className="px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground"
                                 >
                                   {tag}
                                 </span>
                               ))}
                               {blog.tags.length > 4 && (
-                                <span className="px-2 py-0.5 text-xs rounded-full bg-white/10 text-white/70">
+                                <span className="px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground">
                                   +{blog.tags.length - 4}
                                 </span>
                               )}

@@ -840,8 +840,8 @@ export default function AdminDashboardPage() {
 
   if (!hasHydrated || !user || user.role !== "ADMIN") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="text-white">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-foreground">Loading...</div>
       </div>
     );
   }
@@ -913,7 +913,7 @@ export default function AdminDashboardPage() {
           <div className="space-y-6">
             <div className="flex items-center gap-4">
               <h2 className="text-xl font-semibold">User Management</h2>
-              <span className="text-sm text-gray-400">({users.length} users)</span>
+              <span className="text-sm text-muted-foreground">({users.length} users)</span>
             </div>
 
             {tabLoading ? (
@@ -921,21 +921,21 @@ export default function AdminDashboardPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+              <div className="bg-card rounded-lg border border-border overflow-hidden">
                 <table className="w-full">
-                  <thead className="bg-gray-800">
+                  <thead className="bg-muted">
                     <tr>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
                         Email
                       </th>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
                         Role
                       </th>
 
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
                         Joined
                       </th>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
                         Actions
                       </th>
                     </tr>
@@ -945,14 +945,14 @@ export default function AdminDashboardPage() {
                       <tr>
                         <td
                           colSpan={4}
-                          className="px-4 py-8 text-center text-gray-500"
+                          className="px-4 py-8 text-center text-muted-foreground"
                         >
                           No users found
                         </td>
                       </tr>
                     ) : (
                       displayedUsers.map((u) => (
-                        <tr key={u.id} className="hover:bg-gray-800/50">
+                        <tr key={u.id} className="hover:bg-muted/50">
                           <td className="px-4 py-3 text-sm">{u.email}</td>
                           <td className="px-4 py-3">
                             <Select
@@ -961,10 +961,10 @@ export default function AdminDashboardPage() {
                                 handleUpdateRole(u.id, role)
                               }
                             >
-                              <SelectTrigger className="w-28 h-8 bg-gray-800 border-gray-700 text-xs">
+                              <SelectTrigger className="w-28 h-8 bg-muted border-border text-xs">
                                 <SelectValue />
                               </SelectTrigger>
-                              <SelectContent className="bg-gray-800 border-gray-700">
+                              <SelectContent className="bg-muted border-border">
                                 <SelectItem value="STUDENT">Student</SelectItem>
                                 <SelectItem value="ADMIN">Admin</SelectItem>
                                 <SelectItem value="ALUMNI">Alumni</SelectItem>
@@ -972,7 +972,7 @@ export default function AdminDashboardPage() {
                             </Select>
                           </td>
 
-                          <td className="px-4 py-3 text-sm text-gray-400">
+                          <td className="px-4 py-3 text-sm text-muted-foreground">
                             {new Date(u.createdAt).toLocaleDateString()}
                           </td>
                           <td className="px-4 py-3">
@@ -1006,9 +1006,9 @@ export default function AdminDashboardPage() {
         {/* Contests Tab */}
         {activeTab === "contests" && (
           <div className="grid gap-6 lg:grid-cols-2">
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-white">Create Contest</CardTitle>
+                <CardTitle className="text-foreground">Create Contest</CardTitle>
                 <CardDescription>
                   Set up a new competitive programming contest
                 </CardDescription>
@@ -1021,7 +1021,7 @@ export default function AdminDashboardPage() {
                       placeholder="e.g. Weekly Contest #45"
                       value={contestTitle}
                       onChange={(e) => setContestTitle(e.target.value)}
-                      className="bg-gray-800 border-gray-700"
+                      className="bg-muted border-border"
                       required
                     />
                   </div>
@@ -1031,9 +1031,9 @@ export default function AdminDashboardPage() {
                       placeholder="https://www.hackerrank.com/contests/..."
                       value={contestHackerRankUrl}
                       onChange={(e) => setContestHackerRankUrl(e.target.value)}
-                      className="bg-gray-800 border-gray-700"
+                      className="bg-muted border-border"
                     />
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       Link to the HackerRank contest page (students will be redirected here)
                     </p>
                   </div>
@@ -1043,10 +1043,10 @@ export default function AdminDashboardPage() {
                       type="datetime-local"
                       value={contestStartTime}
                       onChange={(e) => setContestStartTime(e.target.value)}
-                      className="bg-gray-800 border-gray-700"
+                      className="bg-muted border-border"
                       required
                     />
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       Schedule when the contest will start (your local timezone)
                     </p>
                   </div>
@@ -1058,7 +1058,7 @@ export default function AdminDashboardPage() {
                       placeholder="e.g. 90"
                       value={contestTimer}
                       onChange={(e) => setContestTimer(e.target.value)}
-                      className="bg-gray-800 border-gray-700"
+                      className="bg-muted border-border"
                       required
                     />
                   </div>
@@ -1069,9 +1069,9 @@ export default function AdminDashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-white">Enter Results</CardTitle>
+                <CardTitle className="text-foreground">Enter Results</CardTitle>
                 <CardDescription>
                   Enter leaderboard results from HackerRank after contest ends
                 </CardDescription>
@@ -1084,10 +1084,10 @@ export default function AdminDashboardPage() {
                       value={resultsContestId}
                       onValueChange={setResultsContestId}
                     >
-                      <SelectTrigger className="bg-gray-800 border-gray-700">
+                      <SelectTrigger className="bg-muted border-border">
                         <SelectValue placeholder="Select a contest" />
                       </SelectTrigger>
-                      <SelectContent className="bg-gray-800 border-gray-700">
+                      <SelectContent className="bg-muted border-border">
                         {contests.map((c) => (
                           <SelectItem key={c.id} value={c.id}>
                             {c.title}
@@ -1098,14 +1098,14 @@ export default function AdminDashboardPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Results (one per line)</Label>
-                    <p className="text-xs text-gray-500 mb-1">
+                    <p className="text-xs text-muted-foreground mb-1">
                       Format: Name, Score, Problems Solved (one line per participant)
                     </p>
                     <textarea
                       placeholder={`John Doe, 450, 3\nJane Smith, 400, 2\nBob Wilson, 350, 2`}
                       value={resultsText}
                       onChange={(e) => setResultsText(e.target.value)}
-                      className="w-full h-32 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm font-mono resize-none"
+                      className="w-full h-32 px-3 py-2 bg-muted border border-border rounded-md text-sm font-mono resize-none"
                     />
                   </div>
                   <Button type="submit" disabled={loading} className="w-full">
@@ -1116,9 +1116,9 @@ export default function AdminDashboardPage() {
             </Card>
 
             {/* Contest List */}
-            <Card className="bg-gray-900 border-gray-800 lg:col-span-2">
+            <Card className="bg-card border-border lg:col-span-2">
               <CardHeader>
-                <CardTitle className="text-white">Existing Contests</CardTitle>
+                <CardTitle className="text-foreground">Existing Contests</CardTitle>
               </CardHeader>
               <CardContent>
                 {tabLoading ? (
@@ -1128,7 +1128,7 @@ export default function AdminDashboardPage() {
                 ) : (
                   <div className="space-y-3">
                     {contests.length === 0 ? (
-                      <p className="text-gray-500 text-center py-4">
+                      <p className="text-muted-foreground text-center py-4">
                         No contests yet
                       </p>
                     ) : (
@@ -1149,7 +1149,7 @@ export default function AdminDashboardPage() {
                         return (
                           <div
                             key={c.id}
-                            className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg"
+                            className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
                           >
                             <div>
                               <div className="flex items-center gap-2">
@@ -1159,19 +1159,19 @@ export default function AdminDashboardPage() {
                                     ? "bg-green-500/20 text-green-400"
                                     : status === "upcoming"
                                       ? "bg-yellow-500/20 text-yellow-400"
-                                      : "bg-gray-500/20 text-gray-400"
+                                      : "bg-gray-500/20 text-muted-foreground"
                                     }`}
                                 >
                                   {status.charAt(0).toUpperCase() +
                                     status.slice(1)}
                                 </span>
                               </div>
-                              <p className="text-sm text-gray-400">
+                              <p className="text-sm text-muted-foreground">
                                 {c.timer} min
                                 {c.hackerRankUrl && " • HackerRank"}
                                 {c.results && " • Results posted"}
                               </p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-muted-foreground">
                                 Starts: {startTime.toLocaleString()}
                               </p>
                               {c.hackerRankUrl && (
@@ -1215,9 +1215,9 @@ export default function AdminDashboardPage() {
         {/* Sessions Tab */}
         {activeTab === "sessions" && (
           <div className="grid gap-6 lg:grid-cols-2">
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-white">Create Session</CardTitle>
+                <CardTitle className="text-foreground">Create Session</CardTitle>
                 <CardDescription>
                   Schedule a learning session or workshop
                 </CardDescription>
@@ -1230,7 +1230,7 @@ export default function AdminDashboardPage() {
                       placeholder="e.g. Intro to Dynamic Programming"
                       value={sessionTitle}
                       onChange={(e) => setSessionTitle(e.target.value)}
-                      className="bg-gray-800 border-gray-700"
+                      className="bg-muted border-border"
                       required
                     />
                   </div>
@@ -1240,23 +1240,23 @@ export default function AdminDashboardPage() {
                       placeholder="Session details..."
                       value={sessionDetails}
                       onChange={(e) => setSessionDetails(e.target.value)}
-                      className="w-full h-24 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none"
+                      className="w-full h-24 px-3 py-2 bg-muted border border-border rounded-md text-sm resize-none"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Meeting Link *</Label>
                     <div className="relative">
-                      <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         type="url"
                         placeholder="https://meet.google.com/abc-defg-hij"
                         value={sessionMeetLink}
                         onChange={(e) => setSessionMeetLink(e.target.value)}
-                        className="bg-gray-800 border-gray-700 pl-10"
+                        className="bg-muted border-border pl-10"
                         required
                       />
                     </div>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       Google Meet, Zoom, or any video call URL
                     </p>
                   </div>
@@ -1266,7 +1266,7 @@ export default function AdminDashboardPage() {
                       type="datetime-local"
                       value={sessionDate}
                       onChange={(e) => setSessionDate(e.target.value)}
-                      className="bg-gray-800 border-gray-700"
+                      className="bg-muted border-border"
                     />
                   </div>
                   <Button
@@ -1282,9 +1282,9 @@ export default function AdminDashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-white">Existing Sessions</CardTitle>
+                <CardTitle className="text-foreground">Existing Sessions</CardTitle>
               </CardHeader>
               <CardContent>
                 {tabLoading ? (
@@ -1294,31 +1294,31 @@ export default function AdminDashboardPage() {
                 ) : (
                   <div className="space-y-3 max-h-[500px] overflow-y-auto">
                     {sessions.length === 0 ? (
-                      <p className="text-gray-500 text-center py-4">
+                      <p className="text-muted-foreground text-center py-4">
                         No sessions yet
                       </p>
                     ) : (
                       sessions.map((s) => (
                         <div
                           key={s.id}
-                          className="p-4 bg-gray-800/50 rounded-lg"
+                          className="p-4 bg-muted/50 rounded-lg"
                         >
                           {editingId === s.id ? (
                             // Edit Mode
                             <div className="space-y-3">
                               <div className="space-y-2">
-                                <Label className="text-xs text-gray-400">
+                                <Label className="text-xs text-muted-foreground">
                                   Title *
                                 </Label>
                                 <Input
                                   value={editTitle}
                                   onChange={(e) => setEditTitle(e.target.value)}
-                                  className="bg-gray-800 border-gray-700 h-9"
+                                  className="bg-muted border-border h-9"
                                   required
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label className="text-xs text-gray-400">
+                                <Label className="text-xs text-muted-foreground">
                                   Details
                                 </Label>
                                 <textarea
@@ -1326,11 +1326,11 @@ export default function AdminDashboardPage() {
                                   onChange={(e) =>
                                     setEditDetails(e.target.value)
                                   }
-                                  className="w-full h-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none"
+                                  className="w-full h-20 px-3 py-2 bg-muted border border-border rounded-md text-sm resize-none"
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label className="text-xs text-gray-400">
+                                <Label className="text-xs text-muted-foreground">
                                   Meeting Link *
                                 </Label>
                                 <Input
@@ -1339,19 +1339,19 @@ export default function AdminDashboardPage() {
                                   onChange={(e) =>
                                     setEditMeetLink(e.target.value)
                                   }
-                                  className="bg-gray-800 border-gray-700 h-9"
+                                  className="bg-muted border-border h-9"
                                   required
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label className="text-xs text-gray-400">
+                                <Label className="text-xs text-muted-foreground">
                                   Date & Time
                                 </Label>
                                 <Input
                                   type="datetime-local"
                                   value={editDate}
                                   onChange={(e) => setEditDate(e.target.value)}
-                                  className="bg-gray-800 border-gray-700 h-9"
+                                  className="bg-muted border-border h-9"
                                 />
                               </div>
                               <div className="flex gap-2 pt-2">
@@ -1381,15 +1381,15 @@ export default function AdminDashboardPage() {
                             // View Mode
                             <div className="space-y-3">
                               <div>
-                                <p className="font-medium text-white">
+                                <p className="font-medium text-foreground">
                                   {s.title}
                                 </p>
                                 {s.details && (
-                                  <p className="text-sm text-gray-400 mt-1 line-clamp-2">
+                                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                                     {s.details}
                                   </p>
                                 )}
-                                <p className="text-sm text-gray-500 mt-1">
+                                <p className="text-sm text-muted-foreground mt-1">
                                   {s.date
                                     ? new Date(s.date).toLocaleString()
                                     : "No date set"}
@@ -1452,9 +1452,9 @@ export default function AdminDashboardPage() {
           <div className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-2">
               {/* Create Task Form */}
-              <Card className="bg-gray-900 border-gray-800">
+              <Card className="bg-card border-border">
                 <CardHeader>
-                  <CardTitle className="text-white">Create Task</CardTitle>
+                  <CardTitle className="text-foreground">Create Task</CardTitle>
                   <CardDescription>
                     Create a new task for students
                   </CardDescription>
@@ -1467,7 +1467,7 @@ export default function AdminDashboardPage() {
                         placeholder="e.g. Solve 5 DP problems"
                         value={taskTitle}
                         onChange={(e) => setTaskTitle(e.target.value)}
-                        className="bg-gray-800 border-gray-700"
+                        className="bg-muted border-border"
                         required
                       />
                     </div>
@@ -1477,7 +1477,7 @@ export default function AdminDashboardPage() {
                         placeholder="Task details..."
                         value={taskDesc}
                         onChange={(e) => setTaskDesc(e.target.value)}
-                        className="w-full h-24 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none"
+                        className="w-full h-24 px-3 py-2 bg-muted border border-border rounded-md text-sm resize-none"
                       />
                     </div>
                     <div className="space-y-2">
@@ -1486,9 +1486,9 @@ export default function AdminDashboardPage() {
                         placeholder="https://leetcode.com/problems/two-sum/"
                         value={taskLeetcodeUrl}
                         onChange={(e) => setTaskLeetcodeUrl(e.target.value)}
-                        className="bg-gray-800 border-gray-700"
+                        className="bg-muted border-border"
                       />
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         Optional. Students can auto-verify via LeetCode if provided.
                       </p>
                     </div>
@@ -1501,7 +1501,7 @@ export default function AdminDashboardPage() {
                           placeholder="100"
                           value={taskPoints}
                           onChange={(e) => setTaskPoints(e.target.value)}
-                          className="bg-gray-800 border-gray-700"
+                          className="bg-muted border-border"
                           required
                         />
                       </div>
@@ -1511,7 +1511,7 @@ export default function AdminDashboardPage() {
                           type="datetime-local"
                           value={taskDueDate}
                           onChange={(e) => setTaskDueDate(e.target.value)}
-                          className="bg-gray-800 border-gray-700"
+                          className="bg-muted border-border"
                         />
                       </div>
                     </div>
@@ -1531,7 +1531,7 @@ export default function AdminDashboardPage() {
                             }}
                             className="text-blue-500"
                           />
-                          <Globe className="h-4 w-4 text-gray-400" />
+                          <Globe className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm">All Students</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
@@ -1542,16 +1542,16 @@ export default function AdminDashboardPage() {
                             onChange={() => setTaskAssignmentType("specific")}
                             className="text-blue-500"
                           />
-                          <UserIcon className="h-4 w-4 text-gray-400" />
+                          <UserIcon className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm">Specific Users</span>
                         </label>
                       </div>
 
                       {taskAssignmentType === "specific" && (
                         <div className="space-y-2">
-                          <div className="flex flex-wrap gap-2 p-2 bg-gray-800 border border-gray-700 rounded-md min-h-[40px]">
+                          <div className="flex flex-wrap gap-2 p-2 bg-muted border border-border rounded-md min-h-[40px]">
                             {selectedUserIds.length === 0 ? (
-                              <span className="text-sm text-gray-500">
+                              <span className="text-sm text-muted-foreground">
                                 No users selected
                               </span>
                             ) : (
@@ -1594,10 +1594,10 @@ export default function AdminDashboardPage() {
                               }
                             }}
                           >
-                            <SelectTrigger className="bg-gray-800 border-gray-700">
+                            <SelectTrigger className="bg-muted border-border">
                               <SelectValue placeholder="Add a student..." />
                             </SelectTrigger>
-                            <SelectContent className="bg-gray-800 border-gray-700 max-h-48">
+                            <SelectContent className="bg-muted border-border max-h-48">
                               {studentUsers
                                 .filter((u) => !selectedUserIds.includes(u.id))
                                 .map((u) => (
@@ -1625,9 +1625,9 @@ export default function AdminDashboardPage() {
               </Card>
 
               {/* Tasks List */}
-              <Card className="bg-gray-900 border-gray-800">
+              <Card className="bg-card border-border">
                 <CardHeader>
-                  <CardTitle className="text-white">Existing Tasks</CardTitle>
+                  <CardTitle className="text-foreground">Existing Tasks</CardTitle>
                   <CardDescription>
                     {tasks.length} task{tasks.length !== 1 ? "s" : ""} created
                   </CardDescription>
@@ -1640,11 +1640,11 @@ export default function AdminDashboardPage() {
                   ) : (
                     <div className="space-y-3 max-h-[500px] overflow-y-auto">
                       {tasksLoading ? (
-                        <p className="text-gray-500 text-center py-4">
+                        <p className="text-muted-foreground text-center py-4">
                           Loading...
                         </p>
                       ) : tasks.length === 0 ? (
-                        <p className="text-gray-500 text-center py-4">
+                        <p className="text-muted-foreground text-center py-4">
                           No tasks yet
                         </p>
                       ) : (
@@ -1657,13 +1657,13 @@ export default function AdminDashboardPage() {
                           return (
                             <div
                               key={task.id}
-                              className="bg-gray-800/50 rounded-lg overflow-hidden"
+                              className="bg-muted/50 rounded-lg overflow-hidden"
                             >
                               {isEditing ? (
                                 // Edit Mode
                                 <div className="p-4 space-y-3">
                                   <div className="space-y-2">
-                                    <Label className="text-xs text-gray-400">
+                                    <Label className="text-xs text-muted-foreground">
                                       Title *
                                     </Label>
                                     <Input
@@ -1671,12 +1671,12 @@ export default function AdminDashboardPage() {
                                       onChange={(e) =>
                                         setEditTaskTitle(e.target.value)
                                       }
-                                      className="bg-gray-800 border-gray-700 h-9"
+                                      className="bg-muted border-border h-9"
                                       required
                                     />
                                   </div>
                                   <div className="space-y-2">
-                                    <Label className="text-xs text-gray-400">
+                                    <Label className="text-xs text-muted-foreground">
                                       Description
                                     </Label>
                                     <textarea
@@ -1684,12 +1684,12 @@ export default function AdminDashboardPage() {
                                       onChange={(e) =>
                                         setEditTaskDesc(e.target.value)
                                       }
-                                      className="w-full h-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none"
+                                      className="w-full h-20 px-3 py-2 bg-muted border border-border rounded-md text-sm resize-none"
                                     />
                                   </div>
                                   <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-2">
-                                      <Label className="text-xs text-gray-400">
+                                      <Label className="text-xs text-muted-foreground">
                                         Points
                                       </Label>
                                       <Input
@@ -1699,11 +1699,11 @@ export default function AdminDashboardPage() {
                                         onChange={(e) =>
                                           setEditTaskPoints(e.target.value)
                                         }
-                                        className="bg-gray-800 border-gray-700 h-9"
+                                        className="bg-muted border-border h-9"
                                       />
                                     </div>
                                     <div className="space-y-2">
-                                      <Label className="text-xs text-gray-400">
+                                      <Label className="text-xs text-muted-foreground">
                                         Due Date
                                       </Label>
                                       <Input
@@ -1712,14 +1712,14 @@ export default function AdminDashboardPage() {
                                         onChange={(e) =>
                                           setEditTaskDueDate(e.target.value)
                                         }
-                                        className="bg-gray-800 border-gray-700 h-9"
+                                        className="bg-muted border-border h-9"
                                       />
                                     </div>
                                   </div>
 
                                   {/* Edit Assignment Type */}
                                   <div className="space-y-2">
-                                    <Label className="text-xs text-gray-400">
+                                    <Label className="text-xs text-muted-foreground">
                                       Assign To
                                     </Label>
                                     <div className="flex gap-4">
@@ -1772,10 +1772,10 @@ export default function AdminDashboardPage() {
                                           }
                                         }}
                                       >
-                                        <SelectTrigger className="bg-gray-800 border-gray-700 h-8 text-xs">
+                                        <SelectTrigger className="bg-muted border-border h-8 text-xs">
                                           <SelectValue placeholder="Add user..." />
                                         </SelectTrigger>
-                                        <SelectContent className="bg-gray-800 border-gray-700 max-h-32">
+                                        <SelectContent className="bg-muted border-border max-h-32">
                                           {studentUsers
                                             .filter(
                                               (u) =>
@@ -1859,7 +1859,7 @@ export default function AdminDashboardPage() {
                                     <div className="flex items-start justify-between gap-2">
                                       <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
-                                          <p className="font-medium text-white truncate">
+                                          <p className="font-medium text-foreground truncate">
                                             {task.title}
                                           </p>
                                           <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded text-xs font-medium">
@@ -1880,11 +1880,11 @@ export default function AdminDashboardPage() {
                                           )}
                                         </div>
                                         {task.description && (
-                                          <p className="text-sm text-gray-400 mt-1 line-clamp-2">
+                                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                                             {task.description}
                                           </p>
                                         )}
-                                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                                        <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                                           {task.dueDate && (
                                             <span
                                               className={
@@ -1950,16 +1950,16 @@ export default function AdminDashboardPage() {
 
                                   {/* Submissions Panel */}
                                   {isExpanded && (
-                                    <div className="border-t border-gray-700 bg-gray-900/50 p-4">
-                                      <h4 className="text-sm font-medium text-gray-300 mb-3">
+                                    <div className="border-t border-border bg-card/50 p-4">
+                                      <h4 className="text-sm font-medium text-muted-foreground mb-3">
                                         Submissions ({taskSubmissions.length})
                                       </h4>
                                       {submissionsLoading ? (
-                                        <p className="text-sm text-gray-500">
+                                        <p className="text-sm text-muted-foreground">
                                           Loading submissions...
                                         </p>
                                       ) : taskSubmissions.length === 0 ? (
-                                        <p className="text-sm text-gray-500">
+                                        <p className="text-sm text-muted-foreground">
                                           No submissions yet
                                         </p>
                                       ) : (
@@ -1972,11 +1972,11 @@ export default function AdminDashboardPage() {
                                             return (
                                               <div
                                                 key={sub.id}
-                                                className="flex items-center justify-between gap-2 p-2 bg-gray-800 rounded text-sm"
+                                                className="flex items-center justify-between gap-2 p-2 bg-muted rounded text-sm"
                                               >
                                                 <div className="flex-1 min-w-0">
                                                   <div className="flex items-center gap-2 flex-wrap">
-                                                    <span className="text-gray-300 truncate">
+                                                    <span className="text-muted-foreground truncate">
                                                       {sub.user?.email ||
                                                         sub.userId}
                                                     </span>
@@ -2006,7 +2006,7 @@ export default function AdminDashboardPage() {
                                                     >
                                                       {sub.link}
                                                     </a>
-                                                    <span className="text-xs text-gray-500">
+                                                    <span className="text-xs text-muted-foreground">
                                                       {new Date(
                                                         sub.createdAt,
                                                       ).toLocaleString()}
@@ -2066,9 +2066,9 @@ export default function AdminDashboardPage() {
             {/* Verify Modal */}
             {verifyModalOpen && selectedSubmission && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <Card className="bg-gray-900 border-gray-700 w-full max-w-md mx-4">
+                <Card className="bg-card border-border w-full max-w-md mx-4">
                   <CardHeader>
-                    <CardTitle className="text-white">
+                    <CardTitle className="text-foreground">
                       Verify Submission
                     </CardTitle>
                     <CardDescription>
@@ -2076,7 +2076,7 @@ export default function AdminDashboardPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="text-sm text-gray-400">
+                    <div className="text-sm text-muted-foreground">
                       <p>
                         <strong>User:</strong>{" "}
                         {selectedSubmission.user?.email ||
@@ -2103,9 +2103,9 @@ export default function AdminDashboardPage() {
                         onChange={(e) =>
                           setVerifyPoints(Number(e.target.value))
                         }
-                        className="bg-gray-800 border-gray-700"
+                        className="bg-muted border-border"
                       />
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         Default task points. Adjust if needed.
                       </p>
                     </div>
@@ -2137,9 +2137,9 @@ export default function AdminDashboardPage() {
         {/* Announcements Tab */}
         {activeTab === "announcements" && (
           <div className="grid gap-6 lg:grid-cols-2">
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-white">
+                <CardTitle className="text-foreground">
                   Create Announcement
                 </CardTitle>
                 <CardDescription>
@@ -2154,7 +2154,7 @@ export default function AdminDashboardPage() {
                       placeholder="Announcement title"
                       value={announcementTitle}
                       onChange={(e) => setAnnouncementTitle(e.target.value)}
-                      className="bg-gray-800 border-gray-700"
+                      className="bg-muted border-border"
                       required
                     />
                   </div>
@@ -2164,7 +2164,7 @@ export default function AdminDashboardPage() {
                       placeholder="Announcement content..."
                       value={announcementContent}
                       onChange={(e) => setAnnouncementContent(e.target.value)}
-                      className="w-full h-32 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none"
+                      className="w-full h-32 px-3 py-2 bg-muted border border-border rounded-md text-sm resize-none"
                       required
                     />
                   </div>
@@ -2174,7 +2174,7 @@ export default function AdminDashboardPage() {
                       id="pinned"
                       checked={announcementPinned}
                       onChange={(e) => setAnnouncementPinned(e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-yellow-500 focus:ring-yellow-500"
+                      className="w-4 h-4 rounded border-gray-600 bg-muted text-yellow-500 focus:ring-yellow-500"
                     />
                     <Label
                       htmlFor="pinned"
@@ -2191,9 +2191,9 @@ export default function AdminDashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-white">All Announcements</CardTitle>
+                <CardTitle className="text-foreground">All Announcements</CardTitle>
                 <CardDescription>
                   {announcements.length} announcement
                   {announcements.length !== 1 ? "s" : ""}
@@ -2207,7 +2207,7 @@ export default function AdminDashboardPage() {
                 ) : (
                   <div className="space-y-3 max-h-[500px] overflow-y-auto">
                     {announcements.length === 0 ? (
-                      <p className="text-gray-500 text-center py-4">
+                      <p className="text-muted-foreground text-center py-4">
                         No announcements yet
                       </p>
                     ) : (
@@ -2219,14 +2219,14 @@ export default function AdminDashboardPage() {
                             key={a.id}
                             className={`p-4 rounded-lg ${a.pinned
                               ? "bg-yellow-500/10 border-l-4 border-yellow-500"
-                              : "bg-gray-800/50"
+                              : "bg-muted/50"
                               }`}
                           >
                             {isEditing ? (
                               // Edit Mode
                               <div className="space-y-3">
                                 <div className="space-y-2">
-                                  <Label className="text-xs text-gray-400">
+                                  <Label className="text-xs text-muted-foreground">
                                     Title *
                                   </Label>
                                   <Input
@@ -2234,12 +2234,12 @@ export default function AdminDashboardPage() {
                                     onChange={(e) =>
                                       setEditAnnTitle(e.target.value)
                                     }
-                                    className="bg-gray-800 border-gray-700 h-9"
+                                    className="bg-muted border-border h-9"
                                     required
                                   />
                                 </div>
                                 <div className="space-y-2">
-                                  <Label className="text-xs text-gray-400">
+                                  <Label className="text-xs text-muted-foreground">
                                     Content *
                                   </Label>
                                   <textarea
@@ -2247,7 +2247,7 @@ export default function AdminDashboardPage() {
                                     onChange={(e) =>
                                       setEditAnnContent(e.target.value)
                                     }
-                                    className="w-full h-24 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none"
+                                    className="w-full h-24 px-3 py-2 bg-muted border border-border rounded-md text-sm resize-none"
                                     required
                                   />
                                 </div>
@@ -2259,7 +2259,7 @@ export default function AdminDashboardPage() {
                                     onChange={(e) =>
                                       setEditAnnPinned(e.target.checked)
                                     }
-                                    className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-yellow-500 focus:ring-yellow-500"
+                                    className="w-4 h-4 rounded border-gray-600 bg-muted text-yellow-500 focus:ring-yellow-500"
                                   />
                                   <Label
                                     htmlFor={`edit-pinned-${a.id}`}
@@ -2299,14 +2299,14 @@ export default function AdminDashboardPage() {
                                       {a.pinned && (
                                         <Pin className="h-4 w-4 text-yellow-500 flex-shrink-0" />
                                       )}
-                                      <p className="font-medium text-white">
+                                      <p className="font-medium text-foreground">
                                         {a.title}
                                       </p>
                                     </div>
-                                    <p className="text-sm text-gray-400 mt-1 whitespace-pre-wrap">
+                                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
                                       {a.content}
                                     </p>
-                                    <p className="text-xs text-gray-500 mt-2">
+                                    <p className="text-xs text-muted-foreground mt-2">
                                       {new Date(a.createdAt).toLocaleString()}
                                     </p>
                                   </div>
@@ -2317,7 +2317,7 @@ export default function AdminDashboardPage() {
                                       onClick={() => handleTogglePin(a)}
                                       className={`h-8 w-8 p-0 ${a.pinned
                                         ? "text-yellow-500 hover:text-yellow-400"
-                                        : "text-gray-400 hover:text-yellow-500"
+                                        : "text-muted-foreground hover:text-yellow-500"
                                         }`}
                                       title={a.pinned ? "Unpin" : "Pin"}
                                     >
@@ -2362,9 +2362,9 @@ export default function AdminDashboardPage() {
 
         {/* Blogs Tab */}
         {activeTab === "blogs" && (
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white">
+              <CardTitle className="text-foreground">
                 Pending Blog Approvals
               </CardTitle>
               <CardDescription>
@@ -2379,7 +2379,7 @@ export default function AdminDashboardPage() {
               ) : (
                 <div className="space-y-4">
                   {pendingBlogs.length === 0 ? (
-                    <p className="text-gray-500 text-center py-8">
+                    <p className="text-muted-foreground text-center py-8">
                       No pending blogs to review
                     </p>
                   ) : (
@@ -2389,14 +2389,14 @@ export default function AdminDashboardPage() {
                       return (
                         <div
                           key={blog.id}
-                          className="p-4 bg-gray-800/50 rounded-lg space-y-3"
+                          className="p-4 bg-muted/50 rounded-lg space-y-3"
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-medium text-white">
+                              <h3 className="font-medium text-foreground">
                                 {blog.title}
                               </h3>
-                              <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
+                              <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                                 <span>
                                   By: {blog.author?.name || blog.authorId}
                                 </span>
@@ -2412,13 +2412,13 @@ export default function AdminDashboardPage() {
                                   {blog.tags.slice(0, 5).map((tag) => (
                                     <span
                                       key={tag}
-                                      className="px-2 py-0.5 text-xs rounded-full bg-white/10 text-white/70"
+                                      className="px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground"
                                     >
                                       {tag}
                                     </span>
                                   ))}
                                   {blog.tags.length > 5 && (
-                                    <span className="px-2 py-0.5 text-xs rounded-full bg-white/10 text-white/70">
+                                    <span className="px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground">
                                       +{blog.tags.length - 5}
                                     </span>
                                   )}
@@ -2450,7 +2450,7 @@ export default function AdminDashboardPage() {
 
                           {/* Blog content preview */}
                           <div
-                            className="text-sm text-gray-300 line-clamp-3 prose prose-invert prose-sm max-w-none"
+                            className="text-sm text-muted-foreground line-clamp-3 prose prose-invert prose-sm max-w-none"
                             dangerouslySetInnerHTML={{ __html: blog.content }}
                           />
 
@@ -2479,7 +2479,7 @@ export default function AdminDashboardPage() {
                                     setRejectionReason(e.target.value)
                                   }
                                   placeholder="Provide feedback to help the author improve their blog..."
-                                  className="w-full h-20 px-3 py-2 bg-gray-800 border border-red-500/30 rounded-md text-sm resize-none text-white placeholder:text-gray-500"
+                                  className="w-full h-20 px-3 py-2 bg-muted border border-red-500/30 rounded-md text-sm resize-none text-foreground placeholder:text-muted-foreground"
                                 />
                               </div>
                               <div className="flex gap-2">
@@ -2519,19 +2519,19 @@ export default function AdminDashboardPage() {
       {/* Delete User Confirmation Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
-            <h3 className="text-lg font-semibold text-white mb-2">Delete User</h3>
-            <p className="text-gray-300 text-sm mb-1">
-              Are you sure you want to delete <strong className="text-white">{deleteConfirm.userEmail}</strong>?
+          <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <h3 className="text-lg font-semibold text-foreground mb-2">Delete User</h3>
+            <p className="text-muted-foreground text-sm mb-1">
+              Are you sure you want to delete <strong className="text-foreground">{deleteConfirm.userEmail}</strong>?
             </p>
-            <p className="text-gray-500 text-xs mb-5">
+            <p className="text-muted-foreground text-xs mb-5">
               This will permanently delete all their data including profile, task submissions, contest submissions, and blogs. This action cannot be undone.
             </p>
             <div className="flex justify-end gap-3">
               <Button
                 variant="outline"
                 size="sm"
-                className="border-gray-600 hover:bg-gray-800"
+                className="border-gray-600 hover:bg-muted"
                 onClick={() => setDeleteConfirm(null)}
                 disabled={deleting}
               >

@@ -279,8 +279,8 @@ const ToolbarButton = ({
       p-2 rounded-lg transition-all duration-200
       ${
         isActive
-          ? "bg-white/20 text-white"
-          : "text-white/60 hover:text-white hover:bg-white/10"
+          ? "bg-primary/20 text-foreground"
+          : "text-muted-foreground hover:text-foreground hover:bg-muted"
       }
       ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
     `}

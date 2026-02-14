@@ -307,7 +307,7 @@ export default function EditBlogPage() {
                       onClick={() => handleTagToggle(tag)}
                       className={`px-3 py-1 text-sm rounded-full transition-all ${selectedTags.includes(tag)
                         ? "bg-primary/20 text-primary border border-primary/30"
-                        : "bg-white/5 text-white/70 border border-white/10 hover:border-white/30"
+                        : "bg-muted/50 text-muted-foreground border border-border hover:border-border"
                         }`}
                     >
                       {tag}

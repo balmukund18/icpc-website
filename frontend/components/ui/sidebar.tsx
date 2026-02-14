@@ -88,7 +88,7 @@ export const DesktopSidebar = ({
   return (
     <motion.div
       className={cn(
-        "h-full px-2 py-4 hidden md:flex md:flex-col bg-neutral-900 border-r border-neutral-800 shrink-0 overflow-hidden",
+        "h-full px-2 py-4 hidden md:flex md:flex-col bg-sidebar border-r border-border shrink-0 overflow-hidden",
         className
       )}
       animate={{
@@ -116,18 +116,18 @@ export const MobileSidebar = ({
   return (
     <div
       className={cn(
-        "h-14 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-neutral-900 border-b border-neutral-800 w-full"
+        "h-14 px-4 py-4 flex flex-row md:hidden items-center justify-between bg-sidebar border-b border-border w-full"
       )}
       {...props}
     >
       <div className="flex items-center z-20">
         <IconMenu2
-          className="h-5 w-5 text-neutral-200 cursor-pointer"
+          className="h-5 w-5 text-foreground cursor-pointer"
           onClick={() => setOpen(!open)}
         />
       </div>
       <div className="flex items-center">
-        <span className="font-bold text-xl text-white">ICPC</span>
+        <span className="font-bold text-xl text-foreground">ICPC</span>
       </div>
       <div className="w-5" /> {/* Spacer for centering */}
       <AnimatePresence>
@@ -141,12 +141,12 @@ export const MobileSidebar = ({
               ease: "easeInOut",
             }}
             className={cn(
-              "fixed h-full w-full inset-0 bg-neutral-900 p-6 z-[100] flex flex-col",
+              "fixed h-full w-full inset-0 bg-sidebar p-6 z-[100] flex flex-col",
               className
             )}
           >
             <div
-              className="absolute right-6 top-6 z-50 text-neutral-200 cursor-pointer"
+              className="absolute right-6 top-6 z-50 text-foreground cursor-pointer"
               onClick={() => setOpen(false)}
             >
               <IconX className="h-5 w-5" />
@@ -181,8 +181,8 @@ export const SidebarLink = ({
       className={cn(
         "flex items-center justify-start gap-3 group/sidebar py-2 px-3 rounded-md transition-colors overflow-hidden",
         active
-          ? "bg-white/10 text-white"
-          : "text-neutral-400 hover:text-white hover:bg-white/5",
+          ? "bg-primary/10 text-foreground"
+          : "text-muted-foreground hover:text-foreground hover:bg-muted",
         className
       )}
       onClick={onClick}
@@ -220,7 +220,7 @@ export const SidebarButton = ({
       onClick={onClick}
       className={cn(
         "flex items-center justify-start gap-3 group/sidebar py-2 px-3 rounded-md transition-colors w-full overflow-hidden",
-        "text-neutral-400 hover:text-white hover:bg-white/5",
+        "text-muted-foreground hover:text-foreground hover:bg-muted",
         className
       )}
     >
@@ -243,7 +243,7 @@ export const Logo = () => {
   return (
     <Link
       href="/dashboard"
-      className="font-bold flex items-center text-sm text-white py-2 px-3 relative z-20"
+      className="font-bold flex items-center text-sm text-foreground py-2 px-3 relative z-20"
     >
       <div className="h-6 w-6 bg-primary rounded-md flex-shrink-0 flex items-center justify-center text-xs font-bold">
         IC
@@ -253,7 +253,7 @@ export const Logo = () => {
           display: animate ? (open ? "inline-block" : "none") : "inline-block",
           opacity: animate ? (open ? 1 : 0) : 1,
         }}
-        className="font-bold text-xl ml-2 whitespace-nowrap"
+        className="font-bold text-xl ml-2 whitespace-nowrap text-foreground"
       >
         PC
       </motion.span>

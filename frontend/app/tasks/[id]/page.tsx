@@ -149,7 +149,7 @@ export default function TaskDetailPage() {
           </div>
 
           {/* Task Content */}
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-card border-border">
             <CardHeader className="space-y-4">
               {/* Points and Status Badges */}
               <div className="flex flex-wrap items-center gap-3">
@@ -170,12 +170,12 @@ export default function TaskDetailPage() {
               </div>
 
               {/* Title */}
-              <CardTitle className="text-3xl font-bold leading-tight text-white">
+              <CardTitle className="text-3xl font-bold leading-tight text-foreground">
                 {task.title}
               </CardTitle>
 
               {/* Meta Info */}
-              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
+              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                 {task.dueDate && status.label !== "Completed" && (
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4" />
@@ -199,10 +199,10 @@ export default function TaskDetailPage() {
               {/* Description Section */}
               {task.description && (
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-2">
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
                     Description
                   </h3>
-                  <p className="text-gray-400 whitespace-pre-wrap">
+                  <p className="text-muted-foreground whitespace-pre-wrap">
                     {task.description}
                   </p>
                 </div>
@@ -210,8 +210,8 @@ export default function TaskDetailPage() {
 
               {/* Latest Submission Info */}
               {latestSubmission && (
-                <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                  <h3 className="text-lg font-semibold text-white mb-3">
+                <div className="p-4 bg-muted/50 rounded-lg border border-border">
+                  <h3 className="text-lg font-semibold text-foreground mb-3">
                     Latest Submission
                   </h3>
                   <div className="flex items-center gap-2 mb-2">
@@ -247,14 +247,14 @@ export default function TaskDetailPage() {
                   >
                     {latestSubmission.link}
                   </a>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-muted-foreground mt-2">
                     Submitted: {new Date(latestSubmission.createdAt).toLocaleString()}
                   </p>
                 </div>
               )}
 
               {/* Action Buttons */}
-              <div className="pt-4 border-t border-gray-700">
+              <div className="pt-4 border-t border-border">
                 {status.canSubmit && (
                   <Button
                     onClick={handleOpenSubmitModal}
@@ -282,7 +282,7 @@ export default function TaskDetailPage() {
                 )}
 
                 {!status.canSubmit && status.label === "Max Attempts Reached" && (
-                  <p className="text-gray-400 flex items-center gap-2">
+                  <p className="text-muted-foreground flex items-center gap-2">
                     <AlertCircle className="h-5 w-5" />
                     Maximum submission attempts reached.
                   </p>
@@ -296,11 +296,11 @@ export default function TaskDetailPage() {
       {/* Submit Solution Modal */}
       {submitModalOpen && task && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="bg-gray-900 border-gray-700 w-full max-w-lg">
+          <Card className="bg-card border-border w-full max-w-lg">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="text-white">Submit Solution</CardTitle>
+                  <CardTitle className="text-foreground">Submit Solution</CardTitle>
                   <CardDescription className="mt-1">
                     {task.title}
                   </CardDescription>
@@ -317,15 +317,15 @@ export default function TaskDetailPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="p-3 bg-gray-800/50 rounded-lg text-sm">
-                  <div className="flex items-center gap-2 text-gray-300">
+                <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Trophy className="h-4 w-4 text-purple-400" />
                     <span>
                       <strong>{task.points} points</strong> upon verification
                     </span>
                   </div>
                   {task.dueDate && (
-                    <div className="flex items-center gap-2 text-gray-400 mt-2">
+                    <div className="flex items-center gap-2 text-muted-foreground mt-2">
                       <Clock className="h-4 w-4" />
                       <span>
                         Due: {new Date(task.dueDate).toLocaleString()}
@@ -340,18 +340,18 @@ export default function TaskDetailPage() {
                 <div className="space-y-2">
                   <Label htmlFor="link">Solution Link *</Label>
                   <div className="relative">
-                    <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="link"
                       type="url"
                       placeholder="https://github.com/user/repo or drive link"
                       value={submissionLink}
                       onChange={(e) => setSubmissionLink(e.target.value)}
-                      className="bg-gray-800 border-gray-700 pl-10"
+                      className="bg-muted border-border pl-10"
                       required
                     />
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     Provide a link to your solution (GitHub, Google Drive, etc.)
                   </p>
                 </div>

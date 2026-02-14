@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
+import { ModeToggle } from "@/components/mode-toggle";
 import {
   Sidebar,
   SidebarBody,
@@ -136,7 +137,7 @@ function SidebarContent({ userName }: { userName: string }) {
         {/* Role-based links */}
         {visibleRoleLinks.length > 0 && (
           <>
-            <div className="my-2 border-t border-neutral-800" />
+            <div className="my-2 border-t border-border" />
             {visibleRoleLinks.map((link) => (
               <SidebarLink
                 key={link.href}
@@ -150,21 +151,26 @@ function SidebarContent({ userName }: { userName: string }) {
       </div>
 
       {/* User Section */}
-      <div className="border-t border-neutral-800 pt-4 mt-4">
+      <div className="border-t border-border pt-4 mt-4">
         {/* User Info */}
         <div className="flex items-center gap-3 px-3 py-2 mb-2 overflow-hidden">
-          <div className="h-6 w-6 rounded-full bg-neutral-700 flex items-center justify-center flex-shrink-0">
-            <User className="h-3.5 w-3.5 text-neutral-300" />
+          <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+            <User className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
           <motion.span
             animate={{
               display: animate ? (open ? "inline-block" : "none") : "inline-block",
               opacity: animate ? (open ? 1 : 0) : 1,
             }}
-            className="text-sm text-neutral-200 whitespace-nowrap overflow-hidden text-ellipsis"
+            className="text-sm text-foreground whitespace-nowrap overflow-hidden text-ellipsis"
           >
             {userName}
           </motion.span>
+        </div>
+
+        {/* Theme Toggle */}
+        <div className="flex items-center justify-center px-3 py-2">
+          <ModeToggle />
         </div>
 
         {/* Logout Button */}

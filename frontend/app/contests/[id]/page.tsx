@@ -77,7 +77,7 @@ export default function ContestDetailPage() {
     ? "bg-green-500/20 text-green-400"
     : isUpcoming
       ? "bg-yellow-500/20 text-yellow-400"
-      : "bg-gray-500/20 text-gray-400";
+      : "bg-gray-500/20 text-muted-foreground";
 
   return (
     <DashboardLayout>
@@ -85,14 +85,14 @@ export default function ContestDetailPage() {
         {/* Back link */}
         <Link
           href="/contests"
-          className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-white mb-6 transition-colors"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Contests
         </Link>
 
         {/* Contest Header */}
-        <Card className="bg-gray-900 border-gray-800 mb-6">
+        <Card className="bg-card border-border mb-6">
           <CardContent className="py-6">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -106,7 +106,7 @@ export default function ContestDetailPage() {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-6 text-sm text-gray-400">
+                <div className="flex items-center gap-6 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1.5">
                     <Calendar className="h-4 w-4" />
                     {startTime.toLocaleDateString(undefined, {
@@ -128,7 +128,7 @@ export default function ContestDetailPage() {
                       minute: "2-digit",
                     })}
                   </span>
-                  <span className="text-gray-500">
+                  <span className="text-muted-foreground">
                     Duration: {contest.timer} min
                   </span>
                 </div>
@@ -162,11 +162,11 @@ export default function ContestDetailPage() {
 
         {/* Countdown for upcoming */}
         {isUpcoming && (
-          <Card className="bg-gray-900 border-gray-800 mb-6">
+          <Card className="bg-card border-border mb-6">
             <CardContent className="py-8 text-center">
               <Clock className="h-10 w-10 text-yellow-500 mx-auto mb-3" />
               <h2 className="text-xl font-semibold mb-2">Contest Starts Soon</h2>
-              <p className="text-gray-400">
+              <p className="text-muted-foreground">
                 Starts on{" "}
                 {startTime.toLocaleDateString(undefined, {
                   weekday: "long",
@@ -180,7 +180,7 @@ export default function ContestDetailPage() {
                 })}
               </p>
               {contest.hackerRankUrl && (
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-sm text-muted-foreground mt-2">
                   The contest will be hosted on HackerRank. Click the button above
                   to register.
                 </p>
@@ -191,7 +191,7 @@ export default function ContestDetailPage() {
 
         {/* Active contest info */}
         {isActive && (
-          <Card className="bg-gray-900 border-green-800/50 mb-6">
+          <Card className="bg-card border-green-800/50 mb-6">
             <CardContent className="py-8 text-center">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-500/10 rounded-full mb-4">
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
@@ -200,7 +200,7 @@ export default function ContestDetailPage() {
                 </span>
               </div>
               <h2 className="text-xl font-semibold mb-2">Contest is Active!</h2>
-              <p className="text-gray-400 mb-4">
+              <p className="text-muted-foreground mb-4">
                 Head to HackerRank to participate in this contest.
               </p>
               {contest.hackerRankUrl && (
@@ -221,7 +221,7 @@ export default function ContestDetailPage() {
 
         {/* Results for ended contests */}
         {isEnded && hasResults && (
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Medal className="h-5 w-5 text-yellow-500" />
@@ -232,17 +232,17 @@ export default function ContestDetailPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-800">
-                      <th className="text-left py-3 px-4 text-gray-400 font-medium">
+                    <tr className="border-b border-border">
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium">
                         Rank
                       </th>
-                      <th className="text-left py-3 px-4 text-gray-400 font-medium">
+                      <th className="text-left py-3 px-4 text-muted-foreground font-medium">
                         Name
                       </th>
-                      <th className="text-right py-3 px-4 text-gray-400 font-medium">
+                      <th className="text-right py-3 px-4 text-muted-foreground font-medium">
                         Score
                       </th>
-                      <th className="text-right py-3 px-4 text-gray-400 font-medium">
+                      <th className="text-right py-3 px-4 text-muted-foreground font-medium">
                         Solved
                       </th>
                     </tr>
@@ -252,7 +252,7 @@ export default function ContestDetailPage() {
                       (result, idx) => (
                         <tr
                           key={idx}
-                          className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors"
+                          className="border-b border-border/50 hover:bg-muted/30 transition-colors"
                         >
                           <td className="py-3 px-4">
                             {result.rank <= 3 ? (
@@ -260,14 +260,14 @@ export default function ContestDetailPage() {
                                 className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${result.rank === 1
                                   ? "bg-yellow-500/20 text-yellow-400"
                                   : result.rank === 2
-                                    ? "bg-gray-300/20 text-gray-300"
+                                    ? "bg-gray-300/20 text-muted-foreground"
                                     : "bg-orange-500/20 text-orange-400"
                                   }`}
                               >
                                 {result.rank}
                               </span>
                             ) : (
-                              <span className="text-gray-400 pl-2">
+                              <span className="text-muted-foreground pl-2">
                                 {result.rank}
                               </span>
                             )}
@@ -275,10 +275,10 @@ export default function ContestDetailPage() {
                           <td className="py-3 px-4 font-medium">
                             {result.name}
                           </td>
-                          <td className="py-3 px-4 text-right text-gray-300">
+                          <td className="py-3 px-4 text-right text-muted-foreground">
                             {result.score ?? "-"}
                           </td>
-                          <td className="py-3 px-4 text-right text-gray-400">
+                          <td className="py-3 px-4 text-right text-muted-foreground">
                             {result.solved ?? "-"}
                           </td>
                         </tr>
@@ -293,11 +293,11 @@ export default function ContestDetailPage() {
 
         {/* Ended without results */}
         {isEnded && !hasResults && (
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-card border-border">
             <CardContent className="py-8 text-center">
-              <Trophy className="h-10 w-10 text-gray-600 mx-auto mb-3" />
+              <Trophy className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
               <h2 className="text-xl font-semibold mb-2">Contest Has Ended</h2>
-              <p className="text-gray-400">
+              <p className="text-muted-foreground">
                 Results have not been posted yet. Check back later for the
                 leaderboard.
               </p>

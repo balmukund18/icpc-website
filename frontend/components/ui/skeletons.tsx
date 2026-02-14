@@ -62,26 +62,26 @@ export function SessionCardSkeleton() {
 
 export function TaskCardSkeleton() {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+    <div className="bg-card border border-border rounded-lg p-6">
       <div className="flex items-start justify-between gap-2 mb-3">
-        <Skeleton className="h-6 w-3/4 bg-gray-800" />
-        <Skeleton className="h-6 w-16 rounded bg-gray-800" />
+        <Skeleton className="h-6 w-3/4 bg-muted" />
+        <Skeleton className="h-6 w-16 rounded bg-muted" />
       </div>
       <div className="flex gap-2 mb-4">
-        <Skeleton className="h-5 w-24 rounded bg-gray-800" />
-        <Skeleton className="h-5 w-16 rounded bg-gray-800" />
+        <Skeleton className="h-5 w-24 rounded bg-muted" />
+        <Skeleton className="h-5 w-16 rounded bg-muted" />
       </div>
-      <Skeleton className="h-4 w-full mb-2 bg-gray-800" />
-      <Skeleton className="h-4 w-2/3 mb-4 bg-gray-800" />
+      <Skeleton className="h-4 w-full mb-2 bg-muted" />
+      <Skeleton className="h-4 w-2/3 mb-4 bg-muted" />
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Skeleton className="h-4 w-4 bg-gray-800" />
-          <Skeleton className="h-4 w-40 bg-gray-800" />
+          <Skeleton className="h-4 w-4 bg-muted" />
+          <Skeleton className="h-4 w-40 bg-muted" />
         </div>
       </div>
-      <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-800">
-        <Skeleton className="h-9 w-28 bg-gray-800" />
-        <Skeleton className="h-9 w-20 bg-gray-800" />
+      <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
+        <Skeleton className="h-9 w-28 bg-muted" />
+        <Skeleton className="h-9 w-20 bg-muted" />
       </div>
     </div>
   );
@@ -128,26 +128,26 @@ export function BlogCardSkeleton() {
 
 export function ContestCardSkeleton() {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-lg">
+    <div className="bg-card border border-border rounded-lg">
       <div className="p-6">
         <div className="flex justify-between items-start mb-2">
-          <Skeleton className="h-6 w-3/4 bg-gray-800" />
-          <Skeleton className="h-5 w-16 rounded bg-gray-800" />
+          <Skeleton className="h-6 w-3/4 bg-muted" />
+          <Skeleton className="h-5 w-16 rounded bg-muted" />
         </div>
-        <Skeleton className="h-4 w-24 mb-4 bg-gray-800" />
+        <Skeleton className="h-4 w-24 mb-4 bg-muted" />
         <div className="space-y-2">
           <div className="flex justify-between">
-            <Skeleton className="h-4 w-12 bg-gray-800" />
-            <Skeleton className="h-4 w-32 bg-gray-800" />
+            <Skeleton className="h-4 w-12 bg-muted" />
+            <Skeleton className="h-4 w-32 bg-muted" />
           </div>
           <div className="flex justify-between">
-            <Skeleton className="h-4 w-16 bg-gray-800" />
-            <Skeleton className="h-4 w-20 bg-gray-800" />
+            <Skeleton className="h-4 w-16 bg-muted" />
+            <Skeleton className="h-4 w-20 bg-muted" />
           </div>
         </div>
       </div>
       <div className="px-6 pb-6">
-        <Skeleton className="h-10 w-full bg-gray-800" />
+        <Skeleton className="h-10 w-full bg-muted" />
       </div>
     </div>
   );
@@ -316,16 +316,16 @@ export function TasksPageSkeleton() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <Skeleton className="h-9 w-32 mb-2 bg-gray-800" />
-          <Skeleton className="h-5 w-48 bg-gray-800" />
+          <Skeleton className="h-9 w-32 mb-2 bg-muted" />
+          <Skeleton className="h-5 w-48 bg-muted" />
         </div>
-        <Skeleton className="h-10 w-28 rounded-lg bg-gray-800" />
+        <Skeleton className="h-10 w-28 rounded-lg bg-muted" />
       </div>
 
       {/* Filter Bar */}
       <div className="flex gap-2 mb-6">
         {[1, 2, 3, 4].map((i) => (
-          <Skeleton key={i} className="h-9 w-28 bg-gray-800" />
+          <Skeleton key={i} className="h-9 w-28 bg-muted" />
         ))}
       </div>
 
@@ -344,36 +344,36 @@ export function TaskDetailSkeleton() {
     <div className="p-8">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Back Button */}
-        <Skeleton className="h-9 w-32 bg-gray-800" />
+        <Skeleton className="h-9 w-32 bg-muted" />
 
         {/* Task Content */}
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 space-y-6">
+        <div className="bg-card border border-border rounded-lg p-6 space-y-6">
           {/* Badges */}
           <div className="flex flex-wrap gap-3">
-            <Skeleton className="h-8 w-20 rounded-full bg-gray-800" />
-            <Skeleton className="h-8 w-32 rounded-full bg-gray-800" />
+            <Skeleton className="h-8 w-20 rounded-full bg-muted" />
+            <Skeleton className="h-8 w-32 rounded-full bg-muted" />
           </div>
 
           {/* Title */}
-          <Skeleton className="h-10 w-3/4 bg-gray-800" />
+          <Skeleton className="h-10 w-3/4 bg-muted" />
 
           {/* Meta Info */}
           <div className="flex flex-wrap gap-4">
-            <Skeleton className="h-5 w-48 bg-gray-800" />
-            <Skeleton className="h-5 w-32 bg-gray-800" />
+            <Skeleton className="h-5 w-48 bg-muted" />
+            <Skeleton className="h-5 w-32 bg-muted" />
           </div>
 
           {/* Description */}
           <div>
-            <Skeleton className="h-6 w-28 mb-3 bg-gray-800" />
-            <Skeleton className="h-4 w-full mb-2 bg-gray-800" />
-            <Skeleton className="h-4 w-full mb-2 bg-gray-800" />
-            <Skeleton className="h-4 w-2/3 bg-gray-800" />
+            <Skeleton className="h-6 w-28 mb-3 bg-muted" />
+            <Skeleton className="h-4 w-full mb-2 bg-muted" />
+            <Skeleton className="h-4 w-full mb-2 bg-muted" />
+            <Skeleton className="h-4 w-2/3 bg-muted" />
           </div>
 
           {/* Action Button */}
-          <div className="pt-4 border-t border-gray-700">
-            <Skeleton className="h-11 w-40 bg-gray-800" />
+          <div className="pt-4 border-t border-border">
+            <Skeleton className="h-11 w-40 bg-muted" />
           </div>
         </div>
       </div>
@@ -444,8 +444,8 @@ export function ContestsPageSkeleton() {
     <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <Skeleton className="h-10 w-40 mb-2 bg-gray-800" />
-        <Skeleton className="h-5 w-80 bg-gray-800" />
+        <Skeleton className="h-10 w-40 mb-2 bg-muted" />
+        <Skeleton className="h-5 w-80 bg-muted" />
       </div>
 
       {/* Contests Grid */}

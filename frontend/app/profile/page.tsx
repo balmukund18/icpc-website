@@ -213,7 +213,7 @@ export default function ProfilePage() {
     return (
       <DashboardLayout requireProfile={false}>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       </DashboardLayout>
     );
@@ -224,16 +224,16 @@ export default function ProfilePage() {
   // If first-time profile setup, render without sidebar
   if (isFirstTime) {
     return (
-      <div className="min-h-screen bg-black text-white">
+      <div className="min-h-screen bg-background text-foreground">
         {/* Header */}
-        <div className="border-b border-gray-800 bg-gray-900/50">
+        <div className="border-b border-border bg-card/50">
           <div className="max-w-3xl mx-auto px-4 py-4">
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <User className="h-6 w-6" />
                 Profile Settings
               </h1>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Complete your profile to continue
               </p>
             </div>
@@ -246,7 +246,7 @@ export default function ProfilePage() {
             <h2 className="text-lg font-semibold text-blue-400 mb-1">
               Welcome to ICPC Portal!
             </h2>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Please complete your profile to access the dashboard and start
               your competitive programming journey.
             </p>
@@ -286,7 +286,7 @@ export default function ProfilePage() {
       <>
         {/* Email (Read-only) */}
         <div className="space-y-2">
-          <Label className="flex items-center gap-2 text-gray-400">
+          <Label className="flex items-center gap-2 text-muted-foreground">
             <Mail className="h-4 w-4" />
             Email
           </Label>
@@ -294,14 +294,14 @@ export default function ProfilePage() {
             type="email"
             value={user!.email}
             disabled
-            className="bg-gray-800/50 border-gray-700 text-gray-400 cursor-not-allowed"
+            className="bg-muted/50 border-border text-muted-foreground cursor-not-allowed"
           />
         </div>
 
         {/* Personal Information */}
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
+            <CardTitle className="text-foreground flex items-center gap-2">
               <GraduationCap className="h-5 w-5" />
               Personal Information
             </CardTitle>
@@ -325,7 +325,7 @@ export default function ProfilePage() {
                     setErrors((prev) => ({ ...prev, name: "" }));
                   }
                 }}
-                className={`bg-gray-800 border-gray-700 ${
+                className={`bg-muted border-border ${
                   errors.name ? "border-red-500" : ""
                 }`}
               />
@@ -349,13 +349,13 @@ export default function ProfilePage() {
                 }}
               >
                 <SelectTrigger
-                  className={`bg-gray-800 border-gray-700 ${
+                  className={`bg-muted border-border ${
                     errors.branch ? "border-red-500" : ""
                   }`}
                 >
                   <SelectValue placeholder="Select your branch" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
+                <SelectContent className="bg-muted border-border">
                   {BRANCH_OPTIONS.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
@@ -385,13 +385,13 @@ export default function ProfilePage() {
                   }}
                 >
                   <SelectTrigger
-                    className={`bg-gray-800 border-gray-700 ${
+                    className={`bg-muted border-border ${
                       errors.year ? "border-red-500" : ""
                     }`}
                   >
                     <SelectValue placeholder="Select your year" />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700">
+                  <SelectContent className="bg-muted border-border">
                     {YEAR_OPTIONS.map((option) => (
                       <SelectItem
                         key={option.value}
@@ -426,14 +426,14 @@ export default function ProfilePage() {
                     setErrors((prev) => ({ ...prev, phone: "" }));
                   }
                 }}
-                className={`bg-gray-800 border-gray-700 ${
+                className={`bg-muted border-border ${
                   errors.phone ? "border-red-500" : ""
                 }`}
               />
               {errors.phone ? (
                 <p className="text-xs text-red-400">{errors.phone}</p>
               ) : (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   Optional. Enter your 10-digit mobile number.
                 </p>
               )}
@@ -443,9 +443,9 @@ export default function ProfilePage() {
 
         {/* Alumni Information (only for alumni users) */}
         {isAlumni && (
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-foreground flex items-center gap-2">
                 <Briefcase className="h-5 w-5" />
                 Alumni Information
               </CardTitle>
@@ -471,13 +471,13 @@ export default function ProfilePage() {
                   }}
                 >
                   <SelectTrigger
-                    className={`bg-gray-800 border-gray-700 ${
+                    className={`bg-muted border-border ${
                       errors.graduationYear ? "border-red-500" : ""
                     }`}
                   >
                     <SelectValue placeholder="Select graduation year" />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-800 border-gray-700 max-h-48">
+                  <SelectContent className="bg-muted border-border max-h-48">
                     {GRADUATION_YEAR_OPTIONS.map((option) => (
                       <SelectItem
                         key={option.value}
@@ -506,7 +506,7 @@ export default function ProfilePage() {
                     placeholder="e.g. Google, Microsoft"
                     value={company}
                     onChange={(e) => setCompany(e.target.value)}
-                    className="bg-gray-800 border-gray-700"
+                    className="bg-muted border-border"
                   />
                 </div>
                 <div className="space-y-2">
@@ -515,7 +515,7 @@ export default function ProfilePage() {
                     placeholder="e.g. Software Engineer"
                     value={position}
                     onChange={(e) => setPosition(e.target.value)}
-                    className="bg-gray-800 border-gray-700"
+                    className="bg-muted border-border"
                   />
                 </div>
               </div>
@@ -530,7 +530,7 @@ export default function ProfilePage() {
                   placeholder="e.g. Bangalore, India"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="bg-gray-800 border-gray-700"
+                  className="bg-muted border-border"
                 />
               </div>
 
@@ -545,7 +545,7 @@ export default function ProfilePage() {
                   placeholder="https://linkedin.com/in/yourprofile"
                   value={linkedIn}
                   onChange={(e) => setLinkedIn(e.target.value)}
-                  className="bg-gray-800 border-gray-700"
+                  className="bg-muted border-border"
                 />
               </div>
 
@@ -560,9 +560,9 @@ export default function ProfilePage() {
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   rows={4}
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-muted border border-border rounded-md text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   Optional. Share your experience and tips for current students.
                 </p>
               </div>
@@ -571,9 +571,9 @@ export default function ProfilePage() {
         )}
 
         {/* Competitive Programming Handles */}
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
+            <CardTitle className="text-foreground flex items-center gap-2">
               <Code className="h-5 w-5" />
               Competitive Programming Handles
             </CardTitle>
@@ -593,7 +593,7 @@ export default function ProfilePage() {
                     onChange={(e) =>
                       handleHandleChange(platform.key, e.target.value)
                     }
-                    className="bg-gray-800 border-gray-700"
+                    className="bg-muted border-border"
                   />
                 </div>
               ))}

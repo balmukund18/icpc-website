@@ -40,15 +40,18 @@ ICPC Portal is designed to streamline competitive programming activities for stu
 
 | Feature | Description |
 |---------|-------------|
+| 🔐 **Google OAuth** | Sign in with Google, admin approval workflow |
 | 🏅 **Contest System** | Real-time contests with code execution via Judge0 |
 | ✅ **Task Assignments** | DSA tasks with submission links, verification, points |
 | 📊 **Gamification** | Points, leaderboards (all-time, monthly, semester), badges |
 | 📅 **Session Management** | Workshop scheduling, registration, meeting links |
 | 📢 **Announcements** | Pinned announcements with CRUD operations |
-| 📝 **Blog System** | User posts with admin approval workflow |
-| 🤖 **AI Chatbot** | OpenAI-powered coding assistant |
+| 📝 **Blog System** | Rich-text posts (Tiptap) with admin approval workflow |
+| 🤖 **AI Chatbot** | Groq-powered coding assistant (LLaMA 3) |
+| 🎓 **Alumni Network** | Browse and connect with alumni profiles |
 | 👥 **User Roles** | Student, Admin, Alumni with role-based access |
-| 🌙 **Dark Mode** | Theme toggle support |
+| 🌗 **Dark/Light Mode** | Full theme toggle with system preference support |
+| 📱 **Responsive Design** | Mobile-friendly dashboard with collapsible sidebar |
 | 💾 **Code Persistence** | Editor state saved during contests |
 
 ---
@@ -64,9 +67,9 @@ ICPC Portal is designed to streamline competitive programming activities for stu
 | TypeScript | Type safety |
 | PostgreSQL 15+ | Database |
 | Prisma ORM | Database access & migrations |
-| JWT + bcrypt | Authentication |
+| Google OAuth + JWT | Authentication (Passport.js) |
 | Judge0 CE | Code execution engine |
-| OpenAI API | AI chatbot |
+| Groq AI (LLaMA 3) | AI chatbot |
 | Jest + Supertest | Testing |
 | Docker | Containerization |
 | Swagger | API documentation |
@@ -83,7 +86,9 @@ ICPC Portal is designed to streamline competitive programming activities for stu
 | Tailwind CSS 4 | Styling |
 | shadcn/ui + Radix | UI components |
 | CodeMirror | Code editor |
+| Tiptap | Rich-text blog editor |
 | Framer Motion | Animations |
+| next-themes | Dark/light mode |
 | Axios | HTTP client |
 | Zod | Validation |
 
@@ -141,28 +146,38 @@ ICPC-website/
 ├── frontend/
 │   ├── app/
 │   │   ├── admin/             # Admin dashboard
+│   │   ├── alumni/            # Alumni network
 │   │   ├── announcements/     # Announcements page
+│   │   ├── auth/              # OAuth callback & pending approval
+│   │   ├── blog/              # Blog (list, write, edit, my posts)
 │   │   ├── contests/
 │   │   │   ├── [id]/          # Contest arena
 │   │   │   └── page.tsx       # Contest list
 │   │   ├── dashboard/         # Main dashboard
-│   │   ├── login/             # Login page
+│   │   ├── login/             # Login page (Google Sign-In)
 │   │   ├── profile/           # Profile settings
 │   │   ├── register/          # Registration
-│   │   ├── sessions/          # Sessions list
-│   │   ├── tasks/             # Tasks list
+│   │   ├── sessions/          # Sessions list & details
+│   │   ├── tasks/             # Tasks list & details
 │   │   ├── layout.tsx
 │   │   ├── page.tsx           # Landing page
-│   │   └── globals.css
+│   │   └── globals.css        # Theme variables
 │   ├── components/
 │   │   ├── ui/                # shadcn/ui components
-│   │   ├── code-editor.tsx
-│   │   ├── mode-toggle.tsx
+│   │   ├── app-sidebar.tsx    # Dashboard sidebar
+│   │   ├── chat-widget.tsx    # AI chatbot widget
+│   │   ├── dashboard-layout.tsx # Responsive layout
+│   │   ├── GoogleSignInButton.tsx
+│   │   ├── mode-toggle.tsx    # Dark/light toggle
+│   │   ├── rich-text-editor.tsx # Tiptap blog editor
 │   │   └── theme-provider.tsx
 │   ├── lib/
 │   │   ├── hooks/
 │   │   ├── adminService.ts
+│   │   ├── alumniService.ts
 │   │   ├── axios.ts
+│   │   ├── blogService.ts
+│   │   ├── chatService.ts
 │   │   ├── contestService.ts
 │   │   ├── profileService.ts
 │   │   ├── sessionService.ts
@@ -278,7 +293,9 @@ npm run dev
 | `JUDGE0_KEY` | ❌ | - | Judge0 RapidAPI key |
 | `JUDGE0_KEY_HEADER` | ❌ | `X-RapidAPI-Key` | Judge0 API key header |
 | `JUDGE0_TIMEOUT_MS` | ❌ | `15000` | Judge0 timeout in ms |
-| `OPENAI_API_KEY` | ❌ | - | OpenAI API key for AI chatbot |
+| `GROQ_API_KEY` | ❌ | - | Groq API key for AI chatbot |
+| `GOOGLE_CLIENT_ID` | ❌ | - | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | ❌ | - | Google OAuth client secret |
 | `LOG_LEVEL` | ❌ | `info` | Logging level (debug, info, warn, error) |
 | `LOG_TO_FILE` | ❌ | `false` | Enable file logging |
 
@@ -299,11 +316,12 @@ NODE_ENV=development
 JUDGE0_URL="https://judge0-ce.p.rapidapi.com"
 JUDGE0_KEY="your-rapidapi-key"
 
-# OpenAI (Optional - for AI chatbot)
-OPENAI_API_KEY="sk-xxxx"
+# Groq AI (Optional - for AI chatbot)
+GROQ_API_KEY="gsk_xxxx"
 
-# Logging
-LOG_LEVEL="info"
+# Google OAuth (Required for login)
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
 ```
 
 ### Test Environment (`.env.test`)

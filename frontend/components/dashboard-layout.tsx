@@ -4,6 +4,7 @@ import { useEffect, useState, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { AppSidebar } from "@/components/app-sidebar";
+import { ChatWidget } from "@/components/chat-widget";
 import api from "@/lib/axios";
 
 interface DashboardLayoutProps {
@@ -103,16 +104,19 @@ export function DashboardLayout({
   if (!user) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex flex-col md:flex-row h-screen bg-background">
       {/* Sidebar */}
       <AppSidebar userName={userName || user.email?.split("@")[0] || "User"} />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="min-h-screen bg-background text-foreground">
+      <main className="flex-1 overflow-y-auto min-h-0">
+        <div className="min-h-full bg-background text-foreground">
           {children}
         </div>
       </main>
+
+      {/* Chat Widget - only visible for authenticated users */}
+      <ChatWidget />
     </div>
   );
 }

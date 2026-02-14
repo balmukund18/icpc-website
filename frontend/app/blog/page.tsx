@@ -196,7 +196,7 @@ export default function BlogListingPage() {
                         <CardDescription className="flex items-center gap-2 text-xs">
                           <User className="h-3 w-3" />
                           <span>{blog.author.name}</span>
-                          <span className="text-white/30">•</span>
+                          <span className="text-muted-foreground">•</span>
                           <Clock className="h-3 w-3" />
                           <span>{formatDate(blog.createdAt)}</span>
                         </CardDescription>
@@ -210,13 +210,13 @@ export default function BlogListingPage() {
                             {blog.tags.slice(0, 3).map((tag) => (
                               <span
                                 key={tag}
-                                className="px-2 py-0.5 text-xs rounded-full bg-white/10 text-white/70"
+                                className="px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground"
                               >
                                 {tag}
                               </span>
                             ))}
                             {blog.tags.length > 3 && (
-                              <span className="px-2 py-0.5 text-xs rounded-full bg-white/10 text-white/70">
+                              <span className="px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground">
                                 +{blog.tags.length - 3}
                               </span>
                             )}

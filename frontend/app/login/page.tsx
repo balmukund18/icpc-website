@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -134,8 +135,19 @@ export default function LoginPage() {
           </div>
 
           <GoogleSignInButton text="Sign in with Google" />
+
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            Don&apos;t have an account?{" "}
+            <Link
+              href="/register"
+              className="font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Register
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </Vortex>
   );
 }
+

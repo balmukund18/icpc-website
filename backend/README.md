@@ -14,16 +14,16 @@
 
 A robust **Express.js + TypeScript** backend powering the ACM ICPC USICT Portal. This production-ready system includes:
 
-- 🔐 **JWT Authentication** with role-based access (Student, Admin, Alumni)
+- 🔐 **Google OAuth + JWT Authentication** with role-based access (Student, Admin, Alumni)
 - 🏆 **Contest Management** with real-time code execution via Judge0
 - 📝 **Task Assignment System** with LeetCode/Codeforces verification
 - 🎮 **Gamification** with badges, leaderboards, and streaks
 - 📚 **Blog System** with admin approval workflow
-- 🤖 **AI Chatbot** powered by OpenAI
+- 🤖 **AI Chatbot** powered by Groq (LLaMA 3)
 - 🎓 **Alumni Network** with role-specific features
 - 📊 **Comprehensive API Documentation** via Swagger UI
 
-**Tech Stack:** Node.js, TypeScript, Express.js, PostgreSQL, Prisma ORM, Judge0, OpenAI
+**Tech Stack:** Node.js, TypeScript, Express.js, PostgreSQL, Prisma ORM, Judge0, Groq AI, Passport.js
 
 ---
 
@@ -49,7 +49,8 @@ A robust **Express.js + TypeScript** backend powering the ACM ICPC USICT Portal.
 
 ### 🔐 Core Features
 
-- **JWT Authentication** – Secure token-based authentication with role management
+- **Google OAuth** – Sign in with Google via Passport.js with admin approval workflow
+- **JWT Authentication** – Secure token-based auth with role management (Student, Admin, Alumni)
 - **Contest System** – Create contests, add problems, submit solutions
 - **Task Management** – Assign DSA tasks with automatic link verification
 - **Judge0 Integration** – Execute code in 50+ languages with real-time results
@@ -64,7 +65,7 @@ A robust **Express.js + TypeScript** backend powering the ACM ICPC USICT Portal.
 - **Blog Platform** – User-submitted blogs with admin approval
 - **Session Management** – Workshop registration and attendance tracking
 - **Alumni Network** – Dedicated portal for alumni engagement
-- **AI Assistant** – OpenAI-powered coding help
+- **AI Assistant** – Groq-powered coding help (LLaMA 3)
 
 ### ⚙️ Technical Highlights
 
@@ -86,9 +87,9 @@ A robust **Express.js + TypeScript** backend powering the ACM ICPC USICT Portal.
 | **Runtime** | Node.js 18+, TypeScript 5.x |
 | **Framework** | Express.js, Helmet, CORS, Rate Limiting |
 | **Database** | PostgreSQL 15+, Prisma ORM |
-| **Authentication** | JWT, bcrypt |
+| **Authentication** | Google OAuth (Passport.js), JWT, bcrypt |
 | **Testing** | Jest, Supertest, ts-jest |
-| **External APIs** | Judge0 CE, OpenAI |
+| **External APIs** | Judge0 CE, Groq AI (LLaMA 3) |
 | **DevOps** | Docker, GitHub Actions |
 | **Documentation** | Swagger UI |
 
@@ -128,7 +129,9 @@ NODE_ENV=development
 # Optional
 JUDGE0_URL="https://judge0-ce.p.rapidapi.com"
 JUDGE0_KEY="your-rapidapi-key"
-OPENAI_API_KEY="sk-xxxx"
+GROQ_API_KEY="gsk_xxxx"
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
 ```
 
 > **⚠️ Security Note:** `JWT_SECRET` must be at least 32 characters. Weak secrets are rejected at startup.
@@ -249,8 +252,12 @@ JUDGE0_KEY="your-rapidapi-key"
 JUDGE0_KEY_HEADER="X-RapidAPI-Key"
 JUDGE0_TIMEOUT_MS=15000
 
-# OpenAI Integration
-OPENAI_API_KEY="sk-xxxx"
+# Groq AI Integration
+GROQ_API_KEY="gsk_xxxx"
+
+# Google OAuth
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
 
 # Logging
 LOG_LEVEL="info"          # debug, info, warn, error
@@ -481,7 +488,9 @@ PORT=5000
 # Optional
 JUDGE0_URL="https://..."
 JUDGE0_KEY="..."
-OPENAI_API_KEY="sk-..."
+GROQ_API_KEY="gsk-..."
+GOOGLE_CLIENT_ID="..."
+GOOGLE_CLIENT_SECRET="..."
 LOG_LEVEL="warn"
 LOG_TO_FILE="true"
 ```
@@ -594,7 +603,8 @@ This project is licensed under the **ISC License**.
 | Blogs | ✅ | User posts with approval |
 | Sessions | ✅ | Workshop management |
 | Alumni | ✅ | Dedicated network |
-| AI Chatbot | ✅ | OpenAI integration |
+| Google OAuth | ✅ | Passport.js integration |
+| AI Chatbot | ✅ | Groq AI (LLaMA 3) |
 | API Docs | ✅ | Swagger UI |
 | Tests | ✅ | 80%+ coverage |
 | Docker | ✅ | Production-ready |

@@ -386,7 +386,7 @@ export default function DashboardPage() {
                             className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0
                               ? "bg-yellow-500/20 text-yellow-400"
                               : idx === 1
-                                ? "bg-gray-400/20 text-gray-400"
+                                ? "bg-gray-400/20 text-muted-foreground"
                                 : "bg-orange-500/20 text-orange-400"
                               }`}
                           >

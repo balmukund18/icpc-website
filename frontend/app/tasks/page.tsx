@@ -218,8 +218,8 @@ export default function TasksPage() {
         {/* Tasks Grid */}
         {filteredTasks.length === 0 ? (
           <div className="text-center py-12">
-            <CheckSquare className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400">
+            <CheckSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">
               {filter === "all"
                 ? "No tasks available yet"
                 : `No ${filter} tasks`}
@@ -237,11 +237,11 @@ export default function TasksPage() {
               return (
                 <Card
                   key={task.id}
-                  className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-colors"
+                  className="bg-card border-border hover:border-border transition-colors"
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-white text-lg line-clamp-1">
+                      <CardTitle className="text-foreground text-lg line-clamp-1">
                         {task.title}
                       </CardTitle>
                       <span className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-sm font-semibold whitespace-nowrap">
@@ -263,7 +263,7 @@ export default function TasksPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {task.description && (
-                      <p className="text-sm text-gray-400 line-clamp-3">
+                      <p className="text-sm text-muted-foreground line-clamp-3">
                         {task.description}
                       </p>
                     )}
@@ -281,7 +281,7 @@ export default function TasksPage() {
                       </a>
                     )}
 
-                    <div className="space-y-2 text-sm text-gray-500">
+                    <div className="space-y-2 text-sm text-muted-foreground">
                       {task.dueDate && status.label !== "Completed" && (
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4" />
@@ -303,7 +303,7 @@ export default function TasksPage() {
 
                     {/* Latest Submission Info */}
                     {latestSubmission && (
-                      <div className="p-2 bg-gray-800/50 rounded text-sm">
+                      <div className="p-2 bg-muted/50 rounded text-sm">
                         <div className="flex items-center gap-2 mb-1">
                           {latestSubmission.status === "VERIFIED" && (
                             <CheckCircle className="h-4 w-4 text-green-400" />
@@ -382,11 +382,11 @@ export default function TasksPage() {
       {/* Submit Solution Modal */}
       {submitModalOpen && selectedTask && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="bg-gray-900 border-gray-700 w-full max-w-lg">
+          <Card className="bg-card border-border w-full max-w-lg">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="text-white">Submit Solution</CardTitle>
+                  <CardTitle className="text-foreground">Submit Solution</CardTitle>
                   <CardDescription className="mt-1">
                     {selectedTask.title}
                   </CardDescription>
@@ -403,8 +403,8 @@ export default function TasksPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="p-3 bg-gray-800/50 rounded-lg text-sm">
-                  <div className="flex items-center gap-2 text-gray-300">
+                <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Trophy className="h-4 w-4 text-purple-400" />
                     <span>
                       <strong>{selectedTask.points} points</strong> upon
@@ -412,7 +412,7 @@ export default function TasksPage() {
                     </span>
                   </div>
                   {selectedTask.dueDate && (
-                    <div className="flex items-center gap-2 text-gray-400 mt-2">
+                    <div className="flex items-center gap-2 text-muted-foreground mt-2">
                       <Clock className="h-4 w-4" />
                       <span>
                         Due: {new Date(selectedTask.dueDate).toLocaleString()}
@@ -427,18 +427,18 @@ export default function TasksPage() {
                 <div className="space-y-2">
                   <Label htmlFor="link">Solution Link *</Label>
                   <div className="relative">
-                    <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="link"
                       type="url"
                       placeholder="https://github.com/user/repo or drive link"
                       value={submissionLink}
                       onChange={(e) => setSubmissionLink(e.target.value)}
-                      className="bg-gray-800 border-gray-700 pl-10"
+                      className="bg-muted border-border pl-10"
                       required
                     />
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     Provide a link to your solution (GitHub, Google Drive, etc.)
                   </p>
                 </div>
@@ -491,11 +491,11 @@ export default function TasksPage() {
       {/* LeetCode Verify Modal */}
       {leetcodeModalOpen && leetcodeTask && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="bg-gray-900 border-gray-700 w-full max-w-lg">
+          <Card className="bg-card border-border w-full max-w-lg">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="text-white">Verify LeetCode Solution</CardTitle>
+                  <CardTitle className="text-foreground">Verify LeetCode Solution</CardTitle>
                   <CardDescription className="mt-1">
                     {leetcodeTask.title}
                   </CardDescription>
@@ -512,8 +512,8 @@ export default function TasksPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleVerifyLeetcode} className="space-y-4">
-                <div className="p-3 bg-gray-800/50 rounded-lg text-sm space-y-2">
-                  <div className="flex items-center gap-2 text-gray-300">
+                <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-2">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Trophy className="h-4 w-4 text-purple-400" />
                     <span>
                       <strong>{leetcodeTask.points} points</strong> upon verification
@@ -537,10 +537,10 @@ export default function TasksPage() {
                     placeholder="Your LeetCode username"
                     value={leetcodeUsername}
                     onChange={(e) => setLeetcodeUsername(e.target.value)}
-                    className="bg-gray-800 border-gray-700"
+                    className="bg-muted border-border"
                     required
                   />
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     We&apos;ll check your recent accepted submissions on LeetCode to verify.
                   </p>
                 </div>

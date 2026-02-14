@@ -138,8 +138,7 @@ export default function AdminDashboardPage() {
     clearSubmissions,
   } = useTaskStore();
 
-  // User filter
-  const [userFilter, setUserFilter] = useState<"all" | "pending">("all");
+
 
   // Task form state
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
@@ -1169,15 +1168,15 @@ export default function AdminDashboardPage() {
                               </div>
                               <p className="text-sm text-gray-400">
                                 {c.timer} min
-                                {(c as any).hackerRankUrl && " • HackerRank"}
-                                {(c as any).results && " • Results posted"}
+                                {c.hackerRankUrl && " • HackerRank"}
+                                {c.results && " • Results posted"}
                               </p>
                               <p className="text-xs text-gray-500">
                                 Starts: {startTime.toLocaleString()}
                               </p>
-                              {(c as any).hackerRankUrl && (
+                              {c.hackerRankUrl && (
                                 <a
-                                  href={(c as any).hackerRankUrl}
+                                  href={c.hackerRankUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-xs text-blue-400 hover:text-blue-300 underline"

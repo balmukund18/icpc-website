@@ -1,22 +1,16 @@
 import prisma from "../models/prismaClient";
 
-export const createContest = async (data: any) => {
+export const createContest = async (data: {
+  title: string;
+  hackerRankUrl?: string;
+  timer: number;
+  startTime: string;
+}) => {
   return prisma.contest.create({ data });
 };
 
 export const getContest = async (id: string) => {
   return prisma.contest.findUnique({ where: { id } });
-};
-
-export const addProblem = async (contestId: string, problem: any) => {
-  const c = await prisma.contest.findUnique({ where: { id: contestId } });
-  let problems: any = c?.problems;
-  if (!Array.isArray(problems)) problems = [];
-  problems.push(problem);
-  return prisma.contest.update({
-    where: { id: contestId },
-    data: { problems },
-  });
 };
 
 export const listContests = async () =>
@@ -29,13 +23,11 @@ export const saveResults = async (contestId: string, results: any) => {
 };
 
 export const userHistory = async (userId: string) => {
-  // More efficient: query contests with results containing the user
-  // Filter by userId in results array instead of loading all contests
   const contests = await prisma.contest.findMany({
     orderBy: { createdAt: "desc" },
   });
 
-  // Filter contests where user has results (in memory)
+  // Filter contests where user has results
   const filtered = contests.filter((c) => {
     const res = c.results as any[] | undefined;
     return Array.isArray(res) && res.some((r: any) => r.userId === userId);
@@ -50,30 +42,7 @@ export const getContestSubmissions = async (contestId: string) => {
   });
 };
 
-export const getUserSubmissions = async (userId: string) => {
-  return prisma.contestSubmission.findMany({
-    where: { userId },
-    orderBy: { createdAt: "desc" },
-  });
-};
-
-export const getUserContestSubmissions = async (
-  contestId: string,
-  userId: string,
-) => {
-  return prisma.contestSubmission.findMany({
-    where: { contestId, userId },
-    orderBy: { createdAt: "desc" },
-  });
-};
-
-export const getSubmissionById = async (id: string) => {
-  return prisma.contestSubmission.findUnique({ where: { id } });
-};
-
 export const deleteContest = async (id: string) => {
-  // First delete all submissions for this contest
   await prisma.contestSubmission.deleteMany({ where: { contestId: id } });
-  // Then delete the contest
   return prisma.contest.delete({ where: { id } });
 };

@@ -8,6 +8,7 @@ const MAX_SUBMISSIONS_PER_TASK = 2;
 export const createTask = async (data: {
   title: string;
   description: string;
+  leetcodeSlug?: string;
   points?: number;
   assignedTo?: string[];
   dueDate?: Date;
@@ -16,6 +17,7 @@ export const createTask = async (data: {
     data: {
       title: data.title,
       description: data.description,
+      leetcodeSlug: data.leetcodeSlug || null,
       points: data.points || 0,
       assignedTo: data.assignedTo ? data.assignedTo : Prisma.JsonNull,
       dueDate: data.dueDate || null,
@@ -32,9 +34,9 @@ export const getAllTasks = async (userId?: string) => {
       },
       submissions: userId
         ? {
-            where: { userId },
-            orderBy: { createdAt: "desc" },
-          }
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+        }
         : false,
     },
     orderBy: { createdAt: "desc" },
@@ -74,9 +76,9 @@ export const getTaskById = async (taskId: string, userId?: string) => {
       },
       submissions: userId
         ? {
-            where: { userId },
-            orderBy: { createdAt: "desc" },
-          }
+          where: { userId },
+          orderBy: { createdAt: "desc" },
+        }
         : false,
     },
   });
@@ -109,6 +111,7 @@ export const updateTask = async (
   data: {
     title?: string;
     description?: string;
+    leetcodeSlug?: string | null;
     points?: number;
     assignedTo?: string[] | null;
     dueDate?: Date | null;
@@ -118,6 +121,7 @@ export const updateTask = async (
 
   if (data.title !== undefined) updateData.title = data.title;
   if (data.description !== undefined) updateData.description = data.description;
+  if (data.leetcodeSlug !== undefined) updateData.leetcodeSlug = data.leetcodeSlug;
   if (data.points !== undefined) updateData.points = data.points;
   if (data.dueDate !== undefined) updateData.dueDate = data.dueDate;
   if (data.assignedTo !== undefined) {

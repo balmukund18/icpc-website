@@ -7,10 +7,10 @@ import { body } from "express-validator";
 
 const router = Router();
 
-// Stricter rate limiting for auth endpoints (5 attempts per 15 minutes)
+// Rate limiting for auth endpoints (20 attempts per 15 minutes)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 20,
   message: { error: "Too many attempts, please try again after 15 minutes" },
   standardHeaders: true,
   legacyHeaders: false,

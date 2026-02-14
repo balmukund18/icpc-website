@@ -1,139 +1,113 @@
 "use client";
 
-import { useEffect, useState, Fragment } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
-  Users,
+  GraduationCap,
   Search,
-  RefreshCw,
-  ChevronDown,
-  ChevronUp,
-  Trophy,
-  Medal,
+  Briefcase,
+  MapPin,
+  Linkedin,
+  Mail,
   Phone,
   ExternalLink,
-  User,
   Loader2,
+  Users,
+  Building2,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
-import { getStudentsWithRanks, StudentWithRank } from "@/lib/alumniService";
+import { getAlumniList, AlumniProfile } from "@/lib/alumniService";
 import { CP_PLATFORMS } from "@/lib/profileService";
 
-export default function AlumniDashboardPage() {
-  const user = useAuthStore((state) => state.user);
+export default function AlumniNetworkPage() {
   const isAuthenticated = useAuthStore((state) => !!state.token);
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
   const router = useRouter();
 
-  const [students, setStudents] = useState<StudentWithRank[]>([]);
+  const [alumni, setAlumni] = useState<AlumniProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<"rank" | "name" | "points">("rank");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
-    if (hasHydrated && isAuthenticated && user?.role !== "ALUMNI") {
-      router.push("/dashboard");
+    if (hasHydrated && !isAuthenticated) {
+      router.push("/login");
     }
-  }, [isAuthenticated, hasHydrated, user, router]);
+  }, [isAuthenticated, hasHydrated, router]);
 
   useEffect(() => {
-    if (hasHydrated && user?.role === "ALUMNI") {
-      fetchStudents();
+    if (hasHydrated && isAuthenticated) {
+      fetchAlumni();
     }
-  }, [hasHydrated, user]);
+  }, [hasHydrated, isAuthenticated]);
 
-  const fetchStudents = async () => {
+  const fetchAlumni = async () => {
     setLoading(true);
     try {
-      const data = await getStudentsWithRanks();
-      setStudents(data);
+      const data = await getAlumniList();
+      setAlumni(data);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(
-        err.response?.data?.message || "Failed to fetch students"
-      );
+      toast.error(err.response?.data?.message || "Failed to fetch alumni");
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleExpand = (studentId: string) => {
-    setExpandedStudentId(expandedStudentId === studentId ? null : studentId);
-  };
-
-  const handleSort = (column: "rank" | "name" | "points") => {
-    if (sortBy === column) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(column);
-      setSortOrder(column === "rank" ? "asc" : "desc");
-    }
-  };
-
-  // Filter and sort students
-  const filteredStudents = students
-    .filter((student) => {
-      const query = searchQuery.toLowerCase();
-      return (
-        student.name.toLowerCase().includes(query) ||
-        student.email.toLowerCase().includes(query)
-      );
-    })
-    .sort((a, b) => {
-      let comparison = 0;
-      switch (sortBy) {
-        case "rank":
-          comparison = a.rank - b.rank;
-          break;
-        case "name":
-          comparison = a.name.localeCompare(b.name);
-          break;
-        case "points":
-          comparison = a.totalPoints - b.totalPoints;
-          break;
-      }
-      return sortOrder === "asc" ? comparison : -comparison;
-    });
-
-  const getRankIcon = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return <span className="text-yellow-400 text-lg">🥇</span>;
-      case 2:
-        return <span className="text-gray-300 text-lg">🥈</span>;
-      case 3:
-        return <span className="text-amber-600 text-lg">🥉</span>;
-      default:
-        return <span className="text-gray-500 font-mono">{rank}</span>;
-    }
-  };
+  const filteredAlumni = alumni.filter((a) => {
+    const query = searchQuery.toLowerCase();
+    const name = a.profile?.name?.toLowerCase() || "";
+    const company = a.profile?.company?.toLowerCase() || "";
+    const position = a.profile?.position?.toLowerCase() || "";
+    const branch = a.profile?.branch?.toLowerCase() || "";
+    return (
+      name.includes(query) ||
+      company.includes(query) ||
+      position.includes(query) ||
+      branch.includes(query)
+    );
+  });
 
   const getPlatformUrl = (platform: string, handle: string): string => {
+    // If the handle is already a full URL, return it directly
+    if (handle.startsWith("http://") || handle.startsWith("https://")) {
+      return handle;
+    }
+    // Strip any accidental domain prefix (e.g. "leetcode.com/username" -> "username")
+    const domainPatterns: Record<string, RegExp> = {
+      leetcode: /^(?:www\.)?leetcode\.com\/(?:u\/)?/i,
+      codeforces: /^(?:www\.)?codeforces\.com\/profile\//i,
+      codechef: /^(?:www\.)?codechef\.com\/users\//i,
+      atcoder: /^(?:www\.)?atcoder\.jp\/users\//i,
+      hackerrank: /^(?:www\.)?hackerrank\.com\//i,
+      github: /^(?:www\.)?github\.com\//i,
+    };
+    let cleanHandle = handle.trim();
+    if (domainPatterns[platform]) {
+      cleanHandle = cleanHandle.replace(domainPatterns[platform], "");
+    }
+    // Remove trailing slashes
+    cleanHandle = cleanHandle.replace(/\/+$/, "");
     const urls: Record<string, string> = {
-      leetcode: `https://leetcode.com/${handle}`,
-      codeforces: `https://codeforces.com/profile/${handle}`,
-      codechef: `https://www.codechef.com/users/${handle}`,
-      atcoder: `https://atcoder.jp/users/${handle}`,
-      hackerrank: `https://www.hackerrank.com/${handle}`,
-      github: `https://github.com/${handle}`,
+      leetcode: `https://leetcode.com/${cleanHandle}`,
+      codeforces: `https://codeforces.com/profile/${cleanHandle}`,
+      codechef: `https://www.codechef.com/users/${cleanHandle}`,
+      atcoder: `https://atcoder.jp/users/${cleanHandle}`,
+      hackerrank: `https://www.hackerrank.com/${cleanHandle}`,
+      github: `https://github.com/${cleanHandle}`,
     };
     return urls[platform] || "#";
   };
 
-  if (!hasHydrated || (isAuthenticated && user?.role !== "ALUMNI")) {
+  if (!hasHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
         <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
@@ -143,332 +117,245 @@ export default function AlumniDashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Users className="h-6 w-6" />
-              Alumni Dashboard
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+              <GraduationCap className="h-7 w-7 sm:h-8 sm:w-8 text-purple-400" />
+              Alumni Network
             </h1>
-            <p className="text-sm text-gray-400">
-              View student rankings and profiles
+            <p className="text-sm sm:text-base text-muted-foreground mt-1">
+              Connect with alumni for mentorship, guidance, and career advice
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/profile")}
-              className="gap-2"
-            >
-              <User className="h-4 w-4" />
-              Edit Profile
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchStudents}
-              className="gap-2"
-              disabled={loading}
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchAlumni}
+            className="gap-2 self-start sm:self-auto"
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
+
+        {/* Stats */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-purple-500/20 rounded-lg">
+                  <Users className="h-5 w-5 text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">Total Alumni</p>
+                  <p className="text-xl font-bold">{alumni.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gray-900 border-gray-800">
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-blue-500/20 rounded-lg">
+                  <Building2 className="h-5 w-5 text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">Companies</p>
+                  <p className="text-xl font-bold">
+                    {new Set(alumni.map((a) => a.profile?.company).filter(Boolean)).size}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gray-900 border-gray-800 col-span-2 lg:col-span-1">
+            <CardContent className="pt-5 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-green-500/20 rounded-lg">
+                  <Linkedin className="h-5 w-5 text-green-400" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">On LinkedIn</p>
+                  <p className="text-xl font-bold">
+                    {alumni.filter((a) => a.profile?.linkedIn).length}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search by name, company, position, or branch..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-gray-900 border-gray-800 pl-10"
+          />
+        </div>
+
+        {/* Alumni Cards Grid */}
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
           </div>
-        </div>
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
+        ) : filteredAlumni.length === 0 ? (
           <Card className="bg-gray-900 border-gray-800">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-blue-500/20 rounded-lg">
-                  <Users className="h-6 w-6 text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400">Total Students</p>
-                  <p className="text-2xl font-bold">{students.length}</p>
-                </div>
-              </div>
+            <CardContent className="py-12 text-center">
+              <GraduationCap className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400 text-lg">
+                {searchQuery ? "No alumni match your search" : "No alumni profiles available yet"}
+              </p>
+              <p className="text-gray-500 text-sm mt-1">
+                {searchQuery ? "Try a different search term" : "Check back later"}
+              </p>
             </CardContent>
           </Card>
-
-          <Card className="bg-gray-900 border-gray-800">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-yellow-500/20 rounded-lg">
-                  <Trophy className="h-6 w-6 text-yellow-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400">Top Scorer</p>
-                  <p className="text-xl font-bold truncate">
-                    {students[0]?.name || "N/A"}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gray-900 border-gray-800">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-purple-500/20 rounded-lg">
-                  <Medal className="h-6 w-6 text-purple-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400">Total Points Earned</p>
-                  <p className="text-2xl font-bold">
-                    {students.reduce((sum, s) => sum + s.totalPoints, 0)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Students Leaderboard */}
-        <Card className="bg-gray-900 border-gray-800">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-400" />
-              Student Leaderboard
-            </CardTitle>
-            <CardDescription>
-              View all students ranked by their total points from verified task submissions
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/* Search */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search by name or email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-gray-800 border-gray-700 pl-10"
-              />
-            </div>
-
-            {/* Table */}
-            <div className="bg-gray-800/50 rounded-lg border border-gray-700 overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-gray-800">
-                  <tr>
-                    <th
-                      className="px-4 py-3 text-left text-sm font-medium text-gray-400 cursor-pointer hover:text-white"
-                      onClick={() => handleSort("rank")}
-                    >
-                      <div className="flex items-center gap-1">
-                        Rank
-                        {sortBy === "rank" && (
-                          sortOrder === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+        ) : (
+          <>
+            <div className="grid gap-4 sm:gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+              {filteredAlumni.map((alumnus) => (
+                <Card
+                  key={alumnus.id}
+                  className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-colors group"
+                >
+                  <CardContent className="p-5">
+                    {/* Name & Branch */}
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-white group-hover:text-purple-300 transition-colors">
+                        {alumnus.profile?.name || "Unknown"}
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        {alumnus.profile?.branch && (
+                          <span className="text-xs px-2 py-0.5 bg-gray-800 text-gray-400 rounded-full">
+                            {alumnus.profile.branch}
+                          </span>
+                        )}
+                        {alumnus.profile?.graduationYear && (
+                          <span className="text-xs px-2 py-0.5 bg-purple-500/15 text-purple-400 rounded-full">
+                            Class of {alumnus.profile.graduationYear}
+                          </span>
                         )}
                       </div>
-                    </th>
-                    <th
-                      className="px-4 py-3 text-left text-sm font-medium text-gray-400 cursor-pointer hover:text-white"
-                      onClick={() => handleSort("name")}
-                    >
-                      <div className="flex items-center gap-1">
-                        Name
-                        {sortBy === "name" && (
-                          sortOrder === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
-                        )}
+                    </div>
+
+                    {/* Professional Info */}
+                    {(alumnus.profile?.company || alumnus.profile?.position) && (
+                      <div className="flex items-start gap-2 mb-3">
+                        <Briefcase className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm">
+                          {alumnus.profile?.position && (
+                            <span className="text-gray-200">{alumnus.profile.position}</span>
+                          )}
+                          {alumnus.profile?.position && alumnus.profile?.company && (
+                            <span className="text-gray-500"> at </span>
+                          )}
+                          {alumnus.profile?.company && (
+                            <span className="text-blue-400 font-medium">{alumnus.profile.company}</span>
+                          )}
+                        </div>
                       </div>
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
-                      Email
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
-                      Branch
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
-                      Year
-                    </th>
-                    <th
-                      className="px-4 py-3 text-left text-sm font-medium text-gray-400 cursor-pointer hover:text-white"
-                      onClick={() => handleSort("points")}
-                    >
-                      <div className="flex items-center gap-1">
-                        Points
-                        {sortBy === "points" && (
-                          sortOrder === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
-                        )}
+                    )}
+
+                    {/* Location */}
+                    {alumnus.profile?.location && (
+                      <div className="flex items-center gap-2 mb-3">
+                        <MapPin className="h-4 w-4 text-green-400 flex-shrink-0" />
+                        <span className="text-sm text-gray-400">{alumnus.profile.location}</span>
                       </div>
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
-                      Details
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {loading ? (
-                    <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center">
-                        <Loader2 className="h-6 w-6 animate-spin mx-auto text-gray-400" />
-                      </td>
-                    </tr>
-                  ) : filteredStudents.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={7}
-                        className="px-4 py-8 text-center text-gray-500"
-                      >
-                        {searchQuery ? "No students match your search" : "No students found"}
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredStudents.map((student) => (
-                      <Fragment key={student.id}>
-                        <tr
-                          className={`hover:bg-gray-800/50 cursor-pointer ${
-                            expandedStudentId === student.id ? "bg-gray-800/30" : ""
-                          }`}
-                          onClick={() => toggleExpand(student.id)}
-                        >
-                          <td className="px-4 py-3">
-                            <div className="flex items-center justify-center w-8">
-                              {getRankIcon(student.rank)}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 font-medium">{student.name}</td>
-                          <td className="px-4 py-3 text-sm text-gray-400">
-                            {student.email}
-                          </td>
-                          <td className="px-4 py-3 text-sm">{student.branch}</td>
-                          <td className="px-4 py-3 text-sm">
-                            {student.year > 0 ? `${student.year}${getYearSuffix(student.year)} Year` : "N/A"}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-sm font-medium">
-                              {student.totalPoints} pts
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleExpand(student.id);
-                              }}
+                    )}
+
+                    {/* Bio */}
+                    {alumnus.profile?.bio && (
+                      <p className="text-sm text-gray-400 mb-4 line-clamp-2 leading-relaxed">
+                        {alumnus.profile.bio}
+                      </p>
+                    )}
+
+                    {/* CP Handles */}
+                    {alumnus.profile?.handles && Object.keys(alumnus.profile.handles).length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-4">
+                        {CP_PLATFORMS.map((platform) => {
+                          const handle = alumnus.profile?.handles?.[platform.key];
+                          if (!handle) return null;
+                          return (
+                            <a
+                              key={platform.key}
+                              href={getPlatformUrl(platform.key, handle)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs text-gray-300 transition-colors"
+                              onClick={(e) => e.stopPropagation()}
                             >
-                              {expandedStudentId === student.id ? (
-                                <ChevronUp className="h-4 w-4" />
-                              ) : (
-                                <ChevronDown className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </td>
-                        </tr>
-                        {/* Expanded Details Row */}
-                        {expandedStudentId === student.id && (
-                          <tr className="bg-gray-800/20">
-                            <td colSpan={7} className="px-4 py-4">
-                              <div className="grid gap-4 md:grid-cols-2">
-                                {/* Contact Info */}
-                                <div className="space-y-2">
-                                  <h4 className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                                    <Phone className="h-4 w-4" />
-                                    Contact Information
-                                  </h4>
-                                  <div className="bg-gray-800 rounded-lg p-3 space-y-2">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-gray-400 text-sm">Email:</span>
-                                      <a
-                                        href={`mailto:${student.email}`}
-                                        className="text-blue-400 hover:underline text-sm"
-                                      >
-                                        {student.email}
-                                      </a>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-gray-400 text-sm">Phone:</span>
-                                      {student.contact ? (
-                                        <a
-                                          href={`tel:${student.contact}`}
-                                          className="text-blue-400 hover:underline text-sm"
-                                        >
-                                          {student.contact}
-                                        </a>
-                                      ) : (
-                                        <span className="text-gray-500 text-sm">Not provided</span>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-gray-400 text-sm">Joined:</span>
-                                      <span className="text-sm">
-                                        {new Date(student.createdAt).toLocaleDateString()}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
+                              {platform.label}
+                              <ExternalLink className="h-3 w-3 text-gray-500" />
+                            </a>
+                          );
+                        })}
+                      </div>
+                    )}
 
-                                {/* CP Handles */}
-                                <div className="space-y-2">
-                                  <h4 className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                                    <ExternalLink className="h-4 w-4" />
-                                    Competitive Programming Handles
-                                  </h4>
-                                  <div className="bg-gray-800 rounded-lg p-3">
-                                    {student.handles && Object.keys(student.handles).length > 0 ? (
-                                      <div className="grid gap-2 grid-cols-2">
-                                        {CP_PLATFORMS.map((platform) => {
-                                          const handle = student.handles?.[platform.key];
-                                          if (!handle) return null;
-                                          return (
-                                            <a
-                                              key={platform.key}
-                                              href={getPlatformUrl(platform.key, handle)}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="flex items-center gap-2 px-2 py-1.5 bg-gray-700/50 rounded hover:bg-gray-700 transition-colors"
-                                            >
-                                              <span className="text-xs text-gray-400">
-                                                {platform.label}:
-                                              </span>
-                                              <span className="text-sm text-blue-400 truncate">
-                                                {handle}
-                                              </span>
-                                              <ExternalLink className="h-3 w-3 text-gray-500 flex-shrink-0" />
-                                            </a>
-                                          );
-                                        })}
-                                      </div>
-                                    ) : (
-                                      <p className="text-gray-500 text-sm">No handles provided</p>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
+                    {/* Divider */}
+                    <div className="border-t border-gray-800 pt-3 mt-auto">
+                      {/* Contact Actions */}
+                      <div className="flex flex-wrap gap-2">
+                        {alumnus.profile?.linkedIn && (
+                          <a
+                            href={alumnus.profile.linkedIn.startsWith("http") ? alumnus.profile.linkedIn : `https://${alumnus.profile.linkedIn}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1.5 text-xs h-8 bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300"
+                            >
+                              <Linkedin className="h-3.5 w-3.5" />
+                              LinkedIn
+                            </Button>
+                          </a>
                         )}
-                      </Fragment>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                        <a href={`mailto:${alumnus.email}`}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5 text-xs h-8 bg-gray-800 border-gray-700 hover:bg-gray-700"
+                          >
+                            <Mail className="h-3.5 w-3.5" />
+                            Email
+                          </Button>
+                        </a>
+                        {alumnus.profile?.contact && (
+                          <a href={`tel:${alumnus.profile.contact}`}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1.5 text-xs h-8 bg-gray-800 border-gray-700 hover:bg-gray-700"
+                            >
+                              <Phone className="h-3.5 w-3.5" />
+                              Call
+                            </Button>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
 
             {/* Results count */}
-            {!loading && filteredStudents.length > 0 && (
-              <p className="mt-3 text-sm text-gray-500">
-                Showing {filteredStudents.length} of {students.length} students
-              </p>
-            )}
-          </CardContent>
-        </Card>
+            <p className="text-sm text-gray-500">
+              Showing {filteredAlumni.length} of {alumni.length} alumni
+            </p>
+          </>
+        )}
       </div>
     </DashboardLayout>
   );
-}
-
-// Helper function for year suffix
-function getYearSuffix(year: number): string {
-  if (year === 1) return "st";
-  if (year === 2) return "nd";
-  if (year === 3) return "rd";
-  return "th";
 }

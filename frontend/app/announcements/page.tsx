@@ -29,11 +29,11 @@ export default function AnnouncementsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
-        <div className="max-w-4xl mx-auto space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
           {/* Header */}
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-primary flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-primary flex items-center gap-3">
               <Megaphone className="h-8 w-8 text-yellow-500" />
               Announcements
             </h1>
@@ -55,11 +55,10 @@ export default function AnnouncementsPage() {
               {announcements.map((announcement) => (
                 <Card
                   key={announcement.id}
-                  className={`bg-card border-border ${
-                    announcement.pinned
-                      ? "border-l-4 border-l-yellow-500 bg-yellow-500/5"
-                      : ""
-                  }`}
+                  className={`bg-card border-border ${announcement.pinned
+                    ? "border-l-4 border-l-yellow-500 bg-yellow-500/5"
+                    : ""
+                    }`}
                 >
                   <CardHeader className="pb-2">
                     <div className="flex items-start gap-3">

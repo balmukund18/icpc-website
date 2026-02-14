@@ -108,17 +108,7 @@ export const googleCallback = async (req: Request, res: Response) => {
 
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
 
-    // Check if user is approved
-    if (!user.approved) {
-      // Redirect to pending approval page
-      return res.redirect(
-        `${frontendUrl}/auth/pending-approval?email=${encodeURIComponent(
-          user.email
-        )}&userId=${user.id}`
-      );
-    }
-
-    // Generate JWT token for approved user
+    // Generate JWT token for user (no approval needed)
     const token = googleAuthService.generateToken(user.id, user.role);
 
     // Redirect to frontend with token

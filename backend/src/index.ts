@@ -20,7 +20,6 @@ import dashboardRoutes from "./routes/dashboardRoutes";
 import path from "path";
 import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "../swagger.json";
-import judgeRoutes from "./routes/judgeRoutes";
 import { errorHandler } from "./utils/errorHandler";
 import { startJobs } from "./jobs/cron";
 import passport from "./config/passport";
@@ -111,7 +110,6 @@ app.use("/api/alumni", alumniRoutes);
 app.use("/api/gamification", gamificationRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
-app.use("/api/judge", judgeRoutes);
 
 // Serve a simple Swagger/OpenAPI JSON at /api/docs
 app.get("/api/docs", (req, res) => {

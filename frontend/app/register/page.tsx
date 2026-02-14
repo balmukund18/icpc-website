@@ -49,7 +49,7 @@ export default function RegisterPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       await api.post("/auth/register", values);
-      toast.success("Registration successful. Please wait for admin approval.");
+      toast.success("Registration successful! You can now log in.");
       router.push("/login");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };

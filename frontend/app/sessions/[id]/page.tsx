@@ -122,8 +122,8 @@ export default function SessionDetailPage() {
   if (error) {
     return (
       <DashboardLayout>
-        <div className="p-8">
-          <div className="max-w-4xl mx-auto">
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6">
             <Card className="bg-red-500/10 border-red-500/30">
               <CardContent className="py-12 text-center">
                 <AlertCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
@@ -155,7 +155,7 @@ export default function SessionDetailPage() {
   return (
     <DashboardLayout>
       <div className="p-8">
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8">
           {/* Header with Back Button */}
           <div className="flex items-center justify-between">
             <Button

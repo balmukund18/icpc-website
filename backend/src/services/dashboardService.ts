@@ -1,8 +1,8 @@
 import prisma from '../models/prismaClient';
 import { getProfile } from './profileService';
 import { listSessions } from './sessionService';
-import { getAllTasks, getUserPoints } from './taskService';
-import { listContests, getUserSubmissions as getContestSubmissions } from './contestService';
+import { getAllTasks, getUserPoints, getUserSubmissions } from './taskService';
+import { listContests } from './contestService';
 import { listAnnouncements } from './announcementService';
 import { leaderboard as getLeaderboard } from './gamificationService';
 
@@ -32,25 +32,25 @@ export const getDashboardData = async (userId: string) => {
   ] = await Promise.all([
     // Profile - returns null if not found
     getProfile(userId).catch(() => null),
-    
+
     // Contests list
     listContests().catch(() => []),
-    
-    // User's contest submissions
-    getContestSubmissions(userId).catch(() => []),
-    
+
+    // User's task submissions (primary submission activity)
+    getUserSubmissions(userId).catch(() => []),
+
     // All sessions
     listSessions().catch(() => []),
-    
+
     // All announcements (pinned first)
     listAnnouncements().catch(() => []),
-    
+
     // All tasks with user's submission status
     getAllTasks(userId).catch(() => []),
-    
+
     // User's total points
     getUserPoints(userId).catch(() => 0),
-    
+
     // Top 10 leaderboard
     getLeaderboardTop10().catch(() => []),
   ]);
@@ -66,3 +66,4 @@ export const getDashboardData = async (userId: string) => {
     leaderboard,
   };
 };
+

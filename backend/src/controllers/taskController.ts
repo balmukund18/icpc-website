@@ -5,10 +5,11 @@ import { success, fail } from '../utils/response';
 // Create a new task (Admin)
 export const create = async (req: Request, res: Response) => {
   try {
-    const { title, description, points, assignedTo, dueDate } = req.body;
+    const { title, description, points, assignedTo, dueDate, leetcodeSlug } = req.body;
     const task = await taskService.createTask({
       title,
       description: description || '',
+      leetcodeSlug: leetcodeSlug || undefined,
       points: points ? parseInt(points, 10) : 0,
       assignedTo: assignedTo || undefined,
       dueDate: dueDate ? new Date(dueDate) : undefined,
@@ -47,11 +48,12 @@ export const getOne = async (req: any, res: Response) => {
 export const update = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, description, points, assignedTo, dueDate } = req.body;
+    const { title, description, points, assignedTo, dueDate, leetcodeSlug } = req.body;
 
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
+    if (leetcodeSlug !== undefined) updateData.leetcodeSlug = leetcodeSlug;
     if (points !== undefined) updateData.points = parseInt(points, 10);
     if (assignedTo !== undefined) updateData.assignedTo = assignedTo;
     if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
@@ -79,10 +81,10 @@ export const assign = async (req: Request, res: Response) => {
   try {
     const { taskId } = req.params;
     const { userIds } = req.body;
-    
+
     // Support both single userId (legacy) and userIds array
     const ids = userIds || (req.body.userId ? [req.body.userId] : []);
-    
+
     const task = await taskService.assignTask(taskId, ids);
     success(res, task);
   } catch (err: any) {
@@ -106,7 +108,7 @@ export const submit = async (req: any, res: Response) => {
   try {
     const { taskId } = req.params;
     const { link } = req.body;
-    
+
     if (!link) {
       return fail(res, 'Solution link is required', 400);
     }
@@ -123,7 +125,7 @@ export const verify = async (req: Request, res: Response) => {
   try {
     const { subId } = req.params;
     const { points } = req.body;
-    
+
     const customPoints = points !== undefined ? parseInt(points, 10) : undefined;
     const submission = await taskService.verifySubmission(subId, customPoints);
     success(res, submission);
@@ -160,5 +162,55 @@ export const myPoints = async (req: any, res: Response) => {
     success(res, { points });
   } catch (err: any) {
     fail(res, err.message);
+  }
+};
+
+// Verify a submission via LeetCode (Auth)
+export const verifyLeetCode = async (req: any, res: Response) => {
+  try {
+    const { taskId } = req.params;
+    const { leetcodeUsername } = req.body;
+    const userId = req.user.id;
+
+    if (!leetcodeUsername) {
+      return fail(res, 'LeetCode username is required', 400);
+    }
+
+    // Get task to check it has a leetcodeSlug
+    const task = await taskService.getTaskById(taskId, userId);
+    if (!task.leetcodeSlug) {
+      return fail(res, 'This task does not support LeetCode verification', 400);
+    }
+
+    // Check if user can submit
+    if (!task.canSubmit) {
+      return fail(res, 'You cannot submit to this task', 400);
+    }
+
+    // Verify via LeetCode API
+    const { verifyLeetCodeSubmission } = await import('../services/verificationService');
+    const result = await verifyLeetCodeSubmission(
+      leetcodeUsername,
+      task.leetcodeSlug,
+      168 // 7-day window for practice tasks
+    );
+
+    if (!result.verified) {
+      return fail(res, 'Problem not found in your recent LeetCode submissions. Solve it on LeetCode first.', 400);
+    }
+
+    // Auto-create a verified submission
+    const link = `https://leetcode.com/problems/${task.leetcodeSlug}/`;
+    const submission = await taskService.submitTask(taskId, userId, link);
+    // Auto-verify it
+    const verified = await taskService.verifySubmission(submission.id);
+
+    success(res, {
+      verified: true,
+      submission: verified,
+      message: 'LeetCode submission verified! Points awarded.',
+    }, 201);
+  } catch (err: any) {
+    fail(res, err.message, 400);
   }
 };

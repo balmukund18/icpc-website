@@ -33,6 +33,7 @@ model Profile {
   year           Int
   contact        String
   handles        Json?
+  leetcodeHandle String? // For LeetCode verification
   // Alumni-specific fields (nullable for students)
   graduationYear Int?
   company        String?
@@ -44,14 +45,15 @@ model Profile {
 }
 
 model Task {
-  id          String       @id @default(cuid())
-  title       String
-  description String
-  points      Int          @default(0)
-  assignedTo  Json?        // String[] - null = open to all, array = specific user IDs
-  dueDate     DateTime?
-  createdAt   DateTime     @default(now())
-  submissions Submission[]
+  id           String       @id @default(cuid())
+  title        String
+  description  String
+  leetcodeSlug String?      // e.g. "two-sum" - enables LeetCode auto-verification
+  points       Int          @default(0)
+  assignedTo   Json?        // String[] - null = open to all, array = specific user IDs
+  dueDate      DateTime?
+  createdAt    DateTime     @default(now())
+  submissions  Submission[]
 }
 
 model Submission {
@@ -73,14 +75,15 @@ enum SubmissionStatus {
 }
 
 model Contest {
-  id          String              @id @default(cuid())
-  title       String
-  problems    Json?
-  timer       Int
-  results     Json?
-  createdAt   DateTime            @default(now())
-  startTime   DateTime
-  submissions ContestSubmission[]
+  id            String              @id @default(cuid())
+  title         String
+  hackerRankUrl String?
+  problems      Json?
+  timer         Int
+  results       Json?
+  createdAt     DateTime            @default(now())
+  startTime     DateTime
+  submissions   ContestSubmission[]
 }
 
 model Session {
@@ -131,12 +134,10 @@ model ContestSubmission {
   contestId  String
   problemIdx Int
   userId     String
-  token      String?
   result     Json?
   status     String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  tokens     String[]
   contest    Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

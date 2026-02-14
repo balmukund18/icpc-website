@@ -60,7 +60,7 @@ export const findOrCreateGoogleUser = async (profile: GoogleProfile) => {
         googleEmail: email,
         password: null, // No password for OAuth users
         role: "STUDENT",
-        approved: false, // Require admin approval for Google OAuth users
+        approved: true, // Auto-approve all users (no admin approval needed)
         profile: {
           create: {
             name:

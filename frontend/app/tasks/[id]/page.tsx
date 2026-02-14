@@ -79,8 +79,8 @@ export default function TaskDetailPage() {
       const err = error as { response?: { data?: { error?: string } }; message?: string };
       toast.error(
         err.response?.data?.error ||
-          err.message ||
-          "Failed to submit solution"
+        err.message ||
+        "Failed to submit solution"
       );
     } finally {
       setSubmitting(false);
@@ -100,8 +100,8 @@ export default function TaskDetailPage() {
   if (error) {
     return (
       <DashboardLayout>
-        <div className="p-8">
-          <div className="max-w-4xl mx-auto">
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6">
             <Card className="bg-red-500/10 border-red-500/30">
               <CardContent className="py-12 text-center">
                 <AlertCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
@@ -134,7 +134,7 @@ export default function TaskDetailPage() {
   return (
     <DashboardLayout>
       <div className="p-8">
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8">
           {/* Header with Back Button */}
           <div className="flex items-center justify-between">
             <Button
@@ -225,19 +225,18 @@ export default function TaskDetailPage() {
                       <XCircle className="h-5 w-5 text-red-400" />
                     )}
                     <span
-                      className={`text-sm font-medium ${
-                        latestSubmission.status === "VERIFIED"
-                          ? "text-green-400"
-                          : latestSubmission.status === "PENDING"
+                      className={`text-sm font-medium ${latestSubmission.status === "VERIFIED"
+                        ? "text-green-400"
+                        : latestSubmission.status === "PENDING"
                           ? "text-yellow-400"
                           : "text-red-400"
-                      }`}
+                        }`}
                     >
                       {latestSubmission.status === "VERIFIED"
                         ? `Verified (+${latestSubmission.points} pts)`
                         : latestSubmission.status === "PENDING"
-                        ? "Awaiting verification"
-                        : "Rejected"}
+                          ? "Awaiting verification"
+                          : "Rejected"}
                     </span>
                   </div>
                   <a

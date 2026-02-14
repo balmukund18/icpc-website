@@ -55,6 +55,7 @@ export interface Task {
   id: string;
   title: string;
   description: string;
+  leetcodeSlug?: string | null;
   points: number;
   dueDate: string | null;
   assignedTo: string[] | null;
@@ -73,6 +74,12 @@ export interface TaskSubmission {
   status: "PENDING" | "VERIFIED" | "REJECTED";
   points: number;
   createdAt: string;
+  task?: {
+    id: string;
+    title: string;
+    points: number;
+    dueDate: string | null;
+  };
 }
 
 export interface LeaderboardEntry {
@@ -86,7 +93,7 @@ export interface LeaderboardEntry {
 export interface DashboardData {
   profile: Profile | null;
   contests: Contest[];
-  submissions: ContestSubmission[];
+  submissions: TaskSubmission[];
   sessions: Session[];
   announcements: Announcement[];
   tasks: Task[];

@@ -11,7 +11,6 @@ import announcementRoutes from "./routes/announcementRoutes";
 import contestRoutes from "./routes/contestRoutes";
 import sessionRoutes from "./routes/sessionRoutes";
 import alumniRoutes from "./routes/alumniRoutes";
-import judgeRoutes from "./routes/judgeRoutes";
 import { errorHandler } from "./utils/errorHandler";
 
 const app = express();
@@ -43,7 +42,7 @@ app.use("/api/announcements", announcementRoutes);
 app.use("/api/contests", contestRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/alumni", alumniRoutes);
-app.use("/api/judge", judgeRoutes);
+
 
 app.use(errorHandler as any);
 

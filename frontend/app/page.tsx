@@ -9,17 +9,17 @@ export default function Home() {
     <div className="relative min-h-screen w-full bg-black overflow-hidden">
       {/* Wave Background */}
       <Waves className="absolute inset-0 h-full w-full" />
-      
+
       {/* Gradient overlay for text visibility */}
       <div className="absolute inset-0 z-[5] bg-[radial-gradient(ellipse_at_center,_black_0%,_black_20%,_transparent_60%)]" />
-      
+
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-20 text-center">
-        <h1 className="text-6xl font-bold text-white">
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 sm:px-12 md:px-20 text-center">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight">
           Welcome to <span className="text-blue-500">ICPC Portal</span>
         </h1>
 
-        <p className="mt-3 text-2xl text-neutral-200">
+        <p className="mt-3 text-lg sm:text-xl md:text-2xl text-neutral-200">
           USICT ACM Student Chapter
         </p>
 

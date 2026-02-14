@@ -103,7 +103,7 @@ export async function createSession(data: {
   };
   if (data.details) payload.details = data.details;
   if (data.date) payload.date = data.date;
-  
+
   const response = await api.post("/sessions", payload);
   return response.data.data || response.data;
 }
@@ -118,7 +118,7 @@ export async function updateSession(
   if (data.details !== undefined) payload.details = data.details;
   if (data.meetLink) payload.meetLink = data.meetLink;
   if (data.date !== undefined) payload.date = data.date;
-  
+
   const response = await api.put(`/sessions/${id}`, payload);
   return response.data.data || response.data;
 }
@@ -131,6 +131,7 @@ export async function deleteSession(id: string): Promise<void> {
 export async function createTask(data: {
   title: string;
   description?: string;
+  leetcodeSlug?: string;
   points: number;
   dueDate?: string;
 }): Promise<Task> {
@@ -188,14 +189,9 @@ export async function rejectBlog(blogId: string, reason?: string): Promise<Blog>
   return response.data.data || response.data;
 }
 
-// Contests (admin-specific)
-export async function getContestSubmissions(contestId: string): Promise<unknown[]> {
-  const response = await api.get(`/contests/${contestId}/submissions`);
-  return response.data.data || response.data;
-}
-
 export async function createContest(data: {
   title: string;
+  hackerRankUrl?: string;
   timer: number; // Duration in minutes (required)
   startTime: string; // ISO date string in UTC (required)
 }): Promise<unknown> {
@@ -203,23 +199,11 @@ export async function createContest(data: {
   return response.data.data || response.data;
 }
 
-export async function addProblemToContest(
+export async function updateContestResults(
   contestId: string,
-  problem: {
-    name: string;
-    description?: string;
-    difficulty?: "Easy" | "Medium" | "Hard";
-    tags?: string[];
-    constraints?: {
-      timeLimit?: number;
-      memoryLimit?: number;
-    };
-    sampleTestCases?: { input: string; output: string }[];
-    hiddenTestCases?: { input: string; output: string }[];
-    testCases?: { input: string; output: string }[]; // Legacy support
-  }
+  results: { rank: number; name: string; score?: number; solved?: number }[]
 ): Promise<unknown> {
-  const response = await api.post(`/contests/${contestId}/problems`, problem);
+  const response = await api.put(`/contests/${contestId}/results`, { results });
   return response.data.data || response.data;
 }
 

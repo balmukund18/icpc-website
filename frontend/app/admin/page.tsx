@@ -47,8 +47,7 @@ import {
 import { toast } from "sonner";
 import {
   getUsers,
-  getPendingUsers,
-  approveUser,
+
   updateUserRole,
   deleteUser,
   getAnnouncements,
@@ -59,8 +58,8 @@ import {
   approveBlog,
   rejectBlog,
   createContest,
-  addProblemToContest,
   deleteContest,
+  updateContestResults,
   User,
   Announcement,
   Blog,
@@ -94,9 +93,16 @@ export default function AdminDashboardPage() {
     text: string;
   } | null>(null);
 
+  // Delete confirmation state
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    userId: string;
+    userEmail: string;
+  } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   // Data states
   const [users, setUsers] = useState<User[]>([]);
-  const [pendingUsers, setPendingUsers] = useState<User[]>([]);
+
   const [contests, setContests] = useState<Contest[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [pendingBlogs, setPendingBlogs] = useState<Blog[]>([]);
@@ -157,29 +163,14 @@ export default function AdminDashboardPage() {
   >("all");
   const [editSelectedUserIds, setEditSelectedUserIds] = useState<string[]>([]);
 
-  // Form states
+  // Contest form states
   const [contestTitle, setContestTitle] = useState("");
   const [contestStartTime, setContestStartTime] = useState("");
   const [contestTimer, setContestTimer] = useState("");
-  const [selectedContestId, setSelectedContestId] = useState("");
-  const [problemName, setProblemName] = useState("");
-  const [problemDescription, setProblemDescription] = useState("");
-  const [problemDifficulty, setProblemDifficulty] = useState<
-    "Easy" | "Medium" | "Hard"
-  >("Medium");
-  const [problemTags, setProblemTags] = useState("");
-  const [problemTimeLimit, setProblemTimeLimit] = useState("1");
-  const [problemMemoryLimit, setProblemMemoryLimit] = useState("256");
-  const [sampleTestCases, setSampleTestCases] = useState("");
-  const [sampleTestCasesError, setSampleTestCasesError] = useState<
-    string | null
-  >(null);
-  const [sampleTestCasesCount, setSampleTestCasesCount] = useState<number>(0);
-  const [hiddenTestCases, setHiddenTestCases] = useState("");
-  const [hiddenTestCasesError, setHiddenTestCasesError] = useState<
-    string | null
-  >(null);
-  const [hiddenTestCasesCount, setHiddenTestCasesCount] = useState<number>(0);
+  const [contestHackerRankUrl, setContestHackerRankUrl] = useState("");
+  // Results entry
+  const [resultsContestId, setResultsContestId] = useState("");
+  const [resultsText, setResultsText] = useState("");
 
   const [sessionTitle, setSessionTitle] = useState("");
   const [sessionDetails, setSessionDetails] = useState("");
@@ -195,6 +186,7 @@ export default function AdminDashboardPage() {
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDesc, setTaskDesc] = useState("");
   const [taskPoints, setTaskPoints] = useState("");
+  const [taskLeetcodeUrl, setTaskLeetcodeUrl] = useState("");
 
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementContent, setAnnouncementContent] = useState("");
@@ -254,12 +246,8 @@ export default function AdminDashboardPage() {
     try {
       switch (tab) {
         case "users":
-          const [allUsers, pending] = await Promise.all([
-            getUsers(),
-            getPendingUsers(),
-          ]);
+          const allUsers = await getUsers();
           setUsers(allUsers);
-          setPendingUsers(pending);
           break;
         case "contests":
           const contestsData = await getContests();
@@ -293,19 +281,7 @@ export default function AdminDashboardPage() {
     setTimeout(() => setMessage(null), 3000);
   };
 
-  const handleApproveUser = async (userId: string) => {
-    try {
-      await approveUser(userId);
-      showMessage("success", "User approved successfully!");
-      fetchDataForTab("users");
-    } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      showMessage(
-        "error",
-        err.response?.data?.message || "Failed to approve user",
-      );
-    }
-  };
+
 
   const handleUpdateRole = async (userId: string, role: string) => {
     try {
@@ -321,7 +297,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleDeleteUser = async (
+  const handleDeleteUser = (
     userId: string,
     userEmail: string,
     userRole: string,
@@ -331,18 +307,16 @@ export default function AdminDashboardPage() {
       showMessage("error", "Cannot delete admin users");
       return;
     }
+    setDeleteConfirm({ userId, userEmail });
+  };
 
-    if (
-      !confirm(
-        `Are you sure you want to delete user "${userEmail}"?\n\nThis will permanently delete all their data including:\n- Profile\n- Task submissions\n- Contest submissions\n- Blogs\n\nThis action cannot be undone.`,
-      )
-    ) {
-      return;
-    }
-
+  const confirmDeleteUser = async () => {
+    if (!deleteConfirm) return;
+    setDeleting(true);
     try {
-      await deleteUser(userId);
+      await deleteUser(deleteConfirm.userId);
       showMessage("success", "User deleted successfully");
+      setDeleteConfirm(null);
       fetchDataForTab("users");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -350,6 +324,8 @@ export default function AdminDashboardPage() {
         "error",
         err.response?.data?.message || "Failed to delete user",
       );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -374,6 +350,7 @@ export default function AdminDashboardPage() {
 
       await createContest({
         title: contestTitle,
+        hackerRankUrl: contestHackerRankUrl || undefined,
         timer: parseInt(contestTimer),
         startTime: utcISOString,
       });
@@ -381,6 +358,7 @@ export default function AdminDashboardPage() {
       setContestTitle("");
       setContestStartTime("");
       setContestTimer("");
+      setContestHackerRankUrl("");
       fetchDataForTab("contests");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -393,124 +371,40 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Validate test cases JSON in real-time
-  const validateTestCases = (
-    value: string,
-    setError: (e: string | null) => void,
-    setCount: (c: number) => void,
-  ) => {
-    if (!value.trim()) {
-      setError(null);
-      setCount(0);
-      return;
-    }
-    try {
-      const parsed = JSON.parse(value);
-      if (!Array.isArray(parsed)) {
-        setError("Must be an array of test cases");
-        setCount(0);
-        return;
-      }
-      for (let i = 0; i < parsed.length; i++) {
-        if (
-          typeof parsed[i].input !== "string" ||
-          typeof parsed[i].output !== "string"
-        ) {
-          setError(
-            `Test case ${i + 1}: must have "input" and "output" as strings`,
-          );
-          setCount(0);
-          return;
-        }
-      }
-      setError(null);
-      setCount(parsed.length);
-    } catch {
-      setError("Invalid JSON format");
-      setCount(0);
-    }
-  };
-
-  const formatTestCasesJSON = (
-    value: string,
-    setValue: (v: string) => void,
-  ) => {
-    if (!value.trim()) return;
-    try {
-      const parsed = JSON.parse(value);
-      setValue(JSON.stringify(parsed, null, 2));
-    } catch {
-      // Can't format invalid JSON
-    }
-  };
-
-  const handleAddProblem = async (e: React.FormEvent) => {
+  const handleSaveResults = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedContestId) {
+    if (!resultsContestId) {
       showMessage("error", "Please select a contest");
       return;
     }
-    if (sampleTestCasesError) {
-      showMessage("error", "Please fix sample test cases JSON errors");
+    if (!resultsText.trim()) {
+      showMessage("error", "Please enter results");
       return;
     }
-    if (hiddenTestCasesError) {
-      showMessage("error", "Please fix hidden test cases JSON errors");
-      return;
-    }
-    if (sampleTestCasesCount === 0) {
-      showMessage("error", "At least 1 sample test case is required");
-      return;
-    }
+
     setLoading(true);
     try {
-      let sampleTCs: { input: string; output: string }[] = [];
-      let hiddenTCs: { input: string; output: string }[] = [];
-
-      if (sampleTestCases.trim()) {
-        sampleTCs = JSON.parse(sampleTestCases);
-      }
-      if (hiddenTestCases.trim()) {
-        hiddenTCs = JSON.parse(hiddenTestCases);
-      }
-
-      // Parse tags from comma-separated string
-      const tags = problemTags
-        .split(",")
-        .map((t) => t.trim())
-        .filter((t) => t.length > 0);
-
-      await addProblemToContest(selectedContestId, {
-        name: problemName,
-        description: problemDescription,
-        difficulty: problemDifficulty,
-        tags: tags.length > 0 ? tags : undefined,
-        constraints: {
-          timeLimit: parseFloat(problemTimeLimit) || 1,
-          memoryLimit: parseInt(problemMemoryLimit) || 256,
-        },
-        sampleTestCases: sampleTCs,
-        hiddenTestCases: hiddenTCs,
+      const lines = resultsText.trim().split("\n").filter((l: string) => l.trim());
+      const results = lines.map((line: string, idx: number) => {
+        const parts = line.split(",").map((p: string) => p.trim());
+        return {
+          rank: idx + 1,
+          name: parts[0] || `User ${idx + 1}`,
+          score: parts[1] ? parseInt(parts[1]) : 0,
+          solved: parts[2] ? parseInt(parts[2]) : undefined,
+        };
       });
-      showMessage("success", "Problem added successfully!");
-      setProblemName("");
-      setProblemDescription("");
-      setProblemDifficulty("Medium");
-      setProblemTags("");
-      setProblemTimeLimit("1");
-      setProblemMemoryLimit("256");
-      setSampleTestCases("");
-      setSampleTestCasesError(null);
-      setSampleTestCasesCount(0);
-      setHiddenTestCases("");
-      setHiddenTestCasesError(null);
-      setHiddenTestCasesCount(0);
+
+      await updateContestResults(resultsContestId, results);
+      showMessage("success", "Results saved successfully!");
+      setResultsText("");
+      setResultsContestId("");
       fetchDataForTab("contests");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       showMessage(
         "error",
-        err.response?.data?.message || "Failed to add problem",
+        err.response?.data?.message || "Failed to save results",
       );
     } finally {
       setLoading(false);
@@ -640,9 +534,17 @@ export default function AdminDashboardPage() {
     e.preventDefault();
     setLoading(true);
     try {
+      // Extract slug from LeetCode URL (e.g. https://leetcode.com/problems/two-sum/ → two-sum)
+      let leetcodeSlug: string | undefined;
+      if (taskLeetcodeUrl.trim()) {
+        const match = taskLeetcodeUrl.match(/leetcode\.com\/problems\/([^/]+)/);
+        leetcodeSlug = match ? match[1] : taskLeetcodeUrl.trim();
+      }
+
       await createTask({
         title: taskTitle,
         description: taskDesc || undefined,
+        leetcodeSlug,
         points: taskPoints ? parseInt(taskPoints) : 0,
         dueDate: taskDueDate || undefined,
         assignedTo:
@@ -653,6 +555,7 @@ export default function AdminDashboardPage() {
       setTaskDesc("");
       setTaskPoints("");
       setTaskDueDate("");
+      setTaskLeetcodeUrl("");
       setTaskAssignmentType("all");
       setSelectedUserIds([]);
       // Invalidate tasks cache to refetch
@@ -786,8 +689,8 @@ export default function AdminDashboardPage() {
       showMessage(
         "error",
         err.response?.data?.error ||
-          err.message ||
-          "Failed to verify submission",
+        err.message ||
+        "Failed to verify submission",
       );
     }
   };
@@ -805,8 +708,8 @@ export default function AdminDashboardPage() {
       showMessage(
         "error",
         err.response?.data?.error ||
-          err.message ||
-          "Failed to reject submission",
+        err.message ||
+        "Failed to reject submission",
       );
     }
   };
@@ -961,7 +864,7 @@ export default function AdminDashboardPage() {
     { id: "blogs", label: "Blogs", icon: <FileText className="h-4 w-4" /> },
   ];
 
-  const displayedUsers = userFilter === "pending" ? pendingUsers : users;
+  const displayedUsers = users;
 
   return (
     <DashboardLayout>
@@ -982,11 +885,10 @@ export default function AdminDashboardPage() {
         {/* Message */}
         {message && (
           <div
-            className={`mb-6 p-4 rounded-lg ${
-              message.type === "success"
-                ? "bg-green-500/20 text-green-400 border border-green-500"
-                : "bg-red-500/20 text-red-400 border border-red-500"
-            }`}
+            className={`mb-6 p-4 rounded-lg ${message.type === "success"
+              ? "bg-green-500/20 text-green-400 border border-green-500"
+              : "bg-red-500/20 text-red-400 border border-red-500"
+              }`}
           >
             {message.text}
           </div>
@@ -1012,22 +914,7 @@ export default function AdminDashboardPage() {
           <div className="space-y-6">
             <div className="flex items-center gap-4">
               <h2 className="text-xl font-semibold">User Management</h2>
-              <Select
-                value={userFilter}
-                onValueChange={(v) => setUserFilter(v as "all" | "pending")}
-              >
-                <SelectTrigger className="w-40 bg-gray-800 border-gray-700">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
-                  <SelectItem value="all">
-                    All Users ({users.length})
-                  </SelectItem>
-                  <SelectItem value="pending">
-                    Pending ({pendingUsers.length})
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <span className="text-sm text-gray-400">({users.length} users)</span>
             </div>
 
             {tabLoading ? (
@@ -1045,9 +932,7 @@ export default function AdminDashboardPage() {
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
                         Role
                       </th>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
-                        Status
-                      </th>
+
                       <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">
                         Joined
                       </th>
@@ -1060,7 +945,7 @@ export default function AdminDashboardPage() {
                     {displayedUsers.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={5}
+                          colSpan={4}
                           className="px-4 py-8 text-center text-gray-500"
                         >
                           No users found
@@ -1087,33 +972,13 @@ export default function AdminDashboardPage() {
                               </SelectContent>
                             </Select>
                           </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`px-2 py-1 rounded text-xs ${
-                                u.approved
-                                  ? "bg-green-500/20 text-green-400"
-                                  : "bg-yellow-500/20 text-yellow-400"
-                              }`}
-                            >
-                              {u.approved ? "Approved" : "Pending"}
-                            </span>
-                          </td>
+
                           <td className="px-4 py-3 text-sm text-gray-400">
                             {new Date(u.createdAt).toLocaleDateString()}
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-2">
-                              {!u.approved && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 text-xs gap-1"
-                                  onClick={() => handleApproveUser(u.id)}
-                                >
-                                  <Check className="h-3 w-3" />
-                                  Approve
-                                </Button>
-                              )}
+
                               {u.role !== "ADMIN" && (
                                 <Button
                                   size="sm"
@@ -1162,6 +1027,18 @@ export default function AdminDashboardPage() {
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label>HackerRank Contest URL</Label>
+                    <Input
+                      placeholder="https://www.hackerrank.com/contests/..."
+                      value={contestHackerRankUrl}
+                      onChange={(e) => setContestHackerRankUrl(e.target.value)}
+                      className="bg-gray-800 border-gray-700"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Link to the HackerRank contest page (students will be redirected here)
+                    </p>
+                  </div>
+                  <div className="space-y-2">
                     <Label>Start Time *</Label>
                     <Input
                       type="datetime-local"
@@ -1195,18 +1072,18 @@ export default function AdminDashboardPage() {
 
             <Card className="bg-gray-900 border-gray-800">
               <CardHeader>
-                <CardTitle className="text-white">Add Problem</CardTitle>
+                <CardTitle className="text-white">Enter Results</CardTitle>
                 <CardDescription>
-                  Add a problem to an existing contest
+                  Enter leaderboard results from HackerRank after contest ends
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleAddProblem} className="space-y-4">
+                <form onSubmit={handleSaveResults} className="space-y-4">
                   <div className="space-y-2">
                     <Label>Select Contest</Label>
                     <Select
-                      value={selectedContestId}
-                      onValueChange={setSelectedContestId}
+                      value={resultsContestId}
+                      onValueChange={setResultsContestId}
                     >
                       <SelectTrigger className="bg-gray-800 border-gray-700">
                         <SelectValue placeholder="Select a contest" />
@@ -1221,221 +1098,19 @@ export default function AdminDashboardPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Problem Name *</Label>
-                    <Input
-                      placeholder="e.g. Two Sum"
-                      value={problemName}
-                      onChange={(e) => setProblemName(e.target.value)}
-                      className="bg-gray-800 border-gray-700"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Description</Label>
-                    <textarea
-                      placeholder="Problem description..."
-                      value={problemDescription}
-                      onChange={(e) => setProblemDescription(e.target.value)}
-                      className="w-full h-24 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none"
-                    />
-                  </div>
-
-                  {/* Difficulty and Tags Row */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Difficulty</Label>
-                      <Select
-                        value={problemDifficulty}
-                        onValueChange={(v) =>
-                          setProblemDifficulty(v as "Easy" | "Medium" | "Hard")
-                        }
-                      >
-                        <SelectTrigger className="bg-gray-800 border-gray-700">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-800 border-gray-700">
-                          <SelectItem value="Easy">
-                            <span className="flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-green-500" />
-                              Easy
-                            </span>
-                          </SelectItem>
-                          <SelectItem value="Medium">
-                            <span className="flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                              Medium
-                            </span>
-                          </SelectItem>
-                          <SelectItem value="Hard">
-                            <span className="flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-red-500" />
-                              Hard
-                            </span>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Tags</Label>
-                      <Input
-                        placeholder="e.g. Arrays, DP, Greedy"
-                        value={problemTags}
-                        onChange={(e) => setProblemTags(e.target.value)}
-                        className="bg-gray-800 border-gray-700"
-                      />
-                      <p className="text-xs text-gray-500">Comma-separated</p>
-                    </div>
-                  </div>
-
-                  {/* Constraints Row */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Time Limit (seconds)</Label>
-                      <Input
-                        type="number"
-                        step="0.5"
-                        min="0.5"
-                        placeholder="1"
-                        value={problemTimeLimit}
-                        onChange={(e) => setProblemTimeLimit(e.target.value)}
-                        className="bg-gray-800 border-gray-700"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Memory Limit (MB)</Label>
-                      <Input
-                        type="number"
-                        min="16"
-                        placeholder="256"
-                        value={problemMemoryLimit}
-                        onChange={(e) => setProblemMemoryLimit(e.target.value)}
-                        className="bg-gray-800 border-gray-700"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Sample Test Cases */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label>Sample Test Cases (JSON) *</Label>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          formatTestCasesJSON(
-                            sampleTestCases,
-                            setSampleTestCases,
-                          )
-                        }
-                        className="h-6 text-xs text-gray-400 hover:text-white"
-                      >
-                        Format JSON
-                      </Button>
-                    </div>
+                    <Label>Results (one per line)</Label>
                     <p className="text-xs text-gray-500 mb-1">
-                      Visible to users. At least 1 required. Format:{" "}
-                      {`[{"input": "...", "output": "..."}]`}
+                      Format: Name, Score, Problems Solved (one line per participant)
                     </p>
                     <textarea
-                      placeholder={`[\n  {"input": "5\\n1 2 3 4 5", "output": "15"},\n  {"input": "3\\n1 2 3", "output": "6"}\n]`}
-                      value={sampleTestCases}
-                      onChange={(e) => {
-                        setSampleTestCases(e.target.value);
-                        validateTestCases(
-                          e.target.value,
-                          setSampleTestCasesError,
-                          setSampleTestCasesCount,
-                        );
-                      }}
-                      className={`w-full h-24 px-3 py-2 bg-gray-800 border rounded-md text-sm font-mono resize-none ${
-                        sampleTestCasesError
-                          ? "border-red-500 focus:border-red-500"
-                          : sampleTestCases.trim() && !sampleTestCasesError
-                            ? "border-green-500 focus:border-green-500"
-                            : "border-gray-700"
-                      }`}
+                      placeholder={`John Doe, 450, 3\nJane Smith, 400, 2\nBob Wilson, 350, 2`}
+                      value={resultsText}
+                      onChange={(e) => setResultsText(e.target.value)}
+                      className="w-full h-32 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm font-mono resize-none"
                     />
-                    {sampleTestCasesError ? (
-                      <p className="text-xs text-red-400">
-                        {sampleTestCasesError}
-                      </p>
-                    ) : sampleTestCasesCount > 0 ? (
-                      <p className="text-xs text-green-400">
-                        Valid JSON - {sampleTestCasesCount} sample test case
-                        {sampleTestCasesCount > 1 ? "s" : ""}
-                      </p>
-                    ) : (
-                      <p className="text-xs text-yellow-400">
-                        Required: At least 1 sample test case
-                      </p>
-                    )}
                   </div>
-
-                  {/* Hidden Test Cases */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label>Hidden Test Cases (JSON)</Label>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          formatTestCasesJSON(
-                            hiddenTestCases,
-                            setHiddenTestCases,
-                          )
-                        }
-                        className="h-6 text-xs text-gray-400 hover:text-white"
-                      >
-                        Format JSON
-                      </Button>
-                    </div>
-                    <p className="text-xs text-gray-500 mb-1">
-                      Hidden from users. Used for final judging. Optional.
-                    </p>
-                    <textarea
-                      placeholder={`[\n  {"input": "10000\\n...", "output": "..."}\n]`}
-                      value={hiddenTestCases}
-                      onChange={(e) => {
-                        setHiddenTestCases(e.target.value);
-                        validateTestCases(
-                          e.target.value,
-                          setHiddenTestCasesError,
-                          setHiddenTestCasesCount,
-                        );
-                      }}
-                      className={`w-full h-24 px-3 py-2 bg-gray-800 border rounded-md text-sm font-mono resize-none ${
-                        hiddenTestCasesError
-                          ? "border-red-500 focus:border-red-500"
-                          : hiddenTestCases.trim() && !hiddenTestCasesError
-                            ? "border-green-500 focus:border-green-500"
-                            : "border-gray-700"
-                      }`}
-                    />
-                    {hiddenTestCasesError ? (
-                      <p className="text-xs text-red-400">
-                        {hiddenTestCasesError}
-                      </p>
-                    ) : hiddenTestCasesCount > 0 ? (
-                      <p className="text-xs text-green-400">
-                        Valid JSON - {hiddenTestCasesCount} hidden test case
-                        {hiddenTestCasesCount > 1 ? "s" : ""}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={
-                      loading ||
-                      !!sampleTestCasesError ||
-                      !!hiddenTestCasesError ||
-                      sampleTestCasesCount === 0
-                    }
-                    className="w-full"
-                  >
-                    {loading ? "Adding..." : "Add Problem"}
+                  <Button type="submit" disabled={loading} className="w-full">
+                    {loading ? "Saving..." : "Save Results"}
                   </Button>
                 </form>
               </CardContent>
@@ -1481,25 +1156,35 @@ export default function AdminDashboardPage() {
                               <div className="flex items-center gap-2">
                                 <p className="font-medium">{c.title}</p>
                                 <span
-                                  className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                    status === "active"
-                                      ? "bg-green-500/20 text-green-400"
-                                      : status === "upcoming"
-                                        ? "bg-yellow-500/20 text-yellow-400"
-                                        : "bg-gray-500/20 text-gray-400"
-                                  }`}
+                                  className={`px-2 py-0.5 rounded text-xs font-medium ${status === "active"
+                                    ? "bg-green-500/20 text-green-400"
+                                    : status === "upcoming"
+                                      ? "bg-yellow-500/20 text-yellow-400"
+                                      : "bg-gray-500/20 text-gray-400"
+                                    }`}
                                 >
                                   {status.charAt(0).toUpperCase() +
                                     status.slice(1)}
                                 </span>
                               </div>
                               <p className="text-sm text-gray-400">
-                                {c.problems?.length || 0} problems • {c.timer}{" "}
-                                min
+                                {c.timer} min
+                                {(c as any).hackerRankUrl && " • HackerRank"}
+                                {(c as any).results && " • Results posted"}
                               </p>
                               <p className="text-xs text-gray-500">
                                 Starts: {startTime.toLocaleString()}
                               </p>
+                              {(c as any).hackerRankUrl && (
+                                <a
+                                  href={(c as any).hackerRankUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-blue-400 hover:text-blue-300 underline"
+                                >
+                                  Open on HackerRank ↗
+                                </a>
+                              )}
                             </div>
                             <div className="flex gap-2">
                               <Button
@@ -1795,6 +1480,18 @@ export default function AdminDashboardPage() {
                         onChange={(e) => setTaskDesc(e.target.value)}
                         className="w-full h-24 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm resize-none"
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>LeetCode Problem URL</Label>
+                      <Input
+                        placeholder="https://leetcode.com/problems/two-sum/"
+                        value={taskLeetcodeUrl}
+                        onChange={(e) => setTaskLeetcodeUrl(e.target.value)}
+                        className="bg-gray-800 border-gray-700"
+                      />
+                      <p className="text-xs text-gray-500">
+                        Optional. Students can auto-verify via LeetCode if provided.
+                      </p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -2170,7 +1867,7 @@ export default function AdminDashboardPage() {
                                             {task.points} pts
                                           </span>
                                           {task.assignedTo &&
-                                          task.assignedTo.length > 0 ? (
+                                            task.assignedTo.length > 0 ? (
                                             <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs">
                                               {task.assignedTo.length} user
                                               {task.assignedTo.length !== 1
@@ -2272,7 +1969,7 @@ export default function AdminDashboardPage() {
                                             const isLate =
                                               task.dueDate &&
                                               new Date(sub.createdAt) >
-                                                new Date(task.dueDate);
+                                              new Date(task.dueDate);
                                             return (
                                               <div
                                                 key={sub.id}
@@ -2291,10 +1988,10 @@ export default function AdminDashboardPage() {
                                                     </span>
                                                     {sub.status ===
                                                       "VERIFIED" && (
-                                                      <span className="text-xs text-purple-400">
-                                                        +{sub.points} pts
-                                                      </span>
-                                                    )}
+                                                        <span className="text-xs text-purple-400">
+                                                          +{sub.points} pts
+                                                        </span>
+                                                      )}
                                                     {isLate && (
                                                       <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded text-xs">
                                                         Late
@@ -2521,11 +2218,10 @@ export default function AdminDashboardPage() {
                         return (
                           <div
                             key={a.id}
-                            className={`p-4 rounded-lg ${
-                              a.pinned
-                                ? "bg-yellow-500/10 border-l-4 border-yellow-500"
-                                : "bg-gray-800/50"
-                            }`}
+                            className={`p-4 rounded-lg ${a.pinned
+                              ? "bg-yellow-500/10 border-l-4 border-yellow-500"
+                              : "bg-gray-800/50"
+                              }`}
                           >
                             {isEditing ? (
                               // Edit Mode
@@ -2620,11 +2316,10 @@ export default function AdminDashboardPage() {
                                       size="sm"
                                       variant="ghost"
                                       onClick={() => handleTogglePin(a)}
-                                      className={`h-8 w-8 p-0 ${
-                                        a.pinned
-                                          ? "text-yellow-500 hover:text-yellow-400"
-                                          : "text-gray-400 hover:text-yellow-500"
-                                      }`}
+                                      className={`h-8 w-8 p-0 ${a.pinned
+                                        ? "text-yellow-500 hover:text-yellow-400"
+                                        : "text-gray-400 hover:text-yellow-500"
+                                        }`}
                                       title={a.pinned ? "Unpin" : "Pin"}
                                     >
                                       <Pin className="h-4 w-4" />
@@ -2821,6 +2516,44 @@ export default function AdminDashboardPage() {
           </Card>
         )}
       </div>
+
+      {/* Delete User Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <h3 className="text-lg font-semibold text-white mb-2">Delete User</h3>
+            <p className="text-gray-300 text-sm mb-1">
+              Are you sure you want to delete <strong className="text-white">{deleteConfirm.userEmail}</strong>?
+            </p>
+            <p className="text-gray-500 text-xs mb-5">
+              This will permanently delete all their data including profile, task submissions, contest submissions, and blogs. This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-gray-600 hover:bg-gray-800"
+                onClick={() => setDeleteConfirm(null)}
+                disabled={deleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={confirmDeleteUser}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Deleting...</>
+                ) : (
+                  <><Trash2 className="h-3 w-3 mr-1" /> Delete</>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

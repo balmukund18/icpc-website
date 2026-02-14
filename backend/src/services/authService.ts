@@ -13,8 +13,9 @@ export const registerUser = async (
   role: string = "STUDENT"
 ) => {
   const hashed = await bcrypt.hash(password, 10);
+  const autoApprove = role === "ALUMNI";
   const user = await prisma.user.create({
-    data: { email, password: hashed, role: role as any },
+    data: { email, password: hashed, role: role as any, approved: autoApprove },
   });
   return user;
 };
@@ -98,9 +99,6 @@ export const login = async (email: string, password: string) => {
   const ok = await bcrypt.compare(password, user.password);
   if (!ok) {
     throw new Error("Invalid credentials");
-  }
-  if (!user.approved) {
-    throw new Error("User not approved yet");
   }
   const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
     expiresIn: "7d",

@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SWRProvider } from "@/lib/swr-config";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { ChatWidget } from "@/components/chat-widget";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -50,6 +51,7 @@ export default function RootLayout({
             <ErrorBoundary>{children}</ErrorBoundary>
           </SWRProvider>
           <Toaster />
+          <ChatWidget />
         </ThemeProvider>
       </body>
     </html>

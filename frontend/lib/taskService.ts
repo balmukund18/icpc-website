@@ -7,6 +7,7 @@ export interface Task {
   id: string;
   title: string;
   description: string;
+  leetcodeSlug?: string | null;
   points: number;
   assignedTo: string[] | null;
   dueDate: string | null;
@@ -50,6 +51,7 @@ export interface LeaderboardEntry {
 export interface CreateTaskInput {
   title: string;
   description?: string;
+  leetcodeSlug?: string;
   points: number;
   assignedTo?: string[];
   dueDate?: string;
@@ -103,6 +105,14 @@ export async function getTaskSubmissions(taskId: string): Promise<Submission[]> 
 
 export async function submitSolution(taskId: string, link: string): Promise<Submission> {
   const response = await api.post(`/tasks/${taskId}/submit`, { link });
+  return response.data.data || response.data;
+}
+
+export async function verifyLeetCode(
+  taskId: string,
+  leetcodeUsername: string
+): Promise<{ verified: boolean; submission: Submission; message: string }> {
+  const response = await api.post(`/tasks/${taskId}/verify-leetcode`, { leetcodeUsername });
   return response.data.data || response.data;
 }
 

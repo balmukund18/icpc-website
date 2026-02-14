@@ -28,9 +28,10 @@ import {
   XCircle,
   Loader2,
   Eye,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
-import { getTaskStatus } from "@/lib/taskService";
+import { getTaskStatus, verifyLeetCode } from "@/lib/taskService";
 import type { Task } from "@/lib/hooks/useData";
 
 type FilterType = "all" | "available" | "pending" | "completed";
@@ -48,6 +49,10 @@ export default function TasksPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [submissionLink, setSubmissionLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [leetcodeModalOpen, setLeetcodeModalOpen] = useState(false);
+  const [leetcodeTask, setLeetcodeTask] = useState<Task | null>(null);
+  const [leetcodeUsername, setLeetcodeUsername] = useState("");
+  const [verifying, setVerifying] = useState(false);
 
   const handleOpenSubmitModal = (task: Task) => {
     setSelectedTask(task);
@@ -84,11 +89,41 @@ export default function TasksPage() {
       const err = error as { response?: { data?: { error?: string } }; message?: string };
       toast.error(
         err.response?.data?.error ||
-          err.message ||
-          "Failed to submit solution"
+        err.message ||
+        "Failed to submit solution"
       );
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleOpenLeetcodeModal = (task: Task) => {
+    setLeetcodeTask(task);
+    setLeetcodeUsername("");
+    setLeetcodeModalOpen(true);
+  };
+
+  const handleVerifyLeetcode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!leetcodeTask || !leetcodeUsername.trim()) return;
+
+    setVerifying(true);
+    try {
+      await verifyLeetCode(leetcodeTask.id, leetcodeUsername.trim());
+      await invalidateTasks();
+      toast.success("LeetCode submission verified! Points awarded.");
+      setLeetcodeModalOpen(false);
+      setLeetcodeTask(null);
+      setLeetcodeUsername("");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } }; message?: string };
+      toast.error(
+        err.response?.data?.error ||
+        err.message ||
+        "Failed to verify LeetCode submission"
+      );
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -133,12 +168,12 @@ export default function TasksPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <CheckSquare className="h-8 w-8" />
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+              <CheckSquare className="h-7 w-7 sm:h-8 sm:w-8" />
               Tasks
             </h1>
             <p className="text-muted-foreground mt-1">
@@ -233,6 +268,19 @@ export default function TasksPage() {
                       </p>
                     )}
 
+                    {/* LeetCode Badge */}
+                    {task.leetcodeSlug && (
+                      <a
+                        href={`https://leetcode.com/problems/${task.leetcodeSlug}/`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-orange-500/15 text-orange-400 border border-orange-500/30 rounded-md text-xs hover:bg-orange-500/25 transition-colors"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        Solve on LeetCode
+                      </a>
+                    )}
+
                     <div className="space-y-2 text-sm text-gray-500">
                       {task.dueDate && status.label !== "Completed" && (
                         <div className="flex items-center gap-2">
@@ -267,19 +315,18 @@ export default function TasksPage() {
                             <XCircle className="h-4 w-4 text-red-400" />
                           )}
                           <span
-                            className={`text-xs font-medium ${
-                              latestSubmission.status === "VERIFIED"
-                                ? "text-green-400"
-                                : latestSubmission.status === "PENDING"
+                            className={`text-xs font-medium ${latestSubmission.status === "VERIFIED"
+                              ? "text-green-400"
+                              : latestSubmission.status === "PENDING"
                                 ? "text-yellow-400"
                                 : "text-red-400"
-                            }`}
+                              }`}
                           >
                             {latestSubmission.status === "VERIFIED"
                               ? `Verified (+${latestSubmission.points} pts)`
                               : latestSubmission.status === "PENDING"
-                              ? "Awaiting verification"
-                              : "Rejected"}
+                                ? "Awaiting verification"
+                                : "Rejected"}
                           </span>
                         </div>
                         <a
@@ -301,8 +348,18 @@ export default function TasksPage() {
                           View Details
                         </Button>
                       </Link>
-                      
-                      {status.canSubmit && (
+
+                      {status.canSubmit && task.leetcodeSlug && (
+                        <Button
+                          onClick={() => handleOpenLeetcodeModal(task)}
+                          size="sm"
+                          className="gap-2 bg-orange-600 hover:bg-orange-700"
+                        >
+                          <CheckCircle className="h-4 w-4" />
+                          Verify
+                        </Button>
+                      )}
+                      {status.canSubmit && !task.leetcodeSlug && (
                         <Button
                           onClick={() => handleOpenSubmitModal(task)}
                           size="sm"
@@ -422,6 +479,94 @@ export default function TasksPage() {
                     type="button"
                     variant="outline"
                     onClick={handleCloseSubmitModal}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      {/* LeetCode Verify Modal */}
+      {leetcodeModalOpen && leetcodeTask && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="bg-gray-900 border-gray-700 w-full max-w-lg">
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-white">Verify LeetCode Solution</CardTitle>
+                  <CardDescription className="mt-1">
+                    {leetcodeTask.title}
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => { setLeetcodeModalOpen(false); setLeetcodeTask(null); }}
+                  className="h-8 w-8"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleVerifyLeetcode} className="space-y-4">
+                <div className="p-3 bg-gray-800/50 rounded-lg text-sm space-y-2">
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <Trophy className="h-4 w-4 text-purple-400" />
+                    <span>
+                      <strong>{leetcodeTask.points} points</strong> upon verification
+                    </span>
+                  </div>
+                  <a
+                    href={`https://leetcode.com/problems/${leetcodeTask.leetcodeSlug}/`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-orange-400 hover:text-orange-300"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Open problem on LeetCode
+                  </a>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="leetcode-username">LeetCode Username *</Label>
+                  <Input
+                    id="leetcode-username"
+                    placeholder="Your LeetCode username"
+                    value={leetcodeUsername}
+                    onChange={(e) => setLeetcodeUsername(e.target.value)}
+                    className="bg-gray-800 border-gray-700"
+                    required
+                  />
+                  <p className="text-xs text-gray-500">
+                    We&apos;ll check your recent accepted submissions on LeetCode to verify.
+                  </p>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    type="submit"
+                    disabled={verifying || !leetcodeUsername.trim()}
+                    className="flex-1 gap-2 bg-orange-600 hover:bg-orange-700"
+                  >
+                    {verifying ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Verifying...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4" />
+                        Verify Solution
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => { setLeetcodeModalOpen(false); setLeetcodeTask(null); }}
                   >
                     Cancel
                   </Button>

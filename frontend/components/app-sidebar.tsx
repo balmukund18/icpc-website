@@ -68,6 +68,11 @@ const mainLinks: NavLink[] = [
     href: "/profile",
     icon: <UserCog className="h-5 w-5 flex-shrink-0" />,
   },
+  {
+    label: "Alumni Network",
+    href: "/alumni",
+    icon: <GraduationCap className="h-5 w-5 flex-shrink-0" />,
+  },
 ];
 
 const roleBasedLinks: NavLink[] = [
@@ -76,12 +81,6 @@ const roleBasedLinks: NavLink[] = [
     href: "/admin",
     icon: <Shield className="h-5 w-5 flex-shrink-0" />,
     roles: ["ADMIN"],
-  },
-  {
-    label: "Alumni Panel",
-    href: "/alumni",
-    icon: <GraduationCap className="h-5 w-5 flex-shrink-0" />,
-    roles: ["ALUMNI"],
   },
 ];
 

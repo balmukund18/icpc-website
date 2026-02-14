@@ -89,9 +89,8 @@ function SessionCard({ session, userId, onRegister, registering }: SessionCardPr
 
   return (
     <Card
-      className={`bg-card border-border flex flex-col ${
-        status === "ended" ? "opacity-70" : ""
-      }`}
+      className={`bg-card border-border flex flex-col ${status === "ended" ? "opacity-70" : ""
+        }`}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
@@ -137,7 +136,7 @@ function SessionCard({ session, userId, onRegister, registering }: SessionCardPr
             View Details
           </Button>
         </Link>
-        
+
         <div className="flex-1 flex justify-end">
           {status === "live" && (
             <Button onClick={handleJoin} size="sm" className="gap-2">
@@ -237,13 +236,13 @@ export default function SessionsPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 sm:space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-primary">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-primary">
             Sessions
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">
             Join live sessions or register for upcoming ones.
           </p>
         </div>

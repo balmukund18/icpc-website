@@ -71,21 +71,21 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 sm:space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-primary">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-primary">
             Welcome back, {profile?.name || user.email}
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">
             Here&apos;s what&apos;s happening with your competitive programming journey.
           </p>
         </div>
 
         {/* Announcements Banner */}
         {announcements.length > 0 && (
-          <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-4">
-            <div className="flex items-center gap-4">
+          <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3 sm:p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Megaphone className="h-5 w-5 text-yellow-500" />
                 <span className="font-semibold text-yellow-500 text-sm uppercase tracking-wide">
@@ -93,15 +93,15 @@ export default function DashboardPage() {
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-foreground truncate">
+                <p className="font-medium text-foreground truncate text-sm sm:text-base">
                   {announcements[0].title}
                 </p>
-                <p className="text-sm text-muted-foreground truncate">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">
                   {announcements[0].content}
                 </p>
               </div>
               <Link href="/announcements" className="flex-shrink-0">
-                <Button variant="outline" size="sm" className="gap-1 border-yellow-500/30 hover:bg-yellow-500/10">
+                <Button variant="outline" size="sm" className="gap-1 border-yellow-500/30 hover:bg-yellow-500/10 w-full sm:w-auto">
                   View All ({announcements.length})
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -111,7 +111,7 @@ export default function DashboardPage() {
         )}
 
         {/* Stats Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-4">
           <Card className="bg-card border-border">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-card-foreground">
@@ -190,9 +190,8 @@ export default function DashboardPage() {
                   return (
                     <>
                       <div
-                        className={`text-2xl font-bold ${
-                          isLive ? "text-green-500" : "text-primary"
-                        }`}
+                        className={`text-2xl font-bold ${isLive ? "text-green-500" : "text-primary"
+                          }`}
                       >
                         {isLive ? "Live Now!" : formatSessionDate(nextSession.date)}
                       </div>
@@ -234,7 +233,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Tasks & Points Row */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
           {/* My Tasks Widget */}
           <Card className="bg-card border-border lg:col-span-2">
             <CardHeader className="flex flex-row items-center justify-between">
@@ -266,7 +265,7 @@ export default function DashboardPage() {
                   const status = getTaskStatus(t);
                   return status.canSubmit && !t.userSubmissions?.length;
                 }).length;
-                
+
                 // Get recent available tasks
                 const recentTasks = tasks
                   .filter((t) => {
@@ -378,20 +377,18 @@ export default function DashboardPage() {
                       return (
                         <div
                           key={entry.userId}
-                          className={`flex items-center gap-3 p-2 rounded-lg ${
-                            isCurrentUser
-                              ? "bg-purple-500/10 border border-purple-500/30"
-                              : "bg-background/50"
-                          }`}
+                          className={`flex items-center gap-3 p-2 rounded-lg ${isCurrentUser
+                            ? "bg-purple-500/10 border border-purple-500/30"
+                            : "bg-background/50"
+                            }`}
                         >
                           <div
-                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                              idx === 0
-                                ? "bg-yellow-500/20 text-yellow-400"
-                                : idx === 1
+                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0
+                              ? "bg-yellow-500/20 text-yellow-400"
+                              : idx === 1
                                 ? "bg-gray-400/20 text-gray-400"
                                 : "bg-orange-500/20 text-orange-400"
-                            }`}
+                              }`}
                           >
                             {idx + 1}
                           </div>
@@ -445,9 +442,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-7">
           {/* Recent Contests */}
-          <Card className="col-span-4 bg-card border-border">
+          <Card className="md:col-span-1 lg:col-span-4 bg-card border-border">
             <CardHeader>
               <CardTitle className="text-card-foreground">
                 Recent Contests
@@ -489,7 +486,7 @@ export default function DashboardPage() {
           </Card>
 
           {/* Recent Submissions */}
-          <Card className="col-span-3 bg-card border-border">
+          <Card className="md:col-span-1 lg:col-span-3 bg-card border-border">
             <CardHeader>
               <CardTitle className="text-card-foreground">
                 Recent Submissions
@@ -510,20 +507,32 @@ export default function DashboardPage() {
                     >
                       <div className="space-y-1">
                         <p className="font-medium leading-none text-foreground">
-                          Problem {sub.problemIdx}
+                          {sub.task?.title || "Task"}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {new Date(sub.createdAt).toLocaleDateString()}
                         </p>
                       </div>
-                      <div
-                        className={`text-sm font-medium ${
-                          sub.status === "Accepted"
+                      <div className="flex items-center gap-2">
+                        {sub.status === "VERIFIED" && sub.points > 0 && (
+                          <span className="text-xs text-purple-400 font-medium">
+                            +{sub.points} pts
+                          </span>
+                        )}
+                        <div
+                          className={`text-sm font-medium ${sub.status === "VERIFIED"
                             ? "text-green-400"
-                            : "text-red-400"
-                        }`}
-                      >
-                        {sub.status || "Pending"}
+                            : sub.status === "REJECTED"
+                              ? "text-red-400"
+                              : "text-yellow-400"
+                            }`}
+                        >
+                          {sub.status === "VERIFIED"
+                            ? "Verified"
+                            : sub.status === "REJECTED"
+                              ? "Rejected"
+                              : "Pending"}
+                        </div>
                       </div>
                     </div>
                   ))

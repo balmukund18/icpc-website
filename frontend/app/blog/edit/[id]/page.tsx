@@ -91,7 +91,7 @@ export default function EditBlogPage() {
     if (currentBlog && user) {
       const isAuthor = currentBlog.authorId === user.id;
       const canEdit = isAuthor && currentBlog.status !== "APPROVED";
-      
+
       if (!canEdit) {
         toast.error("You cannot edit this blog");
         router.push("/blog");
@@ -112,8 +112,8 @@ export default function EditBlogPage() {
   if (currentBlogError) {
     return (
       <DashboardLayout>
-        <div className="p-8">
-          <div className="max-w-4xl mx-auto">
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6">
             <Card className="bg-red-500/10 border-red-500/30">
               <CardContent className="py-12 text-center">
                 <AlertCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
@@ -187,7 +187,7 @@ export default function EditBlogPage() {
   return (
     <DashboardLayout>
       <div className="p-8">
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8">
           {/* Header */}
           <div className="flex items-center gap-4">
             <Button
@@ -207,164 +207,163 @@ export default function EditBlogPage() {
             </div>
           </div>
 
-        {/* Rejection Reason Banner */}
-        {currentBlog.status === "REJECTED" && currentBlog.rejectionReason && (
-          <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-            <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-medium text-red-400 mb-1">Rejection Reason</p>
-              <p className="text-red-300/80">{currentBlog.rejectionReason}</p>
-              <p className="text-muted-foreground mt-2 text-xs">
-                Please address the feedback above and resubmit your blog.
+          {/* Rejection Reason Banner */}
+          {currentBlog.status === "REJECTED" && currentBlog.rejectionReason && (
+            <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+              <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-red-400 mb-1">Rejection Reason</p>
+                <p className="text-red-300/80">{currentBlog.rejectionReason}</p>
+                <p className="text-muted-foreground mt-2 text-xs">
+                  Please address the feedback above and resubmit your blog.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Info Banner */}
+          <div className="flex items-start gap-3 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+            <Info className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-200">
+              <p className="font-medium mb-1">Resubmission</p>
+              <p className="text-blue-300/80">
+                After saving, your blog will be resubmitted for admin approval.
               </p>
             </div>
           </div>
-        )}
 
-        {/* Info Banner */}
-        <div className="flex items-start gap-3 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
-          <Info className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-blue-200">
-            <p className="font-medium mb-1">Resubmission</p>
-            <p className="text-blue-300/80">
-              After saving, your blog will be resubmitted for admin approval.
-            </p>
-          </div>
-        </div>
-
-        {/* Form */}
-        <Card className="bg-white/5 backdrop-blur-xl border border-white/10">
-          <CardHeader>
-            <CardTitle>Blog Details</CardTitle>
-            <CardDescription>
-              Update the details below
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter an engaging title for your blog"
-                className="bg-white/5 border-white/10 focus:border-primary"
-                maxLength={200}
-              />
-              <p className="text-xs text-muted-foreground text-right">
-                {title.length}/200
-              </p>
-            </div>
-
-            {/* Content */}
-            <div className="space-y-2">
-              <Label>Content *</Label>
-              {initialized && (
-                <RichTextEditor
-                  content={content}
-                  onChange={setContent}
-                  placeholder="Write your blog content here..."
-                  minHeight="350px"
+          {/* Form */}
+          <Card className="bg-white/5 backdrop-blur-xl border border-white/10">
+            <CardHeader>
+              <CardTitle>Blog Details</CardTitle>
+              <CardDescription>
+                Update the details below
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Title */}
+              <div className="space-y-2">
+                <Label htmlFor="title">Title *</Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter an engaging title for your blog"
+                  className="bg-white/5 border-white/10 focus:border-primary"
+                  maxLength={200}
                 />
-              )}
-            </div>
+                <p className="text-xs text-muted-foreground text-right">
+                  {title.length}/200
+                </p>
+              </div>
 
-            {/* Tags */}
-            <div className="space-y-3">
-              <Label>Tags</Label>
-              <p className="text-xs text-muted-foreground">
-                Select relevant tags or add custom ones
-              </p>
+              {/* Content */}
+              <div className="space-y-2">
+                <Label>Content *</Label>
+                {initialized && (
+                  <RichTextEditor
+                    content={content}
+                    onChange={setContent}
+                    placeholder="Write your blog content here..."
+                    minHeight="350px"
+                  />
+                )}
+              </div>
 
-              {/* Selected Tags */}
-              {selectedTags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {selectedTags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1 px-3 py-1 text-sm rounded-full bg-primary/20 text-primary border border-primary/30"
-                    >
-                      {tag}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTag(tag)}
-                        className="hover:text-red-400 transition-colors"
+              {/* Tags */}
+              <div className="space-y-3">
+                <Label>Tags</Label>
+                <p className="text-xs text-muted-foreground">
+                  Select relevant tags or add custom ones
+                </p>
+
+                {/* Selected Tags */}
+                {selectedTags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {selectedTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 px-3 py-1 text-sm rounded-full bg-primary/20 text-primary border border-primary/30"
                       >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(tag)}
+                          className="hover:text-red-400 transition-colors"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
 
-              {/* Predefined Tags */}
-              <div className="flex flex-wrap gap-2">
-                {tags?.predefined.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => handleTagToggle(tag)}
-                    className={`px-3 py-1 text-sm rounded-full transition-all ${
-                      selectedTags.includes(tag)
+                {/* Predefined Tags */}
+                <div className="flex flex-wrap gap-2">
+                  {tags?.predefined.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => handleTagToggle(tag)}
+                      className={`px-3 py-1 text-sm rounded-full transition-all ${selectedTags.includes(tag)
                         ? "bg-primary/20 text-primary border border-primary/30"
                         : "bg-white/5 text-white/70 border border-white/10 hover:border-white/30"
-                    }`}
+                        }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Custom Tag Input */}
+                <div className="flex gap-2 mt-3">
+                  <Input
+                    value={customTag}
+                    onChange={(e) => setCustomTag(e.target.value)}
+                    placeholder="Add a custom tag"
+                    className="bg-white/5 border-white/10 flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddCustomTag();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={handleAddCustomTag}
+                    disabled={!customTag.trim()}
                   >
-                    {tag}
-                  </button>
-                ))}
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
+            </CardContent>
+          </Card>
 
-              {/* Custom Tag Input */}
-              <div className="flex gap-2 mt-3">
-                <Input
-                  value={customTag}
-                  onChange={(e) => setCustomTag(e.target.value)}
-                  placeholder="Add a custom tag"
-                  className="bg-white/5 border-white/10 flex-1"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddCustomTag();
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={handleAddCustomTag}
-                  disabled={!customTag.trim()}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Submit Button */}
-        <div className="flex justify-end gap-4">
-          <Button
-            variant="outline"
-            onClick={() => router.push("/blog/my")}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={isSubmitting || !title.trim() || !content.trim()}
-            className="gap-2"
-          >
-            {isSubmitting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
-            Save & Resubmit
-          </Button>
-        </div>
+          {/* Submit Button */}
+          <div className="flex justify-end gap-4">
+            <Button
+              variant="outline"
+              onClick={() => router.push("/blog/my")}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting || !title.trim() || !content.trim()}
+              className="gap-2"
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              Save & Resubmit
+            </Button>
+          </div>
         </div>
       </div>
     </DashboardLayout>

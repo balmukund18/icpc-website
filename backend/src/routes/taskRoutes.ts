@@ -15,6 +15,7 @@ router.get('/:id', isAuthenticated, ctrl.getOne);
 router.post('/:taskId/submit', isAuthenticated, [
   body('link').isURL().withMessage('Valid URL is required'),
 ], ctrl.submit);
+router.post('/:taskId/verify-leetcode', isAuthenticated, ctrl.verifyLeetCode);
 
 // Admin routes
 router.post('/', isAuthenticated, isAdmin, [

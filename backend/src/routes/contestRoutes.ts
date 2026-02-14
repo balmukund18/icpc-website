@@ -5,6 +5,7 @@ import { body } from "express-validator";
 
 const router = Router();
 
+// Create contest (admin only)
 router.post(
   "/",
   isAuthenticated,
@@ -12,62 +13,28 @@ router.post(
   [body("title").isString().notEmpty()],
   ctrl.create
 );
-router.post(
-  "/:id/problems",
-  isAuthenticated,
-  isAdmin,
-  [body("name").isString().notEmpty()],
-  ctrl.addProblem
-);
+
+// List all contests
 router.get("/", ctrl.list);
 
-// Get single contest by ID (must be before /:id/problems etc)
+// User contest history
+router.get("/history/me", isAuthenticated, ctrl.history);
+
+// Get single contest by ID
 router.get("/:id", ctrl.getById);
 
 // Delete contest (admin only)
 router.delete("/:id", isAuthenticated, isAdmin, ctrl.deleteContest);
 
-router.post(
+// Save contest results (admin only - paste from HackerRank)
+router.put(
   "/:id/results",
   isAuthenticated,
   isAdmin,
-  [body().isArray().optional()],
   ctrl.saveResults
-);
-router.get("/history/me", isAuthenticated, ctrl.history);
-router.post(
-  "/:id/submit",
-  isAuthenticated,
-  [
-    body("source").isString().notEmpty(),
-    body("language_id").isInt(),
-    body("problemIdx").isInt(),
-  ],
-  ctrl.submit
-);
-
-// Run code against sample test cases (rate limited)
-router.post(
-  "/:id/run",
-  isAuthenticated,
-  [
-    body("source").isString().notEmpty(),
-    body("language_id").isInt(),
-    body("problemIdx").isInt(),
-  ],
-  ctrl.runCode
 );
 
 // Admin: list submissions for a contest
 router.get("/:id/submissions", isAuthenticated, isAdmin, ctrl.submissions);
-
-// Authenticated user: list own submissions for a specific contest
-router.get("/:id/submissions/me", isAuthenticated, ctrl.myContestSubmissions);
-
-// Authenticated user: list all own submissions
-router.get("/submissions/me", isAuthenticated, ctrl.mySubmissions);
-
-// Fetch a single submission (owner or admin)
-router.get("/submissions/:submissionId", isAuthenticated, ctrl.getSubmission);
 
 export default router;

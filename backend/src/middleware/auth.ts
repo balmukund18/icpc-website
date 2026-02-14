@@ -36,10 +36,10 @@ export const isAuthenticated: RequestHandler = async (
       where: { id: payload?.id as string },
     });
 
-    if (!user || !user.approved) {
+    if (!user) {
       return res
         .status(403)
-        .json({ message: "User not approved or not found" });
+        .json({ message: "User not found" });
     }
 
     authReq.user = user;
@@ -98,7 +98,7 @@ export const optionalAuth: RequestHandler = async (
       where: { id: payload?.id as string },
     });
 
-    if (user && user.approved) {
+    if (user) {
       authReq.user = user;
     }
   } catch (err) {

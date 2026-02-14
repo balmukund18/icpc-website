@@ -13,9 +13,8 @@ export const registerUser = async (
   role: string = "STUDENT"
 ) => {
   const hashed = await bcrypt.hash(password, 10);
-  const autoApprove = role === "ALUMNI";
   const user = await prisma.user.create({
-    data: { email, password: hashed, role: role as any, approved: autoApprove },
+    data: { email, password: hashed, role: role as any, approved: true },
   });
   return user;
 };

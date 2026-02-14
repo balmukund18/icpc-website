@@ -81,7 +81,7 @@ function AuthCallbackContent() {
   }, [searchParams, login, setHasProfile, router]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="flex items-center justify-center min-h-screen bg-background">
       <Card className="w-100">
         <CardHeader>
           <CardTitle className="text-center">

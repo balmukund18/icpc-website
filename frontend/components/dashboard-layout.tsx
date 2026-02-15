@@ -70,12 +70,12 @@ export function DashboardLayout({
 
     const syncRole = async () => {
       try {
-        const res = await api.get(`/auth/approval-status/${user.id}`);
-        const status = res.data?.data;
-        if (!status) return;
+        const res = await api.get(`/profile`);
+        const profile = res.data?.data;
+        if (!profile) return;
 
-        if (status.role && status.role !== user.role) {
-          updateUser({ role: status.role, email: status.email || user.email });
+        if (profile.role && profile.role !== user.role) {
+          updateUser({ role: profile.role, email: profile.email || user.email });
         }
       } catch {
         // Ignore sync errors to avoid blocking UI

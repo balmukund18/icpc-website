@@ -208,7 +208,6 @@ export default function SessionDetailPage() {
             </CardHeader>
 
             <CardContent className="space-y-6">
-              {/* Details Section */}
               {session.details && (
                 <div>
                   <h3 className="text-lg font-semibold text-foreground mb-2">
@@ -220,10 +219,28 @@ export default function SessionDetailPage() {
                 </div>
               )}
 
+              {/* Meet Link */}
+              {session.meetLink && status !== "ended" && (
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    Meeting Link
+                  </h3>
+                  <a
+                    href={session.meetLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    {session.meetLink}
+                  </a>
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="pt-4 border-t border-border">
-                {status === "live" && (
-                  <Button onClick={handleJoinMeeting} size="lg" className="gap-2">
+                {(status === "live" || status === "upcoming") && session.meetLink && (
+                  <Button onClick={handleJoinMeeting} variant="outline" size="lg" className="gap-2 border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300">
                     <ExternalLink className="h-4 w-4" />
                     Join Meeting
                   </Button>
@@ -232,16 +249,17 @@ export default function SessionDetailPage() {
                 {status === "upcoming" && (
                   <>
                     {isRegistered ? (
-                      <Button variant="secondary" size="lg" className="gap-2" disabled>
+                      <Button variant="ghost" size="lg" className="gap-2 text-green-400 cursor-default" disabled>
                         <CheckCircle className="h-4 w-4" />
                         You&apos;re Registered
                       </Button>
                     ) : (
                       <Button
                         onClick={handleRegister}
+                        variant="outline"
                         size="lg"
                         disabled={registering}
-                        className="gap-2"
+                        className="gap-2 border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
                       >
                         {registering ? (
                           <>

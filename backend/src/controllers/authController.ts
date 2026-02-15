@@ -16,15 +16,7 @@ export const register = async (req: Request, res: Response) => {
   }
 };
 
-export const approve = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const user = await authService.approveUser(id);
-    success(res, { id: user.id, approved: user.approved });
-  } catch (err: any) {
-    fail(res, err.message);
-  }
-};
+
 
 export const listUsers = async (req: Request, res: Response) => {
   try {
@@ -35,33 +27,9 @@ export const listUsers = async (req: Request, res: Response) => {
   }
 };
 
-export const listPendingUsers = async (req: Request, res: Response) => {
-  try {
-    const users = await authService.getPendingUsers();
-    success(res, users);
-  } catch (err: any) {
-    fail(res, err.message);
-  }
-};
 
-export const checkApprovalStatus = async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.params;
-    if (!userId) {
-      return fail(res, "User ID is required", 400);
-    }
-    const user = await authService.getUserApprovalStatus(userId);
-    success(res, {
-      id: user.id,
-      email: user.email,
-      approved: user.approved,
-      role: user.role,
-    });
-  } catch (err: any) {
-    console.error("checkApprovalStatus error:", err);
-    fail(res, err.message, 404);
-  }
-};
+
+
 
 export const updateRole = async (req: Request, res: Response) => {
   try {

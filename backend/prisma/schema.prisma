@@ -13,7 +13,6 @@ model User {
   email              String              @unique
   password           String?
   role               Role                @default(STUDENT)
-  approved           Boolean             @default(false)
   createdAt          DateTime            @default(now())
   // Google OAuth fields
   googleId           String?             @unique
@@ -23,6 +22,7 @@ model User {
   contestSubmissions ContestSubmission[]
   profile            Profile?
   submissions        Submission[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Profile {
@@ -155,4 +155,14 @@ model Announcement {
   pinned    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

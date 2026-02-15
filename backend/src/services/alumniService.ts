@@ -9,16 +9,15 @@ export const registerAlumni = async (email: string, payload: any) => {
       email,
       password: hashed,
       role: 'ALUMNI',
-      approved: false  // Require admin approval
     }
   });
   return user;
 };
 
-// List all approved alumni with their full profiles (for the alumni directory)
+// List all alumni with their full profiles (for the alumni directory)
 export const listAlumni = async () => {
   return prisma.user.findMany({
-    where: { role: 'ALUMNI', approved: true },
+    where: { role: 'ALUMNI' },
     select: {
       id: true,
       email: true,

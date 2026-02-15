@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import * as svc from '../services/alumniService';
 import { success, fail } from '../utils/response';
 
-// Register as alumni (public endpoint, requires admin approval)
+// Register as alumni (public endpoint)
 export const register = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
@@ -13,8 +13,8 @@ export const register = async (req: Request, res: Response) => {
 
     const user = await svc.registerAlumni(email, req.body);
     success(res, {
-      message: 'Registration successful. Please wait for admin approval.',
-      user: { id: user.id, email: user.email, role: user.role, approved: user.approved }
+      message: 'Registration successful.',
+      user: { id: user.id, email: user.email, role: user.role }
     }, 201);
   } catch (err: any) {
     if (err.code === 'P2002') {

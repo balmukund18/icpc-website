@@ -127,34 +127,46 @@ function SessionCard({ session, userId, onRegister, registering }: SessionCardPr
             <span>{session.attendees.length} registered</span>
           </div>
         )}
+        {session.meetLink && status !== "ended" && (
+          <a
+            href={session.meetLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            <ExternalLink className="h-4 w-4" />
+            <span className="truncate">{session.meetLink}</span>
+          </a>
+        )}
       </CardContent>
 
-      <CardFooter className="pt-3 flex items-center justify-between gap-2">
-        <Link href={`/sessions/${session.id}`}>
-          <Button variant="ghost" size="sm" className="gap-2">
-            <Eye className="h-4 w-4" />
-            View Details
-          </Button>
-        </Link>
+      <CardFooter className="pt-3 pb-2">
+        <div className="flex flex-wrap items-center gap-2 w-full">
+          <Link href={`/sessions/${session.id}`}>
+            <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
+              <Eye className="h-3.5 w-3.5" />
+              View Details
+            </Button>
+          </Link>
 
-        <div className="flex-1 flex justify-end">
-          {status === "live" && (
-            <Button onClick={handleJoin} size="sm" className="gap-2">
-              <ExternalLink className="h-4 w-4" />
-              Join Meeting
+          {(status === "live" || status === "upcoming") && session.meetLink && (
+            <Button onClick={handleJoin} variant="outline" size="sm" className="gap-1.5 text-xs border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300">
+              <ExternalLink className="h-3.5 w-3.5" />
+              Join
             </Button>
           )}
           {status === "upcoming" && (
             <>
               {isRegistered ? (
-                <Button variant="secondary" size="sm" className="gap-2" disabled>
-                  <CheckCircle className="h-4 w-4" />
+                <span className="inline-flex items-center gap-1.5 text-xs text-green-400 px-2 py-1">
+                  <CheckCircle className="h-3.5 w-3.5" />
                   Registered
-                </Button>
+                </span>
               ) : (
                 <Button
                   variant="outline"
                   size="sm"
+                  className="gap-1.5 text-xs border-purple-500/50 text-purple-400 hover:bg-purple-500/10"
                   onClick={() => onRegister(session.id)}
                   disabled={isRegistering}
                 >
@@ -164,7 +176,7 @@ function SessionCard({ session, userId, onRegister, registering }: SessionCardPr
             </>
           )}
           {status === "ended" && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Session ended
             </p>
           )}

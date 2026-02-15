@@ -1,4 +1,5 @@
 import prisma from '../models/prismaClient';
+import { sendSessionReminderEmail } from './emailService';
 
 export const createSession = async (data: any) => {
 	// Clean up empty strings and convert date to proper format
@@ -8,18 +9,44 @@ export const createSession = async (data: any) => {
 		details: data.details || null,
 		date: data.date ? new Date(data.date) : null,
 	};
-	return prisma.session.create({ data: cleanedData });
+	const session = await prisma.session.create({ data: cleanedData });
+
+	// Send email notification to all users (fire-and-forget)
+	prisma.user
+		.findMany({
+			select: { email: true },
+		})
+		.then((users) => {
+			const emails = users.map((u) => u.email);
+			if (emails.length > 0) {
+				const dateStr = cleanedData.date
+					? new Date(cleanedData.date).toLocaleString('en-IN', {
+						dateStyle: 'full',
+						timeStyle: 'short',
+					})
+					: 'TBD';
+				sendSessionReminderEmail(
+					emails,
+					data.title,
+					dateStr,
+					data.meetLink
+				);
+			}
+		})
+		.catch((err: unknown) => console.error('[Session Email Error]:', err));
+
+	return session;
 };
 
 export const updateSession = async (id: string, data: any) => {
 	// Clean up empty strings and convert date to proper format
 	const cleanedData: any = {};
-	
+
 	if (data.title !== undefined) cleanedData.title = data.title;
 	if (data.meetLink !== undefined) cleanedData.meetLink = data.meetLink;
 	if (data.details !== undefined) cleanedData.details = data.details || null;
 	if (data.date !== undefined) cleanedData.date = data.date ? new Date(data.date) : null;
-	
+
 	return prisma.session.update({ where: { id }, data: cleanedData });
 };
 

@@ -14,17 +14,12 @@ export const registerUser = async (
 ) => {
   const hashed = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
-    data: { email, password: hashed, role: role as any, approved: true },
+    data: { email, password: hashed, role: role as any },
   });
   return user;
 };
 
-export const approveUser = async (userId: string) => {
-  return prisma.user.update({
-    where: { id: userId },
-    data: { approved: true },
-  });
-};
+
 
 export const getAllUsers = async () => {
   return prisma.user.findMany({
@@ -32,7 +27,7 @@ export const getAllUsers = async () => {
       id: true,
       email: true,
       role: true,
-      approved: true,
+
       createdAt: true,
       profile: {
         select: {
@@ -54,35 +49,9 @@ export const getAllUsers = async () => {
   });
 };
 
-export const getPendingUsers = async () => {
-  return prisma.user.findMany({
-    where: { approved: false },
-    select: {
-      id: true,
-      email: true,
-      role: true,
-      approved: true,
-      createdAt: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
-};
 
-export const getUserApprovalStatus = async (userId: string) => {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      email: true,
-      role: true,
-      approved: true,
-    },
-  });
-  if (!user) {
-    throw new Error("User not found");
-  }
-  return user;
-};
+
+
 
 export const updateUserRole = async (userId: string, role: string) => {
   return prisma.user.update({
@@ -92,7 +61,7 @@ export const updateUserRole = async (userId: string, role: string) => {
       id: true,
       email: true,
       role: true,
-      approved: true,
+
     },
   });
 };

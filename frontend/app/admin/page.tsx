@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { DashboardLayout } from "@/components/dashboard-layout";
@@ -45,6 +45,7 @@ import {
   Loader2,
   Eye,
   EyeOff,
+  Search,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -52,6 +53,7 @@ import {
 
   updateUserRole,
   deleteUser,
+  updateUserHandles,
   getAnnouncements,
   createAnnouncement,
   updateAnnouncement,
@@ -104,6 +106,11 @@ export default function AdminDashboardPage() {
 
   // User detail expanded state
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+
+  // User search and filter state
+  const [userSearch, setUserSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [profileFilter, setProfileFilter] = useState("");
 
   // Data states
   const [users, setUsers] = useState<User[]>([]);
@@ -162,6 +169,7 @@ export default function AdminDashboardPage() {
   const [editTaskDesc, setEditTaskDesc] = useState("");
   const [editTaskPoints, setEditTaskPoints] = useState("");
   const [editTaskDueDate, setEditTaskDueDate] = useState("");
+  const [editTaskLeetcodeUrl, setEditTaskLeetcodeUrl] = useState("");
   const [editTaskAssignmentType, setEditTaskAssignmentType] = useState<
     "all" | "specific"
   >("all");
@@ -208,6 +216,10 @@ export default function AdminDashboardPage() {
   const [rejectingBlogId, setRejectingBlogId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
+  // Edit handles state
+  const [editingHandlesUserId, setEditingHandlesUserId] = useState<string | null>(null);
+  const [editHandlesForm, setEditHandlesForm] = useState<Record<string, string>>({});
+
   useEffect(() => {
     if (!hasHydrated || !isAuthenticated) return;
     if (user?.role === "ADMIN") return;
@@ -215,10 +227,10 @@ export default function AdminDashboardPage() {
     const verifyRole = async () => {
       try {
         if (!user?.id) return;
-        const res = await api.get(`/auth/approval-status/${user.id}`);
-        const status = res.data?.data;
-        if (status?.role === "ADMIN") {
-          updateUser({ role: status.role, email: status.email || user.email });
+        const res = await api.get(`/profile`);
+        const profile = res.data?.data;
+        if (profile?.role === "ADMIN") {
+          updateUser({ role: profile.role, email: profile.email || user.email });
           return;
         }
       } catch {
@@ -552,7 +564,9 @@ export default function AdminDashboardPage() {
         points: taskPoints ? parseInt(taskPoints) : 0,
         dueDate: taskDueDate || undefined,
         assignedTo:
-          taskAssignmentType === "specific" ? selectedUserIds : undefined,
+          taskAssignmentType === "specific"
+            ? selectedUserIds
+            : studentUsers.map((u) => u.id),
       });
       showMessage("success", "Task created successfully!");
       setTaskTitle("");
@@ -624,6 +638,9 @@ export default function AdminDashboardPage() {
     setEditTaskDueDate(
       task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 16) : "",
     );
+    setEditTaskLeetcodeUrl(
+      task.leetcodeSlug ? `https://leetcode.com/problems/${task.leetcodeSlug}/` : "",
+    );
     setEditTaskAssignmentType(
       task.assignedTo && task.assignedTo.length > 0 ? "specific" : "all",
     );
@@ -636,6 +653,7 @@ export default function AdminDashboardPage() {
     setEditTaskDesc("");
     setEditTaskPoints("");
     setEditTaskDueDate("");
+    setEditTaskLeetcodeUrl("");
     setEditTaskAssignmentType("all");
     setEditSelectedUserIds([]);
   };
@@ -649,6 +667,12 @@ export default function AdminDashboardPage() {
         dueDate: editTaskDueDate || null,
         assignedTo:
           editTaskAssignmentType === "specific" ? editSelectedUserIds : null,
+        leetcodeSlug: (() => {
+          const url = editTaskLeetcodeUrl.trim();
+          if (!url) return null;
+          const match = url.match(/leetcode\.com\/problems\/([^/]+)/);
+          return match ? match[1] : url;
+        })(),
       });
       showMessage("success", "Task updated successfully!");
       handleCancelEditTask();
@@ -719,7 +743,34 @@ export default function AdminDashboardPage() {
   };
 
   // Get only STUDENT users for task assignment
-  const studentUsers = users.filter((u) => u.role === "STUDENT" && u.approved);
+  const studentUsers = users.filter((u) => u.role === "STUDENT");
+
+  const handleStartEditHandles = (u: User) => {
+    const handles = (u.profile?.handles as Record<string, string>) || {};
+    setEditHandlesForm({
+      leetcode: handles.leetcode || "",
+      codeforces: handles.codeforces || "",
+      codechef: handles.codechef || "",
+    });
+    setEditingHandlesUserId(u.id);
+  };
+
+  const handleSaveHandles = async (userId: string) => {
+    try {
+      // Filter out empty handles
+      const handles: Record<string, string> = {};
+      Object.entries(editHandlesForm).forEach(([k, v]) => {
+        if (v.trim()) handles[k] = v.trim();
+      });
+      await updateUserHandles(userId, handles);
+      showMessage("success", "CP handles updated successfully!");
+      setEditingHandlesUserId(null);
+      const refreshed = await getUsers();
+      setUsers(refreshed);
+    } catch (err: any) {
+      showMessage("error", err.response?.data?.message || "Failed to update handles");
+    }
+  };
 
   const handleCreateAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -868,13 +919,32 @@ export default function AdminDashboardPage() {
     { id: "blogs", label: "Blogs", icon: <FileText className="h-4 w-4" /> },
   ];
 
-  const displayedUsers = users;
+  const displayedUsers = useMemo(() => {
+    let result = users;
+    if (userSearch) {
+      const q = userSearch.toLowerCase();
+      result = result.filter(
+        (u) =>
+          u.email.toLowerCase().includes(q) ||
+          u.profile?.name?.toLowerCase().includes(q)
+      );
+    }
+    if (roleFilter) {
+      result = result.filter((u) => u.role === roleFilter);
+    }
+    if (profileFilter === "complete") {
+      result = result.filter((u) => u.profile?.name);
+    } else if (profileFilter === "incomplete") {
+      result = result.filter((u) => !u.profile?.name);
+    }
+    return result;
+  }, [users, userSearch, roleFilter, profileFilter]);
 
   return (
     <DashboardLayout>
-      <div className="p-6">
+      <div className="p-3 sm:p-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>
           <Button
             variant="outline"
@@ -899,13 +969,14 @@ export default function AdminDashboardPage() {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 flex-wrap">
+        <div className="flex gap-1.5 sm:gap-2 mb-4 sm:mb-6 flex-wrap">
           {tabs.map((tab) => (
             <Button
               key={tab.id}
               variant={activeTab === tab.id ? "default" : "outline"}
               onClick={() => setActiveTab(tab.id)}
-              className="gap-2"
+              size="sm"
+              className="gap-1.5 sm:gap-2 text-xs sm:text-sm"
             >
               {tab.icon}
               {tab.label}
@@ -918,7 +989,39 @@ export default function AdminDashboardPage() {
           <div className="space-y-6">
             <div className="flex items-center gap-4">
               <h2 className="text-xl font-semibold">User Management</h2>
-              <span className="text-sm text-muted-foreground">({users.length} users)</span>
+              <span className="text-sm text-muted-foreground">({displayedUsers.length} of {users.length} users)</span>
+            </div>
+
+            {/* Search and Filters */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name or email..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="h-10 rounded-md border border-input bg-background px-3 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">All Roles</option>
+                <option value="STUDENT">Student</option>
+                <option value="ADMIN">Admin</option>
+                <option value="ALUMNI">Alumni</option>
+              </select>
+              <select
+                value={profileFilter}
+                onChange={(e) => setProfileFilter(e.target.value)}
+                className="h-10 rounded-md border border-input bg-background px-3 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">All Profiles</option>
+                <option value="complete">Profile Complete</option>
+                <option value="incomplete">Profile Incomplete</option>
+              </select>
             </div>
 
             {tabLoading ? (
@@ -961,8 +1064,8 @@ export default function AdminDashboardPage() {
                       </tr>
                     ) : (
                       displayedUsers.map((u) => (
-                        <>
-                          <tr key={u.id} className="hover:bg-muted/50">
+                        <Fragment key={u.id}>
+                          <tr className="hover:bg-muted/50">
                             <td className="px-4 py-3 text-sm">{u.email}</td>
                             <td className="px-4 py-3 text-sm">
                               {u.profile?.name || <span className="text-muted-foreground italic">No profile</span>}
@@ -1023,7 +1126,7 @@ export default function AdminDashboardPage() {
                             </td>
                           </tr>
                           {expandedUserId === u.id && (
-                            <tr key={`${u.id}-details`}>
+                            <tr>
                               <td colSpan={5} className="px-4 py-4 bg-muted/30">
                                 {u.profile ? (
                                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -1095,6 +1198,35 @@ export default function AdminDashboardPage() {
                                         </div>
                                       </div>
                                     )}
+                                    {/* Edit Handles Section */}
+                                    <div className="md:col-span-2 lg:col-span-3 pt-2 border-t border-border/50">
+                                      {editingHandlesUserId === u.id ? (
+                                        <div className="space-y-2">
+                                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Edit CP Handles</p>
+                                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                            {["leetcode", "codeforces", "codechef"].map((platform) => (
+                                              <div key={platform}>
+                                                <label className="text-xs text-muted-foreground capitalize">{platform}</label>
+                                                <Input
+                                                  placeholder={`${platform} username`}
+                                                  value={editHandlesForm[platform] || ""}
+                                                  onChange={(e) => setEditHandlesForm({ ...editHandlesForm, [platform]: e.target.value })}
+                                                  className="h-8 text-sm"
+                                                />
+                                              </div>
+                                            ))}
+                                          </div>
+                                          <div className="flex gap-2">
+                                            <Button size="sm" onClick={() => handleSaveHandles(u.id)}>Save</Button>
+                                            <Button size="sm" variant="ghost" onClick={() => setEditingHandlesUserId(null)}>Cancel</Button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => handleStartEditHandles(u)}>
+                                          <Pencil className="h-3 w-3" /> Edit CP Handles
+                                        </Button>
+                                      )}
+                                    </div>
                                   </div>
                                 ) : (
                                   <p className="text-sm text-muted-foreground italic">This user has not completed their profile yet.</p>
@@ -1102,7 +1234,7 @@ export default function AdminDashboardPage() {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </Fragment>
                       ))
                     )}
                   </tbody>
@@ -1116,37 +1248,35 @@ export default function AdminDashboardPage() {
                     </div>
                   ) : (
                     displayedUsers.map((u) => (
-                      <div key={u.id} className="p-4 space-y-3">
+                      <div key={u.id} className="p-3 sm:p-4 space-y-2">
                         <p className="text-sm font-medium break-all">{u.email}</p>
                         {u.profile?.name && (
                           <p className="text-xs text-muted-foreground">{u.profile.name}</p>
                         )}
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2">
-                            <Select
-                              value={u.role}
-                              onValueChange={(role) =>
-                                handleUpdateRole(u.id, role)
-                              }
-                            >
-                              <SelectTrigger className="w-28 h-8 bg-muted border-border text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="bg-muted border-border">
-                                <SelectItem value="STUDENT">Student</SelectItem>
-                                <SelectItem value="ADMIN">Admin</SelectItem>
-                                <SelectItem value="ALUMNI">Alumni</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(u.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <div className="flex gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Select
+                            value={u.role}
+                            onValueChange={(role) =>
+                              handleUpdateRole(u.id, role)
+                            }
+                          >
+                            <SelectTrigger className="w-24 h-7 bg-muted border-border text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-muted border-border">
+                              <SelectItem value="STUDENT">Student</SelectItem>
+                              <SelectItem value="ADMIN">Admin</SelectItem>
+                              <SelectItem value="ALUMNI">Alumni</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(u.createdAt).toLocaleDateString()}
+                          </span>
+                          <div className="flex gap-1.5 ml-auto">
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-7 text-xs gap-1"
+                              className="h-7 text-xs gap-1 px-2"
                               onClick={() =>
                                 setExpandedUserId(
                                   expandedUserId === u.id ? null : u.id
@@ -1163,7 +1293,7 @@ export default function AdminDashboardPage() {
                               <Button
                                 size="sm"
                                 variant="destructive"
-                                className="h-7 text-xs gap-1"
+                                className="h-7 text-xs gap-1 px-2"
                                 onClick={() =>
                                   handleDeleteUser(u.id, u.email, u.role)
                                 }
@@ -1246,6 +1376,35 @@ export default function AdminDashboardPage() {
                                     </div>
                                   </div>
                                 )}
+                                {/* Edit Handles Section (Mobile) */}
+                                <div className="col-span-2 pt-2 border-t border-border/50">
+                                  {editingHandlesUserId === u.id ? (
+                                    <div className="space-y-2">
+                                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Edit CP Handles</p>
+                                      <div className="grid grid-cols-1 gap-2">
+                                        {["leetcode", "codeforces", "codechef"].map((platform) => (
+                                          <div key={platform}>
+                                            <label className="text-xs text-muted-foreground capitalize">{platform}</label>
+                                            <Input
+                                              placeholder={`${platform} username`}
+                                              value={editHandlesForm[platform] || ""}
+                                              onChange={(e) => setEditHandlesForm({ ...editHandlesForm, [platform]: e.target.value })}
+                                              className="h-8 text-sm"
+                                            />
+                                          </div>
+                                        ))}
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <Button size="sm" onClick={() => handleSaveHandles(u.id)}>Save</Button>
+                                        <Button size="sm" variant="ghost" onClick={() => setEditingHandlesUserId(null)}>Cancel</Button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => handleStartEditHandles(u)}>
+                                      <Pencil className="h-3 w-3" /> Edit CP Handles
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                             ) : (
                               <p className="text-sm text-muted-foreground italic">This user has not completed their profile yet.</p>
@@ -1973,6 +2132,24 @@ export default function AdminDashboardPage() {
                                         className="bg-muted border-border h-9"
                                       />
                                     </div>
+                                  </div>
+
+                                  {/* LeetCode URL */}
+                                  <div className="space-y-2">
+                                    <Label className="text-xs text-muted-foreground">
+                                      LeetCode Problem URL
+                                    </Label>
+                                    <Input
+                                      placeholder="https://leetcode.com/problems/two-sum/description/"
+                                      value={editTaskLeetcodeUrl}
+                                      onChange={(e) =>
+                                        setEditTaskLeetcodeUrl(e.target.value)
+                                      }
+                                      className="bg-muted border-border h-9"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                      Optional. Students can auto-verify via LeetCode if provided.
+                                    </p>
                                   </div>
 
                                   {/* Edit Assignment Type */}

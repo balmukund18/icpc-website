@@ -169,14 +169,9 @@ export const myPoints = async (req: any, res: Response) => {
 export const verifyLeetCode = async (req: any, res: Response) => {
   try {
     const { taskId } = req.params;
-    const { leetcodeUsername } = req.body;
     const userId = req.user.id;
 
-    if (!leetcodeUsername) {
-      return fail(res, 'LeetCode username is required', 400);
-    }
-
-    // Get task to check it has a leetcodeSlug
+    // Get task to check it has a leetcodeSlug and dates
     const task = await taskService.getTaskById(taskId, userId);
     if (!task.leetcodeSlug) {
       return fail(res, 'This task does not support LeetCode verification', 400);
@@ -187,16 +182,41 @@ export const verifyLeetCode = async (req: any, res: Response) => {
       return fail(res, 'You cannot submit to this task', 400);
     }
 
+    // Auto-fetch LeetCode handle from user's profile
+    const { getProfile } = await import('../services/profileService');
+    const profile = await getProfile(userId);
+    const handles = (profile?.handles as Record<string, string>) || {};
+    const leetcodeHandle = handles.leetcode;
+
+    if (!leetcodeHandle) {
+      return fail(res, 'No LeetCode handle found in your profile. Please set your LeetCode username in your Profile settings first.', 400);
+    }
+
+    // Sanitize handle: extract username from URL if user stored a full URL
+    // Supports: https://leetcode.com/u/username, https://leetcode.com/username, or just "username"
+    let cleanHandle = leetcodeHandle.trim();
+    const urlMatch = cleanHandle.match(/leetcode\.com\/(?:u\/)?([^/?\s]+)/);
+    if (urlMatch) {
+      cleanHandle = urlMatch[1];
+    }
+
+    console.log(`[LeetCode Verify] Original handle: "${leetcodeHandle}", Clean handle: "${cleanHandle}", Problem: "${task.leetcodeSlug}"`);
+
+    // Use task's createdAt → dueDate as the verification window
+    const startTime = new Date(task.createdAt);
+    const endTime = task.dueDate ? new Date(task.dueDate) : new Date();
+
     // Verify via LeetCode API
     const { verifyLeetCodeSubmission } = await import('../services/verificationService');
     const result = await verifyLeetCodeSubmission(
-      leetcodeUsername,
+      cleanHandle,
       task.leetcodeSlug,
-      168 // 7-day window for practice tasks
+      startTime,
+      endTime
     );
 
     if (!result.verified) {
-      return fail(res, 'Problem not found in your recent LeetCode submissions. Solve it on LeetCode first.', 400);
+      return fail(res, `Problem not found in your recent LeetCode submissions (handle: ${cleanHandle}). Solve it on LeetCode between ${startTime.toLocaleDateString()} and ${endTime.toLocaleDateString()}.`, 400);
     }
 
     // Auto-create a verified submission

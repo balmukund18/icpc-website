@@ -2,6 +2,7 @@ import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import passport from "passport";
 import * as auth from "../controllers/authController";
+import * as passwordReset from "../controllers/passwordResetController";
 import { isAuthenticated, isAdmin } from "../middleware/auth";
 import { body } from "express-validator";
 
@@ -28,8 +29,21 @@ router.post(
   [body("email").isEmail(), body("password").exists()],
   auth.login
 );
-router.get("/approval-status/:userId", auth.checkApprovalStatus);
-router.post("/approve/:id", isAuthenticated, isAdmin, auth.approve);
+
+
+// Password reset routes
+router.post(
+  "/forgot-password",
+  authLimiter,
+  [body("email").isEmail()],
+  passwordReset.forgotPassword
+);
+router.post(
+  "/reset-password",
+  authLimiter,
+  [body("password").isLength({ min: 6 }), body("token").isString()],
+  passwordReset.resetPassword
+);
 
 // Google OAuth routes
 router.get(
@@ -45,7 +59,7 @@ router.get(
 
 // Admin user management
 router.get("/users", isAuthenticated, isAdmin, auth.listUsers);
-router.get("/users/pending", isAuthenticated, isAdmin, auth.listPendingUsers);
+
 router.put(
   "/users/:id/role",
   isAuthenticated,
@@ -56,3 +70,4 @@ router.put(
 router.delete("/users/:id", isAuthenticated, isAdmin, auth.deleteUser);
 
 export default router;
+

@@ -21,15 +21,17 @@ export interface LeetCodeSubmission {
 
 /**
  * Verify that a user has solved a specific problem on LeetCode
- * @param username - LeetCode username
+ * within the task's time window (createdAt → dueDate)
+ * @param username - LeetCode username (from profile handles)
  * @param problemSlug - Problem slug (e.g., "two-sum")
- * @param timeWindowHours - How far back to check (default: 24 hours)
- * @returns true if the problem was solved within the time window
+ * @param startTime - Task creation date
+ * @param endTime - Task due date
  */
 export const verifyLeetCodeSubmission = async (
   username: string,
   problemSlug: string,
-  timeWindowHours: number = 24
+  startTime: Date,
+  endTime: Date
 ): Promise<{ verified: boolean; submission?: LeetCodeSubmission }> => {
   try {
     const response = await axios.post(
@@ -38,7 +40,7 @@ export const verifyLeetCodeSubmission = async (
         query: RECENT_SUBMISSIONS_QUERY,
         variables: {
           username,
-          limit: 50, // Check last 50 accepted submissions
+          limit: 50,
         },
       },
       {
@@ -56,14 +58,16 @@ export const verifyLeetCodeSubmission = async (
       return { verified: false };
     }
 
-    // Check if the problem slug exists in recent submissions
-    const timeWindowMs = timeWindowHours * 60 * 60 * 1000;
-    const cutoffTime = Date.now() - timeWindowMs;
+    // Check if the problem was solved within the task window (createdAt → dueDate)
+    const startMs = startTime.getTime();
+    const endMs = endTime.getTime();
 
     const matchingSubmission = submissions.find((sub) => {
       const submissionTime = parseInt(sub.timestamp) * 1000; // Convert to milliseconds
       return (
-        sub.titleSlug === problemSlug && submissionTime >= cutoffTime
+        sub.titleSlug === problemSlug &&
+        submissionTime >= startMs &&
+        submissionTime <= endMs
       );
     });
 
@@ -80,7 +84,7 @@ export const verifyLeetCodeSubmission = async (
     if (error.response?.data?.errors) {
       const errorMessage = error.response.data.errors[0]?.message || "";
       if (errorMessage.includes("does not exist")) {
-        throw new Error(`LeetCode user "${username}" not found. Make sure the username is correct and the profile is public.`);
+        throw new Error(`LeetCode user "${username}" not found. Make sure your LeetCode handle in your profile is correct and the profile is public.`);
       }
     }
 

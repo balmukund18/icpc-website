@@ -39,11 +39,24 @@ export const leaderboard = async (
       const userIds = rows.map((r) => r.userId);
       const users = await prisma.user.findMany({
         where: { id: { in: userIds } },
-        select: { id: true, email: true },
+        select: { id: true, email: true, role: true },
       });
       const profiles = await prisma.profile.findMany({
         where: { userId: { in: userIds } },
-        select: { userId: true, name: true },
+        select: {
+          userId: true,
+          name: true,
+          branch: true,
+          year: true,
+          contact: true,
+          handles: true,
+          graduationYear: true,
+          company: true,
+          position: true,
+          location: true,
+          bio: true,
+          linkedIn: true,
+        },
       });
 
       // Create maps for O(1) lookups
@@ -58,7 +71,18 @@ export const leaderboard = async (
           position: idx + 1,
           userId: r.userId,
           email: user?.email,
+          role: user?.role || null,
           name: profile?.name || null,
+          branch: profile?.branch || null,
+          year: profile?.year || null,
+          contact: profile?.contact || null,
+          handles: profile?.handles || null,
+          graduationYear: profile?.graduationYear || null,
+          company: profile?.company || null,
+          jobPosition: profile?.position || null,
+          location: profile?.location || null,
+          bio: profile?.bio || null,
+          linkedIn: profile?.linkedIn || null,
           points: r._sum.points || 0,
         };
       });

@@ -120,6 +120,14 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
+              <div className="text-right">
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Forgot Password?
+                </Link>
+              </div>
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>

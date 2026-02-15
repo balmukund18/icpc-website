@@ -1,6 +1,7 @@
 import prisma from "../models/prismaClient";
 import { BlogStatus } from "@prisma/client";
 import cache from "../utils/cache";
+import { sendBlogStatusEmail } from "./emailService";
 
 // Predefined tags for blogs
 export const PREDEFINED_TAGS = [
@@ -517,6 +518,15 @@ export const approveBlog = async (id: string) => {
   // Invalidate cache since blog status changed
   cache.invalidate("blog:tags:all");
 
+  // Send email notification to author (fire-and-forget)
+  const authorEmail = blog.author?.email;
+  const authorName = blog.author?.profile?.name || blog.author?.email?.split("@")[0] || "";
+  if (authorEmail) {
+    sendBlogStatusEmail(authorEmail, authorName, blog.title, "APPROVED").catch(
+      (err: unknown) => console.error("[Blog Approval Email Error]:", err)
+    );
+  }
+
   return transformBlogResponse(blog);
 };
 
@@ -540,5 +550,15 @@ export const rejectBlog = async (id: string, reason?: string) => {
     },
     include: authorInclude,
   });
+
+  // Send email notification to author (fire-and-forget)
+  const authorEmail = blog.author?.email;
+  const authorName = blog.author?.profile?.name || blog.author?.email?.split("@")[0] || "";
+  if (authorEmail) {
+    sendBlogStatusEmail(authorEmail, authorName, blog.title, "REJECTED", reason).catch(
+      (err: unknown) => console.error("[Blog Rejection Email Error]:", err)
+    );
+  }
+
   return transformBlogResponse(blog);
 };

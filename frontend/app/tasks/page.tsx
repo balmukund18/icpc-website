@@ -49,10 +49,7 @@ export default function TasksPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [submissionLink, setSubmissionLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [leetcodeModalOpen, setLeetcodeModalOpen] = useState(false);
-  const [leetcodeTask, setLeetcodeTask] = useState<Task | null>(null);
-  const [leetcodeUsername, setLeetcodeUsername] = useState("");
-  const [verifying, setVerifying] = useState(false);
+  const [verifying, setVerifying] = useState<string | null>(null);
 
   const handleOpenSubmitModal = (task: Task) => {
     setSelectedTask(task);
@@ -97,24 +94,12 @@ export default function TasksPage() {
     }
   };
 
-  const handleOpenLeetcodeModal = (task: Task) => {
-    setLeetcodeTask(task);
-    setLeetcodeUsername("");
-    setLeetcodeModalOpen(true);
-  };
-
-  const handleVerifyLeetcode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!leetcodeTask || !leetcodeUsername.trim()) return;
-
-    setVerifying(true);
+  const handleVerifyLeetcode = async (task: Task) => {
+    setVerifying(task.id);
     try {
-      await verifyLeetCode(leetcodeTask.id, leetcodeUsername.trim());
+      await verifyLeetCode(task.id);
       await invalidateTasks();
       toast.success("LeetCode submission verified! Points awarded.");
-      setLeetcodeModalOpen(false);
-      setLeetcodeTask(null);
-      setLeetcodeUsername("");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } }; message?: string };
       toast.error(
@@ -123,7 +108,7 @@ export default function TasksPage() {
         "Failed to verify LeetCode submission"
       );
     } finally {
-      setVerifying(false);
+      setVerifying(null);
     }
   };
 
@@ -351,12 +336,22 @@ export default function TasksPage() {
 
                       {status.canSubmit && task.leetcodeSlug && (
                         <Button
-                          onClick={() => handleOpenLeetcodeModal(task)}
+                          onClick={() => handleVerifyLeetcode(task)}
                           size="sm"
+                          disabled={verifying === task.id}
                           className="gap-2 bg-orange-600 hover:bg-orange-700"
                         >
-                          <CheckCircle className="h-4 w-4" />
-                          Verify
+                          {verifying === task.id ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Verifying...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="h-4 w-4" />
+                              Verify
+                            </>
+                          )}
                         </Button>
                       )}
                       {status.canSubmit && !task.leetcodeSlug && (
@@ -488,94 +483,7 @@ export default function TasksPage() {
           </Card>
         </div>
       )}
-      {/* LeetCode Verify Modal */}
-      {leetcodeModalOpen && leetcodeTask && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="bg-card border-border w-full max-w-lg">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-foreground">Verify LeetCode Solution</CardTitle>
-                  <CardDescription className="mt-1">
-                    {leetcodeTask.title}
-                  </CardDescription>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => { setLeetcodeModalOpen(false); setLeetcodeTask(null); }}
-                  className="h-8 w-8"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleVerifyLeetcode} className="space-y-4">
-                <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-2">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Trophy className="h-4 w-4 text-purple-400" />
-                    <span>
-                      <strong>{leetcodeTask.points} points</strong> upon verification
-                    </span>
-                  </div>
-                  <a
-                    href={`https://leetcode.com/problems/${leetcodeTask.leetcodeSlug}/`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-orange-400 hover:text-orange-300"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                    Open problem on LeetCode
-                  </a>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="leetcode-username">LeetCode Username *</Label>
-                  <Input
-                    id="leetcode-username"
-                    placeholder="Your LeetCode username"
-                    value={leetcodeUsername}
-                    onChange={(e) => setLeetcodeUsername(e.target.value)}
-                    className="bg-muted border-border"
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    We&apos;ll check your recent accepted submissions on LeetCode to verify.
-                  </p>
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    type="submit"
-                    disabled={verifying || !leetcodeUsername.trim()}
-                    className="flex-1 gap-2 bg-orange-600 hover:bg-orange-700"
-                  >
-                    {verifying ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Verifying...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="h-4 w-4" />
-                        Verify Solution
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => { setLeetcodeModalOpen(false); setLeetcodeTask(null); }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </DashboardLayout>
   );
 }

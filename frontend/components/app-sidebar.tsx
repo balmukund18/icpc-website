@@ -2,6 +2,7 @@
 
 import {
   LayoutDashboard,
+  Trophy,
   Play,
   CheckSquare,
   Calendar,
@@ -38,6 +39,11 @@ const mainLinks: NavLink[] = [
     label: "Dashboard",
     href: "/dashboard",
     icon: <LayoutDashboard className="h-5 w-5 flex-shrink-0" />,
+  },
+  {
+    label: "Leaderboard",
+    href: "/leaderboard",
+    icon: <Trophy className="h-5 w-5 flex-shrink-0" />,
   },
   {
     label: "Contests",

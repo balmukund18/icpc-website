@@ -61,6 +61,7 @@ export default function ProfilePage() {
   const [year, setYear] = useState<number>(1);
   const [phone, setPhone] = useState("");
   const [handles, setHandles] = useState<Handles>({});
+  const [leetcodeLocked, setLeetcodeLocked] = useState(false);
 
   // Alumni-specific form state
   const [graduationYear, setGraduationYear] = useState<number | null>(null);
@@ -93,6 +94,10 @@ export default function ProfilePage() {
           setYear(profile.year || 1);
           setPhone(profile.contact || "");
           setHandles(profile.handles || {});
+          // Lock LeetCode handle if already set (only admin can change)
+          if ((profile.handles as Record<string, string>)?.leetcode) {
+            setLeetcodeLocked(true);
+          }
           // Alumni fields
           setGraduationYear(profile.graduationYear || null);
           setCompany(profile.company || "");
@@ -325,9 +330,8 @@ export default function ProfilePage() {
                     setErrors((prev) => ({ ...prev, name: "" }));
                   }
                 }}
-                className={`bg-muted border-border ${
-                  errors.name ? "border-red-500" : ""
-                }`}
+                className={`bg-muted border-border ${errors.name ? "border-red-500" : ""
+                  }`}
               />
               {errors.name && (
                 <p className="text-xs text-red-400">{errors.name}</p>
@@ -349,9 +353,8 @@ export default function ProfilePage() {
                 }}
               >
                 <SelectTrigger
-                  className={`bg-muted border-border ${
-                    errors.branch ? "border-red-500" : ""
-                  }`}
+                  className={`bg-muted border-border ${errors.branch ? "border-red-500" : ""
+                    }`}
                 >
                   <SelectValue placeholder="Select your branch" />
                 </SelectTrigger>
@@ -385,9 +388,8 @@ export default function ProfilePage() {
                   }}
                 >
                   <SelectTrigger
-                    className={`bg-muted border-border ${
-                      errors.year ? "border-red-500" : ""
-                    }`}
+                    className={`bg-muted border-border ${errors.year ? "border-red-500" : ""
+                      }`}
                   >
                     <SelectValue placeholder="Select your year" />
                   </SelectTrigger>
@@ -426,9 +428,8 @@ export default function ProfilePage() {
                     setErrors((prev) => ({ ...prev, phone: "" }));
                   }
                 }}
-                className={`bg-muted border-border ${
-                  errors.phone ? "border-red-500" : ""
-                }`}
+                className={`bg-muted border-border ${errors.phone ? "border-red-500" : ""
+                  }`}
               />
               {errors.phone ? (
                 <p className="text-xs text-red-400">{errors.phone}</p>
@@ -471,9 +472,8 @@ export default function ProfilePage() {
                   }}
                 >
                   <SelectTrigger
-                    className={`bg-muted border-border ${
-                      errors.graduationYear ? "border-red-500" : ""
-                    }`}
+                    className={`bg-muted border-border ${errors.graduationYear ? "border-red-500" : ""
+                      }`}
                   >
                     <SelectValue placeholder="Select graduation year" />
                   </SelectTrigger>
@@ -583,20 +583,29 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2">
-              {CP_PLATFORMS.map((platform) => (
-                <div key={platform.key} className="space-y-2">
-                  <Label htmlFor={platform.key}>{platform.label}</Label>
-                  <Input
-                    id={platform.key}
-                    placeholder={platform.placeholder}
-                    value={handles[platform.key as keyof Handles] || ""}
-                    onChange={(e) =>
-                      handleHandleChange(platform.key, e.target.value)
-                    }
-                    className="bg-muted border-border"
-                  />
-                </div>
-              ))}
+              {CP_PLATFORMS.map((platform) => {
+                const isLocked = platform.key === "leetcode" && leetcodeLocked;
+                return (
+                  <div key={platform.key} className="space-y-2">
+                    <Label htmlFor={platform.key}>
+                      {platform.label}
+                      {isLocked && (
+                        <span className="ml-2 text-xs text-muted-foreground">(locked — contact admin to change)</span>
+                      )}
+                    </Label>
+                    <Input
+                      id={platform.key}
+                      placeholder={platform.placeholder}
+                      value={handles[platform.key as keyof Handles] || ""}
+                      onChange={(e) =>
+                        handleHandleChange(platform.key, e.target.value)
+                      }
+                      className={`bg-muted border-border ${isLocked ? "opacity-60 cursor-not-allowed" : ""}`}
+                      disabled={isLocked}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

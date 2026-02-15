@@ -5,7 +5,7 @@ export interface User {
   id: string;
   email: string;
   role: "STUDENT" | "ADMIN" | "ALUMNI";
-  approved: boolean;
+
   createdAt: string;
   profile?: {
     name: string;
@@ -75,15 +75,7 @@ export async function getUsers(): Promise<User[]> {
   return response.data.data || response.data;
 }
 
-export async function getPendingUsers(): Promise<User[]> {
-  const response = await api.get("/auth/users/pending");
-  return response.data.data || response.data;
-}
 
-export async function approveUser(userId: string): Promise<User> {
-  const response = await api.post(`/auth/approve/${userId}`);
-  return response.data.data || response.data;
-}
 
 export async function updateUserRole(
   userId: string,
@@ -95,6 +87,14 @@ export async function updateUserRole(
 
 export async function deleteUser(userId: string): Promise<void> {
   await api.delete(`/auth/users/${userId}`);
+}
+
+export async function updateUserHandles(
+  userId: string,
+  handles: Record<string, string>
+): Promise<any> {
+  const response = await api.put(`/profile/users/${userId}/handles`, { handles });
+  return response.data.data || response.data;
 }
 
 // Sessions

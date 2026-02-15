@@ -1,4 +1,5 @@
 import prisma from '../models/prismaClient';
+import { sendAnnouncementEmail } from './emailService';
 
 // Create a new announcement
 export const createAnnouncement = async (data: {
@@ -6,13 +7,28 @@ export const createAnnouncement = async (data: {
   content: string;
   pinned?: boolean;
 }) => {
-  return prisma.announcement.create({
+  const announcement = await prisma.announcement.create({
     data: {
       title: data.title,
       content: data.content,
       pinned: data.pinned ?? false,
     },
   });
+
+  // Send email notification to all users (fire-and-forget)
+  prisma.user
+    .findMany({
+      select: { email: true },
+    })
+    .then((users) => {
+      const emails = users.map((u) => u.email);
+      if (emails.length > 0) {
+        sendAnnouncementEmail(emails, data.title, data.content);
+      }
+    })
+    .catch((err) => console.error("[Announcement Email Error]:", err));
+
+  return announcement;
 };
 
 // List all announcements (pinned first, then newest)

@@ -1,6 +1,7 @@
 import prisma from "../models/prismaClient";
 import { Prisma, SubmissionStatus } from "@prisma/client";
 import cache from "../utils/cache";
+import { sendTaskAssignedEmail } from "./emailService";
 
 const MAX_SUBMISSIONS_PER_TASK = 2;
 
@@ -13,7 +14,9 @@ export const createTask = async (data: {
   assignedTo?: string[];
   dueDate?: Date;
 }) => {
-  return prisma.task.create({
+  console.log("[TaskService] createTask called with assignedTo:", data.assignedTo);
+
+  const task = await prisma.task.create({
     data: {
       title: data.title,
       description: data.description,
@@ -23,6 +26,32 @@ export const createTask = async (data: {
       dueDate: data.dueDate || null,
     },
   });
+
+  // Send email notifications to assigned users (fire-and-forget)
+  if (data.assignedTo && data.assignedTo.length > 0) {
+    console.log("[TaskService] Sending emails to", data.assignedTo.length, "assigned users");
+    prisma.user
+      .findMany({
+        where: { id: { in: data.assignedTo } },
+        select: { email: true, profile: { select: { name: true } } },
+      })
+      .then((users) => {
+        console.log("[TaskService] Found", users.length, "users to email:", users.map(u => u.email));
+        users.forEach((u) => {
+          sendTaskAssignedEmail(
+            u.email,
+            u.profile?.name || u.email.split("@")[0],
+            data.title,
+            data.description
+          );
+        });
+      })
+      .catch((err) => console.error("[Task Assignment Email Error]:", err));
+  } else {
+    console.log("[TaskService] No assignedTo users — skipping emails");
+  }
+
+  return task;
 };
 
 // Get all tasks with optional user context (for submission status)
@@ -146,10 +175,32 @@ export const deleteTask = async (taskId: string) => {
 
 // Assign task to users (replace existing assignments)
 export const assignTask = async (taskId: string, userIds: string[]) => {
-  return prisma.task.update({
+  const task = await prisma.task.update({
     where: { id: taskId },
     data: { assignedTo: userIds.length > 0 ? userIds : Prisma.JsonNull },
   });
+
+  // Send email notifications to newly assigned users (fire-and-forget)
+  if (userIds.length > 0) {
+    prisma.user
+      .findMany({
+        where: { id: { in: userIds } },
+        select: { email: true, profile: { select: { name: true } } },
+      })
+      .then((users) => {
+        users.forEach((u) => {
+          sendTaskAssignedEmail(
+            u.email,
+            u.profile?.name || u.email.split("@")[0],
+            task.title,
+            task.description
+          );
+        });
+      })
+      .catch((err) => console.error("[Task Assignment Email Error]:", err));
+  }
+
+  return task;
 };
 
 // Get all submissions for a task (admin view)

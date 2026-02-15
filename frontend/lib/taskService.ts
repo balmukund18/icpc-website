@@ -63,6 +63,7 @@ export interface UpdateTaskInput {
   points?: number;
   assignedTo?: string[] | null;
   dueDate?: string | null;
+  leetcodeSlug?: string | null;
 }
 
 // Task API functions
@@ -109,10 +110,9 @@ export async function submitSolution(taskId: string, link: string): Promise<Subm
 }
 
 export async function verifyLeetCode(
-  taskId: string,
-  leetcodeUsername: string
+  taskId: string
 ): Promise<{ verified: boolean; submission: Submission; message: string }> {
-  const response = await api.post(`/tasks/${taskId}/verify-leetcode`, { leetcodeUsername });
+  const response = await api.post(`/tasks/${taskId}/verify-leetcode`);
   return response.data.data || response.data;
 }
 

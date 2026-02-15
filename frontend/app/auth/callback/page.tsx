@@ -48,7 +48,8 @@ function AuthCallbackContent() {
             }
           );
 
-          if (response.ok) {
+          const profileData = await response.json();
+          if (response.ok && profileData?.data) {
             setHasProfile(true);
 
             toast.success("Logged in successfully with Google");

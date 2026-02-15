@@ -54,9 +54,19 @@ export default function LoginPage() {
       // Check if profile exists and store result
       try {
         const profile = await getProfile();
-        setHasProfile(!!profile);
+        const profileExists = !!profile;
+        setHasProfile(profileExists);
+
+        if (!profileExists) {
+          toast.success("Please complete your profile.");
+          router.push("/profile");
+          return;
+        }
       } catch {
         setHasProfile(false);
+        toast.success("Please complete your profile.");
+        router.push("/profile");
+        return;
       }
 
       toast.success("Logged in successfully");

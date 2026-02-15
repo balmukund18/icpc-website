@@ -7,6 +7,19 @@ export interface User {
   role: "STUDENT" | "ADMIN" | "ALUMNI";
   approved: boolean;
   createdAt: string;
+  profile?: {
+    name: string;
+    branch: string;
+    year: number;
+    contact: string;
+    handles?: Record<string, string>;
+    graduationYear?: number;
+    company?: string;
+    position?: string;
+    location?: string;
+    bio?: string;
+    linkedIn?: string;
+  } | null;
 }
 
 export interface Session {

@@ -34,6 +34,21 @@ export const getAllUsers = async () => {
       role: true,
       approved: true,
       createdAt: true,
+      profile: {
+        select: {
+          name: true,
+          branch: true,
+          year: true,
+          contact: true,
+          handles: true,
+          graduationYear: true,
+          company: true,
+          position: true,
+          location: true,
+          bio: true,
+          linkedIn: true,
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
   });

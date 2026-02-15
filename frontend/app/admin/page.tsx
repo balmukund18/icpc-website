@@ -43,6 +43,8 @@ import {
   Pin,
   Trash2,
   Loader2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -99,6 +101,9 @@ export default function AdminDashboardPage() {
     userEmail: string;
   } | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // User detail expanded state
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
 
   // Data states
   const [users, setUsers] = useState<User[]>([]);
@@ -930,6 +935,9 @@ export default function AdminDashboardPage() {
                         Email
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
+                        Name
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
                         Role
                       </th>
 
@@ -945,7 +953,7 @@ export default function AdminDashboardPage() {
                     {displayedUsers.length === 0 ? (
                       <tr>
                         <td
-                          colSpan={4}
+                          colSpan={5}
                           className="px-4 py-8 text-center text-muted-foreground"
                         >
                           No users found
@@ -953,48 +961,148 @@ export default function AdminDashboardPage() {
                       </tr>
                     ) : (
                       displayedUsers.map((u) => (
-                        <tr key={u.id} className="hover:bg-muted/50">
-                          <td className="px-4 py-3 text-sm">{u.email}</td>
-                          <td className="px-4 py-3">
-                            <Select
-                              value={u.role}
-                              onValueChange={(role) =>
-                                handleUpdateRole(u.id, role)
-                              }
-                            >
-                              <SelectTrigger className="w-28 h-8 bg-muted border-border text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="bg-muted border-border">
-                                <SelectItem value="STUDENT">Student</SelectItem>
-                                <SelectItem value="ADMIN">Admin</SelectItem>
-                                <SelectItem value="ALUMNI">Alumni</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </td>
+                        <>
+                          <tr key={u.id} className="hover:bg-muted/50">
+                            <td className="px-4 py-3 text-sm">{u.email}</td>
+                            <td className="px-4 py-3 text-sm">
+                              {u.profile?.name || <span className="text-muted-foreground italic">No profile</span>}
+                            </td>
+                            <td className="px-4 py-3">
+                              <Select
+                                value={u.role}
+                                onValueChange={(role) =>
+                                  handleUpdateRole(u.id, role)
+                                }
+                              >
+                                <SelectTrigger className="w-28 h-8 bg-muted border-border text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-muted border-border">
+                                  <SelectItem value="STUDENT">Student</SelectItem>
+                                  <SelectItem value="ADMIN">Admin</SelectItem>
+                                  <SelectItem value="ALUMNI">Alumni</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </td>
 
-                          <td className="px-4 py-3 text-sm text-muted-foreground">
-                            {new Date(u.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex gap-2">
-
-                              {u.role !== "ADMIN" && (
+                            <td className="px-4 py-3 text-sm text-muted-foreground">
+                              {new Date(u.createdAt).toLocaleDateString()}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex gap-2">
                                 <Button
                                   size="sm"
-                                  variant="destructive"
+                                  variant="outline"
                                   className="h-7 text-xs gap-1"
                                   onClick={() =>
-                                    handleDeleteUser(u.id, u.email, u.role)
+                                    setExpandedUserId(
+                                      expandedUserId === u.id ? null : u.id
+                                    )
                                   }
                                 >
-                                  <Trash2 className="h-3 w-3" />
-                                  Delete
+                                  {expandedUserId === u.id ? (
+                                    <><EyeOff className="h-3 w-3" /> Hide</>
+                                  ) : (
+                                    <><Eye className="h-3 w-3" /> View</>
+                                  )}
                                 </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
+                                {u.role !== "ADMIN" && (
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    className="h-7 text-xs gap-1"
+                                    onClick={() =>
+                                      handleDeleteUser(u.id, u.email, u.role)
+                                    }
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                    Delete
+                                  </Button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                          {expandedUserId === u.id && (
+                            <tr key={`${u.id}-details`}>
+                              <td colSpan={5} className="px-4 py-4 bg-muted/30">
+                                {u.profile ? (
+                                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                    <div>
+                                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Name</p>
+                                      <p className="text-sm">{u.profile.name}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Branch</p>
+                                      <p className="text-sm">{u.profile.branch}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Year</p>
+                                      <p className="text-sm">{u.profile.year}</p>
+                                    </div>
+                                    {u.profile.contact && (
+                                      <div>
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Contact</p>
+                                        <p className="text-sm">{u.profile.contact}</p>
+                                      </div>
+                                    )}
+                                    {u.profile.graduationYear && (
+                                      <div>
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Graduation Year</p>
+                                        <p className="text-sm">{u.profile.graduationYear}</p>
+                                      </div>
+                                    )}
+                                    {u.profile.company && (
+                                      <div>
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Company</p>
+                                        <p className="text-sm">{u.profile.company}</p>
+                                      </div>
+                                    )}
+                                    {u.profile.position && (
+                                      <div>
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Position</p>
+                                        <p className="text-sm">{u.profile.position}</p>
+                                      </div>
+                                    )}
+                                    {u.profile.location && (
+                                      <div>
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Location</p>
+                                        <p className="text-sm">{u.profile.location}</p>
+                                      </div>
+                                    )}
+                                    {u.profile.linkedIn && (
+                                      <div>
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">LinkedIn</p>
+                                        <a href={u.profile.linkedIn} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-400 hover:underline">{u.profile.linkedIn}</a>
+                                      </div>
+                                    )}
+                                    {u.profile.bio && (
+                                      <div className="md:col-span-2 lg:col-span-3">
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Bio</p>
+                                        <p className="text-sm">{u.profile.bio}</p>
+                                      </div>
+                                    )}
+                                    {u.profile.handles && Object.keys(u.profile.handles).length > 0 && (
+                                      <div className="md:col-span-2 lg:col-span-3">
+                                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">CP Handles</p>
+                                        <div className="flex flex-wrap gap-2 mt-1">
+                                          {Object.entries(u.profile.handles).map(([platform, handle]) =>
+                                            handle ? (
+                                              <span key={platform} className="text-xs px-2 py-1 rounded-full bg-primary/10 border border-primary/20">
+                                                <span className="font-medium capitalize">{platform}:</span> {handle as string}
+                                              </span>
+                                            ) : null
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground italic">This user has not completed their profile yet.</p>
+                                )}
+                              </td>
+                            </tr>
+                          )}
+                        </>
                       ))
                     )}
                   </tbody>
@@ -1010,6 +1118,9 @@ export default function AdminDashboardPage() {
                     displayedUsers.map((u) => (
                       <div key={u.id} className="p-4 space-y-3">
                         <p className="text-sm font-medium break-all">{u.email}</p>
+                        {u.profile?.name && (
+                          <p className="text-xs text-muted-foreground">{u.profile.name}</p>
+                        )}
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2">
                             <Select
@@ -1031,20 +1142,116 @@ export default function AdminDashboardPage() {
                               {new Date(u.createdAt).toLocaleDateString()}
                             </span>
                           </div>
-                          {u.role !== "ADMIN" && (
+                          <div className="flex gap-2">
                             <Button
                               size="sm"
-                              variant="destructive"
+                              variant="outline"
                               className="h-7 text-xs gap-1"
                               onClick={() =>
-                                handleDeleteUser(u.id, u.email, u.role)
+                                setExpandedUserId(
+                                  expandedUserId === u.id ? null : u.id
+                                )
                               }
                             >
-                              <Trash2 className="h-3 w-3" />
-                              Delete
+                              {expandedUserId === u.id ? (
+                                <><EyeOff className="h-3 w-3" /> Hide</>
+                              ) : (
+                                <><Eye className="h-3 w-3" /> View</>
+                              )}
                             </Button>
-                          )}
+                            {u.role !== "ADMIN" && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-7 text-xs gap-1"
+                                onClick={() =>
+                                  handleDeleteUser(u.id, u.email, u.role)
+                                }
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Delete
+                              </Button>
+                            )}
+                          </div>
                         </div>
+                        {expandedUserId === u.id && (
+                          <div className="mt-3 p-3 bg-muted/30 rounded-lg">
+                            {u.profile ? (
+                              <div className="grid gap-3 grid-cols-2">
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Name</p>
+                                  <p className="text-sm">{u.profile.name}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Branch</p>
+                                  <p className="text-sm">{u.profile.branch}</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Year</p>
+                                  <p className="text-sm">{u.profile.year}</p>
+                                </div>
+                                {u.profile.contact && (
+                                  <div>
+                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Contact</p>
+                                    <p className="text-sm">{u.profile.contact}</p>
+                                  </div>
+                                )}
+                                {u.profile.graduationYear && (
+                                  <div>
+                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Graduation Year</p>
+                                    <p className="text-sm">{u.profile.graduationYear}</p>
+                                  </div>
+                                )}
+                                {u.profile.company && (
+                                  <div>
+                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Company</p>
+                                    <p className="text-sm">{u.profile.company}</p>
+                                  </div>
+                                )}
+                                {u.profile.position && (
+                                  <div>
+                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Position</p>
+                                    <p className="text-sm">{u.profile.position}</p>
+                                  </div>
+                                )}
+                                {u.profile.location && (
+                                  <div>
+                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Location</p>
+                                    <p className="text-sm">{u.profile.location}</p>
+                                  </div>
+                                )}
+                                {u.profile.linkedIn && (
+                                  <div className="col-span-2">
+                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">LinkedIn</p>
+                                    <a href={u.profile.linkedIn} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-400 hover:underline break-all">{u.profile.linkedIn}</a>
+                                  </div>
+                                )}
+                                {u.profile.bio && (
+                                  <div className="col-span-2">
+                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Bio</p>
+                                    <p className="text-sm">{u.profile.bio}</p>
+                                  </div>
+                                )}
+                                {u.profile.handles && Object.keys(u.profile.handles).length > 0 && (
+                                  <div className="col-span-2">
+                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">CP Handles</p>
+                                    <div className="flex flex-wrap gap-2 mt-1">
+                                      {Object.entries(u.profile.handles).map(([platform, handle]) =>
+                                        handle ? (
+                                          <span key={platform} className="text-xs px-2 py-1 rounded-full bg-primary/10 border border-primary/20">
+                                            <span className="font-medium capitalize">{platform}:</span> {handle as string}
+                                          </span>
+                                        ) : null
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-muted-foreground italic">This user has not completed their profile yet.</p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))
                   )}

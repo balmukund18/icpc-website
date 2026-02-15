@@ -57,6 +57,14 @@ router.get(
   auth.googleCallback
 );
 
+// Role selection for new Google OAuth users
+router.post(
+  "/select-role",
+  isAuthenticated,
+  [body("role").isIn(["STUDENT", "ALUMNI"])],
+  auth.selectRole
+);
+
 // Admin user management
 router.get("/users", isAuthenticated, isAdmin, auth.listUsers);
 

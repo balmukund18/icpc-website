@@ -34,10 +34,14 @@ passport.use(
       _refreshToken: string,
       _params: any,
       profile: Profile,
-      done: (err: Error | null, user?: User) => void,
+      done: (err: Error | null, user?: any) => void,
     ) => {
       findOrCreateGoogleUser(profile as GoogleProfile)
-        .then((user) => done(null, user))
+        .then(({ user, isNewUser }) => {
+          // Attach isNewUser flag to the user object for the callback
+          (user as any).isNewUser = isNewUser;
+          done(null, user);
+        })
         .catch((error) => done(error));
     },
   ),

@@ -22,6 +22,8 @@ export const findOrCreateGoogleUser = async (profile: GoogleProfile) => {
   const email = profile.emails[0]?.value || profile._json.email;
   const googleId = profile.id;
 
+  let isNewUser = false;
+
   // Use a transaction to ensure user and profile are created together
   const user = await prisma.$transaction(async (tx) => {
     // Try to find existing user by googleId
@@ -53,13 +55,15 @@ export const findOrCreateGoogleUser = async (profile: GoogleProfile) => {
     }
 
     // If user doesn't exist, create a new one with Google OAuth
+    // Mark as new user so we can redirect to role selection
+    isNewUser = true;
     const newUser = await tx.user.create({
       data: {
         email,
         googleId,
         googleEmail: email,
         password: null, // No password for OAuth users
-        role: "STUDENT",
+        role: "STUDENT", // Default role, will be updated after selection
 
         profile: {
           create: {
@@ -79,7 +83,7 @@ export const findOrCreateGoogleUser = async (profile: GoogleProfile) => {
     return newUser;
   });
 
-  return user;
+  return { user, isNewUser };
 };
 
 export const generateToken = (userId: string, role: string) => {

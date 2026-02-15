@@ -3,6 +3,7 @@ import * as authService from "../services/authService";
 import * as googleAuthService from "../services/googleAuthService";
 import { success, fail } from "../utils/response";
 import { validationResult } from "express-validator";
+import prisma from "../models/prismaClient";
 
 export const register = async (req: Request, res: Response) => {
   const errors = validationResult(req);
@@ -79,11 +80,60 @@ export const googleCallback = async (req: Request, res: Response) => {
     // Generate JWT token for user (no approval needed)
     const token = googleAuthService.generateToken(user.id, user.role);
 
-    // Redirect to frontend with token and user info
-    res.redirect(
-      `${frontendUrl}/auth/callback?token=${token}&userId=${user.id}&email=${encodeURIComponent(user.email)}&role=${user.role}`
-    );
+    // Check if this is a new user who needs to select a role
+    const isNewUser = (user as any).isNewUser || false;
+
+    if (isNewUser) {
+      // Redirect new users to role selection page
+      res.redirect(
+        `${frontendUrl}/select-role?token=${token}&userId=${user.id}&email=${encodeURIComponent(user.email)}`
+      );
+    } else {
+      // Redirect existing users to the normal callback
+      res.redirect(
+        `${frontendUrl}/auth/callback?token=${token}&userId=${user.id}&email=${encodeURIComponent(user.email)}&role=${user.role}`
+      );
+    }
   } catch (err: any) {
     fail(res, err.message, 401);
+  }
+};
+
+// Select role for new Google OAuth users
+export const selectRole = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return fail(res, "User not authenticated", 401);
+    }
+
+    const { role } = req.body;
+    
+    // Validate role
+    const validRoles = ["STUDENT", "ALUMNI"];
+    if (!role || !validRoles.includes(role)) {
+      return fail(res, "Invalid role. Must be one of: STUDENT, ALUMNI", 400);
+    }
+
+    // Update user role
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { role },
+      include: { profile: true },
+    });
+
+    // Generate new token with updated role
+    const token = googleAuthService.generateToken(updatedUser.id, updatedUser.role);
+
+    return success(res, {
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        role: updatedUser.role,
+      },
+      token,
+    });
+  } catch (err: any) {
+    return fail(res, err.message, 500);
   }
 };

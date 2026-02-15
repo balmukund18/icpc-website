@@ -52,12 +52,12 @@ const yearOptions = [
 ];
 
 const handleLabels: Record<string, { label: string; url: (v: string) => string }> = {
-    leetcode: { label: "LeetCode", url: (v) => `https://leetcode.com/${v}` },
-    codeforces: { label: "Codeforces", url: (v) => `https://codeforces.com/profile/${v}` },
-    codechef: { label: "CodeChef", url: (v) => `https://www.codechef.com/users/${v}` },
-    atcoder: { label: "AtCoder", url: (v) => `https://atcoder.jp/users/${v}` },
-    hackerrank: { label: "HackerRank", url: (v) => `https://www.hackerrank.com/${v}` },
-    github: { label: "GitHub", url: (v) => `https://github.com/${v}` },
+    leetcode: { label: "LeetCode", url: (v) => v.startsWith("http") ? v : `https://leetcode.com/${v}` },
+    codeforces: { label: "Codeforces", url: (v) => v.startsWith("http") ? v : `https://codeforces.com/profile/${v}` },
+    codechef: { label: "CodeChef", url: (v) => v.startsWith("http") ? v : `https://www.codechef.com/users/${v}` },
+    atcoder: { label: "AtCoder", url: (v) => v.startsWith("http") ? v : `https://atcoder.jp/users/${v}` },
+    hackerrank: { label: "HackerRank", url: (v) => v.startsWith("http") ? v : `https://www.hackerrank.com/${v}` },
+    github: { label: "GitHub", url: (v) => v.startsWith("http") ? v : `https://github.com/${v}` },
 };
 
 function PodiumCard({

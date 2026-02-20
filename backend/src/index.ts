@@ -27,6 +27,9 @@ import passport from "./config/passport";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust first proxy (Render/Cloudflare) so rate limiter uses real client IP
+app.set("trust proxy", 1);
+
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -75,7 +78,7 @@ app.use(reqLogger as any);
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: process.env.NODE_ENV === "production" ? 200 : 1000, // Higher limit for dev
+    max: process.env.NODE_ENV === "production" ? 500 : 1000,
   })
 );
 

@@ -105,7 +105,13 @@ export default function ProfilePage() {
           setLocation(profile.location || "");
           setBio(profile.bio || "");
           setLinkedIn(profile.linkedIn || "");
-          setIsFirstTime(false);
+
+          // Check if profile is actually complete (Google OAuth creates empty profiles)
+          const isComplete =
+            profile.name?.trim() &&
+            profile.branch?.trim() &&
+            profile.contact?.trim();
+          setIsFirstTime(!isComplete);
         } else {
           // No profile - first time setup
           setIsFirstTime(true);

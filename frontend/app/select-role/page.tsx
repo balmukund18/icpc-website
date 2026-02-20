@@ -71,11 +71,12 @@ function SelectRoleContent() {
       
       login(userData, data.data.token);
 
-      // Profile already exists from Google OAuth, so set hasProfile to true
-      setHasProfile(true);
+      // Google OAuth auto-creates a profile with empty fields (branch, contact)
+      // so redirect to profile page to complete it
+      setHasProfile(false);
 
-      toast.success(`Role set to ${role}. Welcome!`);
-      router.push("/dashboard");
+      toast.success(`Role set to ${role}. Please complete your profile.`);
+      router.push("/profile");
     } catch (error: any) {
       console.error("Role selection error:", error);
       toast.error(error.message || "Failed to set role");

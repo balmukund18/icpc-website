@@ -566,7 +566,7 @@ export default function AdminDashboardPage() {
         assignedTo:
           taskAssignmentType === "specific"
             ? selectedUserIds
-            : studentUsers.map((u) => u.id),
+            : undefined,
       });
       showMessage("success", "Task created successfully!");
       setTaskTitle("");

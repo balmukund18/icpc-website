@@ -1,6 +1,7 @@
 "use client";
 import { cn } from "@/lib/utils";
 import Link, { LinkProps } from "next/link";
+import Image from "next/image";
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { IconMenu2, IconX } from "@tabler/icons-react";
@@ -126,7 +127,14 @@ export const MobileSidebar = ({
           onClick={() => setOpen(!open)}
         />
       </div>
-      <div className="flex items-center">
+      <div className="flex items-center gap-2">
+        <Image
+          src="/logo/icpc-logo.png"
+          alt="ICPC"
+          width={24}
+          height={24}
+          className="rounded"
+        />
         <span className="font-bold text-xl text-foreground">ICPC</span>
       </div>
       <div className="w-5" /> {/* Spacer for centering */}
@@ -245,17 +253,21 @@ export const Logo = () => {
       href="/dashboard"
       className="font-bold flex items-center text-sm text-foreground py-2 px-3 relative z-20"
     >
-      <div className="h-6 w-6 bg-primary rounded-md flex-shrink-0 flex items-center justify-center text-xs font-bold">
-        IC
-      </div>
+      <Image
+        src="/logo/icpc-logo.png"
+        alt="ICPC"
+        width={28}
+        height={28}
+        className="flex-shrink-0 rounded"
+      />
       <motion.span
         animate={{
           display: animate ? (open ? "inline-block" : "none") : "inline-block",
           opacity: animate ? (open ? 1 : 0) : 1,
         }}
-        className="font-bold text-xl ml-2 whitespace-nowrap text-foreground"
+        className="font-bold text-lg ml-2 whitespace-nowrap text-foreground"
       >
-        PC
+        ICPC
       </motion.span>
     </Link>
   );

@@ -37,7 +37,7 @@ function AuthCallbackContent() {
         };
         login(userData, token);
 
-        // Fetch user profile to check if it exists
+        // Fetch user profile to check if it exists and is complete
         try {
           const response = await fetch(
             `${process.env.NEXT_PUBLIC_API_URL}/profile`,
@@ -49,13 +49,22 @@ function AuthCallbackContent() {
           );
 
           const profileData = await response.json();
-          if (response.ok && profileData?.data) {
+          const profile = profileData?.data;
+          // Check that profile exists AND has required fields filled in
+          const isProfileComplete =
+            response.ok &&
+            profile &&
+            profile.name?.trim() &&
+            profile.branch?.trim() &&
+            profile.contact?.trim();
+
+          if (isProfileComplete) {
             setHasProfile(true);
 
             toast.success("Logged in successfully with Google");
             router.push("/dashboard");
           } else {
-            // Profile doesn't exist, redirect to create one
+            // Profile doesn't exist or is incomplete, redirect to complete it
             setHasProfile(false);
             toast.success(
               "Logged in successfully with Google. Please complete your profile."

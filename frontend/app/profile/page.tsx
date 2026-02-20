@@ -159,6 +159,16 @@ export default function ProfilePage() {
       newErrors.phone = "Please enter a valid 10-digit mobile number";
     }
 
+    // Validate LinkedIn (required for alumni)
+    if (isAlumni && !linkedIn.trim()) {
+      newErrors.linkedIn = "LinkedIn profile is required for alumni";
+    }
+
+    // Validate LeetCode handle (required for students)
+    if (!isAlumni && !handles.leetcode?.trim()) {
+      newErrors.leetcode = "LeetCode handle is required";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -545,14 +555,18 @@ export default function ProfilePage() {
                 <Label className="flex items-center gap-2">
                   <Linkedin className="h-4 w-4" />
                   LinkedIn Profile
+                  <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   type="url"
                   placeholder="https://linkedin.com/in/yourprofile"
                   value={linkedIn}
                   onChange={(e) => setLinkedIn(e.target.value)}
-                  className="bg-muted border-border"
+                  className={`bg-muted border-border ${errors.linkedIn ? "border-red-500" : ""}`}
                 />
+                {errors.linkedIn && (
+                  <p className="text-xs text-red-500">{errors.linkedIn}</p>
+                )}
               </div>
 
               {/* Bio */}
@@ -584,7 +598,7 @@ export default function ProfilePage() {
               Competitive Programming Handles
             </CardTitle>
             <CardDescription>
-              Add your usernames on various platforms. All fields are optional.
+              Add your usernames on various platforms.{!isAlumni && " LeetCode is required."}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -595,6 +609,9 @@ export default function ProfilePage() {
                   <div key={platform.key} className="space-y-2">
                     <Label htmlFor={platform.key}>
                       {platform.label}
+                      {platform.key === "leetcode" && !isAlumni && (
+                        <span className="text-red-500 ml-1">*</span>
+                      )}
                       {isLocked && (
                         <span className="ml-2 text-xs text-muted-foreground">(locked — contact admin to change)</span>
                       )}
@@ -606,9 +623,12 @@ export default function ProfilePage() {
                       onChange={(e) =>
                         handleHandleChange(platform.key, e.target.value)
                       }
-                      className={`bg-muted border-border ${isLocked ? "opacity-60 cursor-not-allowed" : ""}`}
+                      className={`bg-muted border-border ${isLocked ? "opacity-60 cursor-not-allowed" : ""} ${platform.key === "leetcode" && errors.leetcode ? "border-red-500" : ""}`}
                       disabled={isLocked}
                     />
+                    {platform.key === "leetcode" && errors.leetcode && (
+                      <p className="text-xs text-red-500">{errors.leetcode}</p>
+                    )}
                   </div>
                 );
               })}

@@ -245,6 +245,13 @@ export const approve = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const blog = await blogService.approveBlog(id);
+
+    // Trigger achievement check for the author (blog_writer badge + any others)
+    const { checkAndAwardAchievements } = await import('../services/gamificationService');
+    checkAndAwardAchievements(blog.authorId).catch((err: any) =>
+      console.error('[Achievement Check Error on blog approval]:', err)
+    );
+
     success(res, blog);
   } catch (err: any) {
     if (err.message === 'Blog not found') {

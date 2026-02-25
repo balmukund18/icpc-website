@@ -279,6 +279,10 @@ export const checkAndAwardAchievements = async (userId: string) => {
 };
 
 export const getUserAchievements = async (userId: string) => {
+  // Always recompute so existing users and ranking-based achievements stay current.
+  // leaderboard() is cached for 5 minutes so this is cheap on repeated calls.
+  await checkAndAwardAchievements(userId);
+
   const earned = await prisma.achievement.findMany({
     where: { userId },
     orderBy: { unlockedAt: "desc" },

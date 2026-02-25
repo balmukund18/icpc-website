@@ -104,7 +104,7 @@ export default function TasksPage() {
   const filteredTasks = tasks.filter((task) => {
     const status = getTaskStatus(task);
     switch (filter) {
-      case "available": return status.canSubmit && !task.userSubmissions?.length;
+      case "available": return status.canSubmit; // includes rejected-but-resubmittable tasks
       case "pending": return task.userSubmissions?.some((s) => s.status === "PENDING");
       case "completed": return task.userSubmissions?.some((s) => s.status === "VERIFIED");
       default: return true;

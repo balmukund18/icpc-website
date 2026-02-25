@@ -51,69 +51,91 @@ export async function getExternalContests(): Promise<ExternalContest[]> {
         return [];
     }
 
-    try {
-        // Use start__gt to only get contests that haven't started yet
-        const nowISO = new Date().toISOString().replace(/\.\d{3}Z$/, "");
+    // Build query params — credentials go ONLY in the Authorization header,
+    // never in the URL (prevents leakage in Cloudflare challenge pages).
+    const nowISO = new Date().toISOString().replace(/\.\d{3}Z$/, "");
 
-        const params = new URLSearchParams({
-            upcoming: "true",
-            order_by: "start",
-            resource_id__in: RESOURCE_IDS,
-            start__gt: nowISO,
-            limit: "50",
-            username,
-            api_key: apiKey,
-        });
+    const params = new URLSearchParams({
+        upcoming: "true",
+        order_by: "start",
+        resource_id__in: RESOURCE_IDS,
+        start__gt: nowISO,
+        limit: "50",
+    });
 
-        const url = `https://clist.by/api/v4/contest/?${params.toString()}`;
+    const url = `https://clist.by/api/v4/contest/?${params.toString()}`;
 
-        const response = await fetch(url, {
-            headers: {
-                Authorization: `ApiKey ${username}:${apiKey}`,
-                "User-Agent": "ICPC-Website-App",
-                "Accept": "application/json",
-            },
-        });
+    const headers: Record<string, string> = {
+        Authorization: `ApiKey ${username}:${apiKey}`,
+        "User-Agent": "ICPC-Website-App",
+        Accept: "application/json",
+    };
 
-        if (!response.ok) {
-            const text = await response.text();
-            logger.error({ status: response.status, body: text }, "clist.by API error");
+    // Attempt fetch with one retry (Cloudflare sometimes clears after a short delay)
+    for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+            const response = await fetch(url, { headers });
+
+            // Detect Cloudflare challenge (403 with HTML body)
+            if (response.status === 403) {
+                const text = await response.text();
+                const isCloudflare = text.includes("cf_chl") || text.includes("Just a moment");
+
+                if (isCloudflare && attempt < 2) {
+                    logger.warn({ attempt }, "Cloudflare challenge on clist.by, retrying after delay");
+                    await new Promise((r) => setTimeout(r, 2000));
+                    continue;
+                }
+
+                logger.error(
+                    { status: 403, cloudflare: isCloudflare, attempt },
+                    "clist.by blocked by Cloudflare — returning stale cache"
+                );
+                return cache; // return stale cache gracefully
+            }
+
+            if (!response.ok) {
+                const text = await response.text();
+                logger.error({ status: response.status, body: text.slice(0, 500) }, "clist.by API error");
+                return cache;
+            }
+
+            const data = (await response.json()) as {
+                objects: Array<{
+                    event: string;
+                    href: string;
+                    start: string;
+                    end: string;
+                    duration: number;
+                    resource: string;
+                }>;
+            };
+
+            cache = (data.objects || []).map((c) => {
+                const platformInfo = PLATFORM_MAP[c.resource] || {
+                    name: c.resource,
+                    icon: c.resource.slice(0, 2).toUpperCase(),
+                };
+
+                return {
+                    name: c.event,
+                    url: c.href,
+                    startTime: toUTCISO(c.start),
+                    endTime: toUTCISO(c.end),
+                    duration: c.duration,
+                    platform: platformInfo.name,
+                    platformIcon: platformInfo.icon,
+                };
+            });
+
+            cacheTimestamp = now;
+            logger.info({ count: cache.length }, "Fetched external contests from clist.by");
             return cache;
+        } catch (err) {
+            logger.error({ err, attempt }, "Failed to fetch external contests");
+            if (attempt >= 2) return cache;
         }
-
-        const data = (await response.json()) as {
-            objects: Array<{
-                event: string;
-                href: string;
-                start: string;
-                end: string;
-                duration: number;
-                resource: string;
-            }>;
-        };
-
-        cache = (data.objects || []).map((c) => {
-            const platformInfo = PLATFORM_MAP[c.resource] || {
-                name: c.resource,
-                icon: c.resource.slice(0, 2).toUpperCase(),
-            };
-
-            return {
-                name: c.event,
-                url: c.href,
-                startTime: toUTCISO(c.start),
-                endTime: toUTCISO(c.end),
-                duration: c.duration,
-                platform: platformInfo.name,
-                platformIcon: platformInfo.icon,
-            };
-        });
-
-        cacheTimestamp = now;
-        logger.info({ count: cache.length }, "Fetched external contests from clist.by");
-        return cache;
-    } catch (err) {
-        logger.error({ err }, "Failed to fetch external contests");
-        return cache;
     }
+
+    return cache;
 }

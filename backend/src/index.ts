@@ -27,8 +27,10 @@ import passport from "./config/passport";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Trust first proxy (Render/Cloudflare) so rate limiter uses real client IP
-app.set("trust proxy", 1);
+// Trust 2 proxies: Cloudflare + Render's internal load-balancer
+// Without this, express-rate-limit keys on Cloudflare's shared IP and all
+// users hit the same bucket, causing mass 429s.
+app.set("trust proxy", 2);
 
 app.use(
   helmet({
@@ -79,6 +81,13 @@ app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
     max: process.env.NODE_ENV === "production" ? 500 : 1000,
+    // Use Cloudflare's real-client-IP header as the rate-limit key so each
+    // user gets their own bucket rather than sharing Cloudflare's IP.
+    keyGenerator: (req) =>
+      (req.headers["cf-connecting-ip"] as string) ||
+      (req.headers["x-forwarded-for"] as string)?.split(",")[0].trim() ||
+      req.ip ||
+      "unknown",
   })
 );
 

@@ -351,6 +351,7 @@ export async function invalidateDashboard() {
 export async function invalidateTasks() {
   await mutate(SWR_KEYS.TASKS);
   await mutate(SWR_KEYS.DASHBOARD); // Dashboard also shows tasks
+  await mutate(SWR_KEYS.ACHIEVEMENTS); // Submission state change may unlock achievements
 }
 
 /**
@@ -360,6 +361,7 @@ export async function invalidateTask(id: string) {
   await mutate(SWR_KEYS.TASK(id));
   await mutate(SWR_KEYS.TASKS);
   await mutate(SWR_KEYS.DASHBOARD);
+  await mutate(SWR_KEYS.ACHIEVEMENTS);
 }
 
 /**
@@ -404,12 +406,20 @@ export async function invalidateProfile() {
 }
 
 /**
+ * Invalidate achievements cache
+ */
+export async function invalidateAchievements() {
+  await mutate(SWR_KEYS.ACHIEVEMENTS);
+}
+
+/**
  * Invalidate leaderboard cache
  */
 export async function invalidateLeaderboard() {
   await mutate(SWR_KEYS.LEADERBOARD("all"));
   await mutate(SWR_KEYS.LEADERBOARD("month"));
   await mutate(SWR_KEYS.LEADERBOARD("semester"));
+  await mutate(SWR_KEYS.ACHIEVEMENTS); // Leaderboard position change may affect top_3 achievement
   await mutate(SWR_KEYS.DASHBOARD);
 }
 
@@ -469,8 +479,13 @@ export function useHeatmap(months: number = 6) {
 }
 
 export function useAchievements() {
+  // Always revalidate on mount and bypass the global 7-min dedupe interval.
+  // The backend's getUserAchievements() re-computes + awards achievements on
+  // every call, so fetching fresh is both cheap and necessary for existing
+  // users whose achievements were never seeded (e.g. pre-feature sign-ups).
   const { data, error, isLoading, mutate: revalidate } = useSWR<AchievementData[]>(
-    SWR_KEYS.ACHIEVEMENTS
+    SWR_KEYS.ACHIEVEMENTS,
+    { revalidateOnMount: true, dedupingInterval: 0 }
   );
 
   return {

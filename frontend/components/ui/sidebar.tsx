@@ -187,9 +187,9 @@ export const SidebarLink = ({
     <Link
       href={link.href}
       className={cn(
-        "flex items-center justify-start gap-3 group/sidebar py-2 px-3 rounded-md transition-colors overflow-hidden",
+        "flex items-center justify-start gap-3 group/sidebar py-2 px-3 rounded-sm transition-colors overflow-hidden",
         active
-          ? "bg-primary/10 text-foreground"
+          ? "bg-[#3FB950]/10 text-foreground border-l-2 border-[#3FB950]"
           : "text-muted-foreground hover:text-foreground hover:bg-muted",
         className
       )}
@@ -227,7 +227,7 @@ export const SidebarButton = ({
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center justify-start gap-3 group/sidebar py-2 px-3 rounded-md transition-colors w-full overflow-hidden",
+        "flex items-center justify-start gap-3 group/sidebar py-2 px-3 rounded-sm transition-colors w-full overflow-hidden",
         "text-muted-foreground hover:text-foreground hover:bg-muted",
         className
       )}

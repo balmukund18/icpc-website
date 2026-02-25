@@ -120,7 +120,7 @@ export interface Blog {
     email: string;
     profile?: { name: string };
   };
-  _count?: { comments: number };
+  _count?: { comments: number; likes?: number };
 }
 
 // ==========================================
@@ -142,6 +142,9 @@ export const SWR_KEYS = {
   MY_SUBMISSIONS: "/contests/my-submissions",
   BLOG_TAGS: "/blogs/tags",
   BLOGS: "/blogs",
+  STREAK: "/gamification/streak",
+  HEATMAP: (months: number) => `/gamification/heatmap?months=${months}`,
+  ACHIEVEMENTS: "/gamification/achievements",
 } as const;
 
 // ==========================================
@@ -415,4 +418,65 @@ export async function invalidateLeaderboard() {
  */
 export async function invalidateAll() {
   await mutate(() => true, undefined, { revalidate: true });
+}
+
+// ==========================================
+// Gamification Hooks
+// ==========================================
+
+export interface StreakData {
+  currentStreak: number;
+  longestStreak: number;
+}
+
+export interface HeatmapEntry {
+  date: string;
+  count: number;
+}
+
+export interface AchievementData {
+  type: string;
+  name: string;
+  description: string;
+  icon: string;
+  unlockedAt: string;
+}
+
+export function useStreak() {
+  const { data, error, isLoading, mutate: revalidate } = useSWR<StreakData>(
+    SWR_KEYS.STREAK
+  );
+
+  return {
+    streak: data ?? { currentStreak: 0, longestStreak: 0 },
+    isLoading,
+    error,
+    revalidate,
+  };
+}
+
+export function useHeatmap(months: number = 6) {
+  const { data, error, isLoading, mutate: revalidate } = useSWR<HeatmapEntry[]>(
+    SWR_KEYS.HEATMAP(months)
+  );
+
+  return {
+    heatmap: data ?? [],
+    isLoading,
+    error,
+    revalidate,
+  };
+}
+
+export function useAchievements() {
+  const { data, error, isLoading, mutate: revalidate } = useSWR<AchievementData[]>(
+    SWR_KEYS.ACHIEVEMENTS
+  );
+
+  return {
+    achievements: data ?? [],
+    isLoading,
+    error,
+    revalidate,
+  };
 }

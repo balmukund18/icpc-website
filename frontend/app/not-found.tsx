@@ -1,49 +1,40 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Ghost, Home, ArrowLeft } from "lucide-react";
+
+import { Home, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export default function NotFound() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center p-8 max-w-lg">
-        {/* Floating ghost animation */}
-        <div className="mb-8 relative">
-          <div className="absolute inset-0 bg-primary/10 blur-3xl rounded-full" />
-          <div className="relative animate-bounce">
-            <Ghost className="h-24 w-24 text-primary mx-auto" />
-          </div>
+      <div className="text-center p-8 max-w-lg space-y-6">
+        <div className="text-[#FF4D4F] text-sm font-mono">
+          &gt; 404: page not found
         </div>
 
-        <h1 className="text-6xl font-bold mb-4 bg-linear-to-r from-primary to-purple-500 bg-clip-text text-transparent">
+        <h1 className="text-6xl font-bold text-foreground">
           404
         </h1>
 
-        <h2 className="text-2xl font-semibold mb-3">Page not found</h2>
-
-        <p className="text-muted-foreground mb-8">
-          Looks like this page went on vacation and forgot to tell us.
-          <br />
-          Let&apos;s get you back on track!
+        <p className="text-muted-foreground text-sm">
+          the requested page does not exist.<br />
+          let&apos;s get you back on track.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <div className="border-t border-border pt-6 flex flex-col sm:flex-row gap-3 justify-center">
           <Link href="/dashboard">
-            <Button size="lg" className="gap-2 w-full sm:w-auto">
+            <button className="inline-flex items-center gap-2 w-full sm:w-auto text-sm border border-foreground px-4 py-2 text-foreground hover:bg-muted transition-colors">
               <Home className="h-4 w-4" />
-              Go to Dashboard
-            </Button>
+              [ DASHBOARD ]
+            </button>
           </Link>
-          <Button
-            variant="outline"
-            size="lg"
-            className="gap-2"
+          <button
+            className="inline-flex items-center gap-2 text-sm border border-border px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
             onClick={() => history.back()}
           >
             <ArrowLeft className="h-4 w-4" />
-            Go Back
-          </Button>
+            [ GO BACK ]
+          </button>
         </div>
       </div>
     </div>

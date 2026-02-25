@@ -40,6 +40,7 @@ export interface Blog {
   comments: Comment[];
   createdAt: string;
   updatedAt: string;
+  _count?: { comments: number; likes: number };
 }
 
 export interface BlogListResponse {
@@ -210,5 +211,25 @@ export async function approveBlog(id: string): Promise<Blog> {
  */
 export async function rejectBlog(id: string, reason?: string): Promise<Blog> {
   const response = await api.post(`/blogs/${id}/reject`, { reason });
+  return response.data.data || response.data;
+}
+
+// =====================
+// UPVOTE API
+// =====================
+
+/**
+ * Toggle like on a blog (like/unlike)
+ */
+export async function toggleBlogLike(blogId: string): Promise<{ liked: boolean; count: number; userHasLiked: boolean }> {
+  const response = await api.post(`/blogs/${blogId}/like`);
+  return response.data.data || response.data;
+}
+
+/**
+ * Get like status for a blog
+ */
+export async function getBlogLikeStatus(blogId: string): Promise<{ count: number; userHasLiked: boolean }> {
+  const response = await api.get(`/blogs/${blogId}/like-status`);
   return response.data.data || response.data;
 }

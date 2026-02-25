@@ -276,11 +276,10 @@ const ToolbarButton = ({
     disabled={disabled}
     title={title}
     className={`
-      p-2 rounded-lg transition-all duration-200
-      ${
-        isActive
-          ? "bg-primary/20 text-foreground"
-          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+      p-2 transition-all duration-200
+      ${isActive
+        ? "bg-muted text-foreground"
+        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
       }
       ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
     `}
@@ -316,7 +315,7 @@ const MenuBar = ({ editor }: MenuBarProps) => {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-1 p-2 border-b border-white/10 bg-white/5">
+    <div className="flex flex-wrap items-center gap-1 p-2 border-b border-border bg-muted/30">
       {/* Text formatting */}
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -347,7 +346,7 @@ const MenuBar = ({ editor }: MenuBarProps) => {
         <StrikeIcon />
       </ToolbarButton>
 
-      <div className="w-px h-6 bg-white/20 mx-1" />
+      <div className="w-px h-6 bg-border mx-1" />
 
       {/* Headings */}
       <ToolbarButton
@@ -365,7 +364,7 @@ const MenuBar = ({ editor }: MenuBarProps) => {
         <Heading2Icon />
       </ToolbarButton>
 
-      <div className="w-px h-6 bg-white/20 mx-1" />
+      <div className="w-px h-6 bg-border mx-1" />
 
       {/* Lists */}
       <ToolbarButton
@@ -383,7 +382,7 @@ const MenuBar = ({ editor }: MenuBarProps) => {
         <OrderedListIcon />
       </ToolbarButton>
 
-      <div className="w-px h-6 bg-white/20 mx-1" />
+      <div className="w-px h-6 bg-border mx-1" />
 
       {/* Code */}
       <ToolbarButton
@@ -401,7 +400,7 @@ const MenuBar = ({ editor }: MenuBarProps) => {
         <CodeBlockIcon />
       </ToolbarButton>
 
-      <div className="w-px h-6 bg-white/20 mx-1" />
+      <div className="w-px h-6 bg-border mx-1" />
 
       {/* Quote & Link */}
       <ToolbarButton
@@ -419,7 +418,7 @@ const MenuBar = ({ editor }: MenuBarProps) => {
         <LinkIcon />
       </ToolbarButton>
 
-      <div className="w-px h-6 bg-white/20 mx-1" />
+      <div className="w-px h-6 bg-border mx-1" />
 
       {/* Undo/Redo */}
       <ToolbarButton
@@ -481,7 +480,7 @@ export default function RichTextEditor({
     },
     editorProps: {
       attributes: {
-        class: `prose prose-invert prose-sm max-w-none focus:outline-none p-4 ${className}`,
+        class: `prose dark:prose-invert max-w-none focus:outline-none p-5 ${className}`,
         style: `min-height: ${minHeight}`,
       },
     },
@@ -495,42 +494,46 @@ export default function RichTextEditor({
   }, [content, editor]);
 
   return (
-    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden">
+    <div className="bg-background border border-border overflow-hidden">
       <MenuBar editor={editor} />
       <EditorContent editor={editor} />
       <style jsx global>{`
         .ProseMirror {
           min-height: ${minHeight};
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-size: 1rem;
+          line-height: 1.75;
         }
         .ProseMirror p.is-editor-empty:first-child::before {
-          color: rgba(255, 255, 255, 0.3);
+          color: var(--color-muted-foreground);
           content: attr(data-placeholder);
           float: left;
           height: 0;
           pointer-events: none;
+          opacity: 0.5;
         }
         .ProseMirror h1 {
           font-size: 1.75rem;
           font-weight: 700;
           margin-bottom: 0.75rem;
-          color: white;
+          color: var(--color-foreground);
         }
         .ProseMirror h2 {
           font-size: 1.5rem;
           font-weight: 600;
           margin-bottom: 0.5rem;
-          color: white;
+          color: var(--color-foreground);
         }
         .ProseMirror h3 {
           font-size: 1.25rem;
           font-weight: 600;
           margin-bottom: 0.5rem;
-          color: white;
+          color: var(--color-foreground);
         }
         .ProseMirror p {
           margin-bottom: 0.75rem;
-          color: rgba(255, 255, 255, 0.85);
-          line-height: 1.7;
+          color: var(--color-foreground);
+          line-height: 1.75;
         }
         .ProseMirror ul,
         .ProseMirror ol {
@@ -539,19 +542,18 @@ export default function RichTextEditor({
         }
         .ProseMirror li {
           margin-bottom: 0.25rem;
-          color: rgba(255, 255, 255, 0.85);
+          color: var(--color-foreground);
         }
         .ProseMirror code {
-          background: rgba(255, 255, 255, 0.1);
+          background: var(--color-muted);
           padding: 0.15rem 0.4rem;
-          border-radius: 0.25rem;
-          font-family: monospace;
-          font-size: 0.9em;
-          color: #f472b6;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 0.875em;
+          color: #58A6FF;
         }
         .ProseMirror pre {
-          background: rgba(0, 0, 0, 0.4);
-          border-radius: 0.5rem;
+          background: var(--color-muted);
+          border: 1px solid var(--color-border);
           padding: 1rem;
           margin-bottom: 0.75rem;
           overflow-x: auto;
@@ -559,19 +561,19 @@ export default function RichTextEditor({
         .ProseMirror pre code {
           background: none;
           padding: 0;
-          color: #e2e8f0;
+          color: var(--color-foreground);
         }
         .ProseMirror blockquote {
-          border-left: 3px solid rgba(255, 255, 255, 0.3);
+          border-left: 3px solid var(--color-border);
           padding-left: 1rem;
           margin-left: 0;
           margin-bottom: 0.75rem;
-          color: rgba(255, 255, 255, 0.7);
+          color: var(--color-muted-foreground);
           font-style: italic;
         }
         .ProseMirror hr {
           border: none;
-          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          border-top: 1px solid var(--color-border);
           margin: 1.5rem 0;
         }
       `}</style>
@@ -588,18 +590,13 @@ interface BlogContentProps {
 export function BlogContent({ content, className = "" }: BlogContentProps) {
   return (
     <div
-      className={`prose prose-invert prose-sm max-w-none ${className}`}
+      className={`prose dark:prose-invert max-w-none ${className}`}
       dangerouslySetInnerHTML={{ __html: content }}
       style={
         {
-          "--tw-prose-body": "rgba(255, 255, 255, 0.85)",
-          "--tw-prose-headings": "white",
-          "--tw-prose-links": "#60a5fa",
-          "--tw-prose-bold": "white",
-          "--tw-prose-code": "#f472b6",
-          "--tw-prose-pre-bg": "rgba(0, 0, 0, 0.4)",
-          "--tw-prose-quotes": "rgba(255, 255, 255, 0.7)",
-          "--tw-prose-quote-borders": "rgba(255, 255, 255, 0.3)",
+          fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+          fontSize: "1rem",
+          lineHeight: "1.75",
         } as React.CSSProperties
       }
     />

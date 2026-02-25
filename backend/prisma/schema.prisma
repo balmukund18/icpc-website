@@ -23,6 +23,9 @@ model User {
   profile            Profile?
   submissions        Submission[]
   passwordResetTokens PasswordResetToken[]
+  dailyActivities    DailyActivity[]
+  blogLikes          BlogLike[]
+  achievements       Achievement[]
 }
 
 model Profile {
@@ -109,6 +112,7 @@ model Blog {
   updatedAt       DateTime   @updatedAt
   author          User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments        Comment[]
+  likes           BlogLike[]
 }
 
 enum BlogStatus {
@@ -165,4 +169,33 @@ model PasswordResetToken {
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model DailyActivity {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime @db.Date
+  type      String   // "submission" | "blog" | "contest" | "session"
+  count     Int      @default(1)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, date, type])
+}
+
+model BlogLike {
+  id        String   @id @default(cuid())
+  blogId    String
+  userId    String
+  createdAt DateTime @default(now())
+  blog      Blog     @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([blogId, userId])
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // "first_submission", "streak_7", "streak_30", etc.
+  unlockedAt  DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, type])
 }

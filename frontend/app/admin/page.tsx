@@ -894,14 +894,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  if (!hasHydrated || !user || user.role !== "ADMIN") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-foreground">Loading...</div>
-      </div>
-    );
-  }
-
   const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
     { id: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
     { id: "contests", label: "Contests", icon: <Trophy className="h-4 w-4" /> },
@@ -939,6 +931,14 @@ export default function AdminDashboardPage() {
     }
     return result;
   }, [users, userSearch, roleFilter, profileFilter]);
+
+  if (!hasHydrated || !user || user.role !== "ADMIN") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -1433,7 +1433,7 @@ export default function AdminDashboardPage() {
               <CardContent>
                 <form onSubmit={handleCreateContest} className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Contest Title *</Label>
+                    <Label className="text-xs text-muted-foreground">Contest Title *</Label>
                     <Input
                       placeholder="e.g. Weekly Contest #45"
                       value={contestTitle}
@@ -1443,7 +1443,7 @@ export default function AdminDashboardPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>HackerRank Contest URL</Label>
+                    <Label className="text-xs text-muted-foreground">HackerRank Contest URL</Label>
                     <Input
                       placeholder="https://www.hackerrank.com/contests/..."
                       value={contestHackerRankUrl}
@@ -1455,7 +1455,7 @@ export default function AdminDashboardPage() {
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label>Start Time *</Label>
+                    <Label className="text-xs text-muted-foreground">Start Time *</Label>
                     <Input
                       type="datetime-local"
                       value={contestStartTime}
@@ -1468,7 +1468,7 @@ export default function AdminDashboardPage() {
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label>Duration (minutes) *</Label>
+                    <Label className="text-xs text-muted-foreground">Duration (minutes) *</Label>
                     <Input
                       type="number"
                       min="1"
@@ -1496,7 +1496,7 @@ export default function AdminDashboardPage() {
               <CardContent>
                 <form onSubmit={handleSaveResults} className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Select Contest</Label>
+                    <Label className="text-xs text-muted-foreground">Select Contest</Label>
                     <Select
                       value={resultsContestId}
                       onValueChange={setResultsContestId}
@@ -1514,7 +1514,7 @@ export default function AdminDashboardPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Results (one per line)</Label>
+                    <Label className="text-xs text-muted-foreground">Results (one per line)</Label>
                     <p className="text-xs text-muted-foreground mb-1">
                       Format: Name, Score, Problems Solved (one line per participant)
                     </p>
@@ -1642,7 +1642,7 @@ export default function AdminDashboardPage() {
               <CardContent>
                 <form onSubmit={handleCreateSession} className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Session Title *</Label>
+                    <Label className="text-xs text-muted-foreground">Session Title *</Label>
                     <Input
                       placeholder="e.g. Intro to Dynamic Programming"
                       value={sessionTitle}
@@ -1652,7 +1652,7 @@ export default function AdminDashboardPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Details</Label>
+                    <Label className="text-xs text-muted-foreground">Details</Label>
                     <textarea
                       placeholder="Session details..."
                       value={sessionDetails}
@@ -1661,7 +1661,7 @@ export default function AdminDashboardPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Meeting Link *</Label>
+                    <Label className="text-xs text-muted-foreground">Meeting Link *</Label>
                     <div className="relative">
                       <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -1678,7 +1678,7 @@ export default function AdminDashboardPage() {
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label>Date & Time</Label>
+                    <Label className="text-xs text-muted-foreground">Date & Time</Label>
                     <Input
                       type="datetime-local"
                       value={sessionDate}
@@ -1879,7 +1879,7 @@ export default function AdminDashboardPage() {
                 <CardContent>
                   <form onSubmit={handleCreateTask} className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Task Title *</Label>
+                      <Label className="text-xs text-muted-foreground">Task Title *</Label>
                       <Input
                         placeholder="e.g. Solve 5 DP problems"
                         value={taskTitle}
@@ -1889,7 +1889,7 @@ export default function AdminDashboardPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Description</Label>
+                      <Label className="text-xs text-muted-foreground">Description</Label>
                       <textarea
                         placeholder="Task details..."
                         value={taskDesc}
@@ -1898,7 +1898,7 @@ export default function AdminDashboardPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>LeetCode Problem URL</Label>
+                      <Label className="text-xs text-muted-foreground">LeetCode Problem URL</Label>
                       <Input
                         placeholder="https://leetcode.com/problems/two-sum/"
                         value={taskLeetcodeUrl}
@@ -1911,7 +1911,7 @@ export default function AdminDashboardPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Points *</Label>
+                        <Label className="text-xs text-muted-foreground">Points *</Label>
                         <Input
                           type="number"
                           min="0"
@@ -1923,7 +1923,7 @@ export default function AdminDashboardPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Due Date</Label>
+                        <Label className="text-xs text-muted-foreground">Due Date</Label>
                         <Input
                           type="datetime-local"
                           value={taskDueDate}
@@ -1935,7 +1935,7 @@ export default function AdminDashboardPage() {
 
                     {/* Assignment Type */}
                     <div className="space-y-3">
-                      <Label>Assign To</Label>
+                      <Label className="text-xs text-muted-foreground">Assign To</Label>
                       <div className="flex gap-4">
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -2530,7 +2530,7 @@ export default function AdminDashboardPage() {
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <Label>Points to Award</Label>
+                      <Label className="text-xs text-muted-foreground">Points to Award</Label>
                       <Input
                         type="number"
                         min="0"
@@ -2584,7 +2584,7 @@ export default function AdminDashboardPage() {
               <CardContent>
                 <form onSubmit={handleCreateAnnouncement} className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Title *</Label>
+                    <Label className="text-xs text-muted-foreground">Title *</Label>
                     <Input
                       placeholder="Announcement title"
                       value={announcementTitle}
@@ -2594,7 +2594,7 @@ export default function AdminDashboardPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Content *</Label>
+                    <Label className="text-xs text-muted-foreground">Content *</Label>
                     <textarea
                       placeholder="Announcement content..."
                       value={announcementContent}

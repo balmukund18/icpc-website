@@ -42,7 +42,7 @@ export const getById = async (req: any, res: Response) => {
     const { id } = req.params;
     const userId = req.user?.id;
     const isAdmin = req.user?.role === 'ADMIN';
-    
+
     const blog = await blogService.getBlogById(id, userId, isAdmin);
     success(res, blog);
   } catch (err: any) {
@@ -262,7 +262,7 @@ export const reject = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
-    
+
     const blog = await blogService.rejectBlog(id, reason);
     success(res, blog);
   } catch (err: any) {
@@ -273,3 +273,41 @@ export const reject = async (req: Request, res: Response) => {
     }
   }
 };
+
+// =====================
+// UPVOTE CONTROLLERS
+// =====================
+
+/**
+ * POST /blogs/:id/like - Toggle like on a blog
+ */
+export const toggleLike = async (req: any, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const result = await blogService.toggleLike(id, userId);
+    const status = await blogService.getLikeStatus(id, userId);
+    success(res, { ...result, ...status });
+  } catch (err: any) {
+    if (err.message === 'Blog not found') {
+      fail(res, err.message, 404);
+    } else {
+      fail(res, err.message);
+    }
+  }
+};
+
+/**
+ * GET /blogs/:id/like-status - Get like status for current user
+ */
+export const likeStatus = async (req: any, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+    const result = await blogService.getLikeStatus(id, userId);
+    success(res, result);
+  } catch (err: any) {
+    fail(res, err.message);
+  }
+};
+

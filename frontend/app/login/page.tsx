@@ -5,10 +5,11 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import Link from "next/link";
+import { useState } from "react";
+import { ModeToggle } from "@/components/mode-toggle";
 
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+
+import { getProfile } from "@/lib/profileService";
 import {
   Form,
   FormControl,
@@ -18,19 +19,20 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import api from "@/lib/axios";
 import { useAuthStore } from "@/store/useAuthStore";
-import { Vortex } from "@/components/ui/vortex";
-import { getProfile } from "@/lib/profileService";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import Link from "next/link";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8),
+  password: z.string().min(1, "Password is required"),
 });
 
 export default function LoginPage() {
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
   const setHasProfile = useAuthStore((state) => state.setHasProfile);
@@ -42,8 +44,6 @@ export default function LoginPage() {
       password: "",
     },
   });
-
-  const { isSubmitting } = form.formState;
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
@@ -69,35 +69,36 @@ export default function LoginPage() {
         return;
       }
 
-      toast.success("Logged in successfully");
+      toast.success("Logged in successfully!");
       router.push("/dashboard");
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || "Login failed");
+      const err = error as { response?: { data?: { message?: string; error?: string } } };
+      toast.error(err.response?.data?.error || err.response?.data?.message || "Login failed");
     }
   }
 
   return (
-    <Vortex
-      containerClassName="h-screen w-full overflow-hidden"
-      className="flex items-center justify-center h-full"
-      backgroundColor="black"
-    >
-      <Card className="w-87.5">
-        <CardHeader>
-          <CardTitle>Login</CardTitle>
-        </CardHeader>
-        <CardContent>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
+      {/* Theme toggle — top right */}
+      <div className="absolute top-4 right-4">
+        <ModeToggle />
+      </div>
+      <div className="border border-border w-full max-w-sm">
+        <div className="p-4">
+          <div className="text-sm text-muted-foreground">&gt; login:</div>
+          <Link href="/" className="text-xl font-bold text-foreground hover:text-[#3FB950] transition-colors">ICPC USICT</Link>
+        </div>
+        <div className="p-4 pt-0">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>email:</FormLabel>
                     <FormControl>
-                      <Input placeholder="email@example.com" {...field} />
+                      <Input placeholder="user@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -108,64 +109,82 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>password:</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="********"
-                        {...field}
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="********"
+                          {...field}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <div className="text-right">
+
+              <div className="flex justify-end">
                 <Link
                   href="/forgot-password"
-                  className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Forgot Password?
+                  forgot password?
                 </Link>
               </div>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? (
+
+              <button
+                className="w-full text-sm border border-foreground px-4 py-2 text-foreground hover:bg-muted transition-colors"
+                type="submit"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? (
                   <>
-                    <Loader2 className="animate-spin" />
-                    Logging in...
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    authenticating...
                   </>
                 ) : (
-                  "Login"
+                  "[ ENTER ]"
                 )}
-              </Button>
+              </button>
             </form>
           </Form>
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+              <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
+              <span className="bg-card px-2 text-muted-foreground">
+                or
               </span>
             </div>
           </div>
 
-          <GoogleSignInButton text="Sign in with Google" />
+          <GoogleSignInButton text="sign in with google" />
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
+          <p className="text-center text-xs text-muted-foreground mt-4">
+            no account?{" "}
             <Link
               href="/register"
-              className="font-medium text-primary underline-offset-4 hover:underline"
+              className="text-[#58A6FF] hover:underline"
             >
-              Register
+              register
             </Link>
           </p>
-        </CardContent>
-      </Card>
-    </Vortex>
+        </div>
+      </div>
+    </div>
   );
 }
-

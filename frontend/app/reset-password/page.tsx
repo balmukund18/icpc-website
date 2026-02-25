@@ -2,14 +2,13 @@
 
 import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { ArrowLeft, Lock, Loader2, CheckCircle, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Vortex } from "@/components/ui/vortex";
 
 function ResetPasswordForm() {
     const searchParams = useSearchParams();
@@ -63,62 +62,55 @@ function ResetPasswordForm() {
 
     if (!token) {
         return (
-            <Vortex
-                containerClassName="h-screen w-full overflow-hidden"
-                className="flex items-center justify-center h-full"
-                backgroundColor="black"
-            >
-                <Card className="w-87.5">
-                    <CardContent className="pt-6 text-center space-y-4">
-                        <p className="text-destructive">Invalid or missing reset token.</p>
+            <div className="min-h-screen flex items-center justify-center bg-background p-4">
+                <div className="border border-border w-full max-w-sm">
+                    <div className="p-4 pt-0">
+                        <p className="text-destructive">&gt; error: invalid or missing reset token</p>
                         <Link href="/forgot-password">
-                            <Button variant="outline">Request New Reset Link</Button>
+                            <button className="text-sm border border-border px-4 py-2 text-muted-foreground hover:text-foreground transition-colors" >[ request new link ]</button>
                         </Link>
-                    </CardContent>
-                </Card>
-            </Vortex>
+                    </div>
+                </div>
+            </div>
         );
     }
 
     return (
-        <Vortex
-            containerClassName="h-screen w-full overflow-hidden"
-            className="flex items-center justify-center h-full"
-            backgroundColor="black"
-        >
-            <Card className="w-87.5">
-                <CardHeader className="space-y-1 text-center">
-                    <CardTitle className="text-2xl font-bold">
-                        Reset Password
-                    </CardTitle>
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+            <div className="border border-border w-full max-w-sm">
+                <div className="p-4">
+                    <div className="text-sm text-muted-foreground">&gt; reset-password:</div>
+                    <p className="text-xl font-bold text-foreground">
+                        New Password
+                    </p>
                     <p className="text-sm text-muted-foreground">
                         {success
-                            ? "Your password has been reset successfully"
-                            : "Enter your new password below"}
+                            ? "password has been reset successfully"
+                            : "enter your new password below"}
                     </p>
-                </CardHeader>
-                <CardContent>
+                </div>
+                <div className="p-4 pt-0">
                     {success ? (
                         <div className="space-y-6 text-center">
                             <div className="flex justify-center">
-                                <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center">
-                                    <CheckCircle className="h-8 w-8 text-green-500" />
+                                <div className="h-12 w-12 border border-[#3FB950]/30 bg-[#3FB950]/10 flex items-center justify-center rounded-sm">
+                                    <CheckCircle className="h-6 w-6 text-[#3FB950]" />
                                 </div>
                             </div>
                             <p className="text-sm text-muted-foreground">
-                                Redirecting you to login...
+                                redirecting to login...
                             </p>
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="password">New Password</Label>
+                                <Label htmlFor="password">new password:</Label>
                                 <div className="relative">
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         id="password"
                                         type={showPassword ? "text" : "password"}
-                                        placeholder="Enter new password"
+                                        placeholder="min 6 characters"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         className="pl-10 pr-10"
@@ -140,13 +132,13 @@ function ResetPasswordForm() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                                <Label htmlFor="confirmPassword">confirm password:</Label>
                                 <div className="relative">
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         id="confirmPassword"
                                         type={showConfirm ? "text" : "password"}
-                                        placeholder="Confirm new password"
+                                        placeholder="re-enter password"
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                         className="pl-10 pr-10"
@@ -169,34 +161,34 @@ function ResetPasswordForm() {
                             </div>
                             {password && confirmPassword && password !== confirmPassword && (
                                 <p className="text-xs text-destructive">
-                                    Passwords do not match
+                                    &gt; error: passwords do not match
                                 </p>
                             )}
-                            <Button
+                            <button
+                                className="w-full text-sm border border-foreground px-4 py-2 text-foreground hover:bg-muted transition-colors"
                                 type="submit"
-                                className="w-full"
                                 disabled={loading}
                             >
                                 {loading ? (
                                     <>
                                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                        Resetting...
+                                        resetting...
                                     </>
                                 ) : (
-                                    "Reset Password"
+                                    "[ RESET PASSWORD ]"
                                 )}
-                            </Button>
+                            </button>
                             <Link href="/login" className="block">
-                                <Button variant="ghost" className="w-full gap-2">
+                                <button className="inline-flex items-center gap-2 w-full text-sm px-4 py-2 text-muted-foreground hover:text-foreground transition-colors">
                                     <ArrowLeft className="h-4 w-4" />
-                                    Back to Login
-                                </Button>
+                                    back to login
+                                </button>
                             </Link>
                         </form>
                     )}
-                </CardContent>
-            </Card>
-        </Vortex>
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -204,8 +196,8 @@ export default function ResetPasswordPage() {
     return (
         <Suspense
             fallback={
-                <div className="min-h-screen flex items-center justify-center bg-black">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <div className="min-h-screen flex items-center justify-center bg-background">
+                    <div className="text-muted-foreground">&gt; loading...</div>
                 </div>
             }
         >

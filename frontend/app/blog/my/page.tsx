@@ -6,23 +6,11 @@ import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useBlogStore } from "@/store/useBlogStore";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
-import {
-  ArrowLeft,
   PenSquare,
-  Clock,
-  FileText,
-  Pencil,
-  Trash2,
-  Eye,
   Loader2,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -40,18 +28,13 @@ export default function MyBlogsPage() {
     deleteBlog,
   } = useBlogStore();
 
-  // Fetch blogs on mount
   useEffect(() => {
-    if (isAuthenticated && hasHydrated) {
-      fetchMyBlogs();
-    }
+    if (isAuthenticated && hasHydrated) { fetchMyBlogs(); }
   }, [isAuthenticated, hasHydrated, fetchMyBlogs]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+      year: "numeric", month: "short", day: "numeric",
     });
   };
 
@@ -66,26 +49,14 @@ export default function MyBlogsPage() {
     }
   };
 
-  const getStatusConfig = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case "APPROVED":
-        return {
-          icon: CheckCircle,
-          label: "Approved",
-          className: "bg-green-500/20 text-green-400 border-green-500/30",
-        };
+        return { label: "approved", prefix: "[✓]", color: "#3FB950", borderColor: "#3FB950" };
       case "REJECTED":
-        return {
-          icon: XCircle,
-          label: "Rejected",
-          className: "bg-red-500/20 text-red-400 border-red-500/30",
-        };
+        return { label: "rejected", prefix: "[✗]", color: "#F85149", borderColor: "#F85149" };
       default:
-        return {
-          icon: Clock,
-          label: "Pending",
-          className: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-        };
+        return { label: "pending", prefix: "[~]", color: "#D29922", borderColor: "#D29922" };
     }
   };
 
@@ -95,216 +66,167 @@ export default function MyBlogsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-4 sm:p-6 lg:p-8">
-        <div className="max-w-5xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => router.push("/blog")}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight text-primary">
-                  My Blogs
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  Manage your blog posts
-                </p>
-              </div>
-            </div>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-0">
+
+        {/* Header */}
+        <section className="py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+              &gt; <span className="font-bold">blog</span>{" "}
+              <span className="font-normal text-muted-foreground">--my-posts</span>
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              manage your blog posts
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => router.push("/blog")}
+              className="text-xs border border-border px-3 py-1.5 text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+            >
+              ← BACK
+            </button>
             {(user?.role === "STUDENT" || user?.role === "ALUMNI" || user?.role === "ADMIN") && (
               <Link href="/blog/write">
-                <Button className="gap-2">
-                  <PenSquare className="h-4 w-4" />
-                  Write New Blog
-                </Button>
+                <button className="text-xs border border-foreground px-3 py-1.5 text-foreground hover:bg-muted transition-colors inline-flex items-center gap-1.5">
+                  <PenSquare className="h-3.5 w-3.5" /> WRITE
+                </button>
               </Link>
             )}
           </div>
+        </section>
 
-          {/* Stats */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card className="bg-yellow-500/10 border-yellow-500/30">
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                  <Clock className="h-6 w-6 text-yellow-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-yellow-400">
-                    {pendingCount}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Pending Review</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-green-500/10 border-green-500/30">
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <CheckCircle className="h-6 w-6 text-green-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-green-400">
-                    {approvedCount}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Published</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-red-500/10 border-red-500/30">
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
-                  <XCircle className="h-6 w-6 text-red-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-red-400">
-                    {rejectedCount}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Need Revision</p>
-                </div>
-              </CardContent>
-            </Card>
+        <hr className="border-border" />
+
+        {/* Stats */}
+        <section className="py-4">
+          <div className="flex flex-wrap gap-x-8 gap-y-1 text-sm">
+            <span>
+              <span className="text-[#D29922]">[~]</span>{" "}
+              <span className="text-muted-foreground">pending: </span>
+              <span className="text-foreground font-semibold">{pendingCount}</span>
+            </span>
+            <span>
+              <span className="text-[#3FB950]">[✓]</span>{" "}
+              <span className="text-muted-foreground">approved: </span>
+              <span className="text-foreground font-semibold">{approvedCount}</span>
+            </span>
+            <span>
+              <span className="text-[#F85149]">[✗]</span>{" "}
+              <span className="text-muted-foreground">rejected: </span>
+              <span className="text-foreground font-semibold">{rejectedCount}</span>
+            </span>
           </div>
+        </section>
 
-          {/* Blog List */}
-          {myBlogsLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : myBlogsError ? (
-            <Card className="bg-red-500/10 border-red-500/30">
-              <CardContent className="py-8 text-center">
-                <p className="text-red-400">{myBlogsError}</p>
-                <Button
-                  variant="outline"
-                  onClick={fetchMyBlogs}
-                  className="mt-4"
+        <hr className="border-border" />
+
+        {/* Blog List */}
+        {myBlogsLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : myBlogsError ? (
+          <div className="text-sm text-[#F85149] border border-[#F85149]/30 p-3 my-4">
+            &gt; error: {myBlogsError}
+            <button onClick={fetchMyBlogs} className="ml-4 text-xs underline">retry</button>
+          </div>
+        ) : myBlogs.length === 0 ? (
+          <section className="py-10 text-center border border-border my-4">
+            <p className="text-foreground font-semibold mb-1">&gt; no blogs yet</p>
+            <p className="text-sm text-muted-foreground mb-4">
+              start sharing your knowledge with the community
+            </p>
+            {(user?.role === "STUDENT" || user?.role === "ALUMNI" || user?.role === "ADMIN") && (
+              <Link href="/blog/write">
+                <button className="text-sm border border-foreground px-4 py-2 text-foreground hover:bg-muted transition-colors inline-flex items-center gap-2">
+                  <PenSquare className="h-4 w-4" /> [ WRITE YOUR FIRST BLOG ]
+                </button>
+              </Link>
+            )}
+          </section>
+        ) : (
+          <section className="py-2">
+            {myBlogs.map((blog, i) => {
+              const statusBadge = getStatusBadge(blog.status);
+              const canEdit = blog.status !== "APPROVED";
+
+              return (
+                <motion.div
+                  key={blog.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(i * 0.05, 0.3), duration: 0.25 }}
+                  className="py-4 border-b border-border/50"
                 >
-                  Retry
-                </Button>
-              </CardContent>
-            </Card>
-          ) : myBlogs.length === 0 ? (
-            <Card className="bg-white/5 backdrop-blur-xl border border-white/10">
-              <CardContent className="py-16 text-center">
-                <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">No blogs yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  You haven&apos;t written any blogs yet. Start sharing your knowledge!
-                </p>
-                {(user?.role === "STUDENT" || user?.role === "ALUMNI" || user?.role === "ADMIN") && (
-                  <Link href="/blog/write">
-                    <Button className="gap-2">
-                      <PenSquare className="h-4 w-4" />
-                      Write your first blog
-                    </Button>
-                  </Link>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {myBlogs.map((blog) => {
-                const statusConfig = getStatusConfig(blog.status);
-                const StatusIcon = statusConfig.icon;
-                const canEdit = blog.status !== "APPROVED";
-
-                return (
-                  <Card
-                    key={blog.id}
-                    className="bg-white/5 backdrop-blur-xl border border-white/10"
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          {/* Status Badge */}
-                          <div className="flex items-center gap-3 mb-2">
-                            <span
-                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium rounded-full border ${statusConfig.className}`}
-                            >
-                              <StatusIcon className="h-3 w-3" />
-                              {statusConfig.label}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {formatDate(blog.createdAt)}
-                            </span>
-                          </div>
-
-                          {/* Title */}
-                          <h3 className="text-lg font-semibold mb-2 truncate">
-                            {blog.title}
-                          </h3>
-
-                          {/* Tags */}
-                          {blog.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mb-3">
-                              {blog.tags.slice(0, 4).map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                              {blog.tags.length > 4 && (
-                                <span className="px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground">
-                                  +{blog.tags.length - 4}
-                                </span>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Rejection Reason */}
-                          {blog.status === "REJECTED" && blog.rejectionReason && (
-                            <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg mt-3">
-                              <AlertCircle className="h-4 w-4 text-red-400 flex-shrink-0 mt-0.5" />
-                              <div className="text-sm">
-                                <p className="font-medium text-red-400">
-                                  Rejection Reason:
-                                </p>
-                                <p className="text-red-300/80">
-                                  {blog.rejectionReason}
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <Link href={`/blog/${blog.id}`}>
-                            <Button variant="ghost" size="icon" title="View">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </Link>
-                          {canEdit && (
-                            <Link href={`/blog/edit/${blog.id}`}>
-                              <Button variant="ghost" size="icon" title="Edit">
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                            </Link>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(blog.id)}
-                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      {/* Status + Date */}
+                      <div className="flex items-center gap-3 mb-1">
+                        <span
+                          className="text-xs px-2 py-0.5 border inline-flex items-center gap-1"
+                          style={{ color: statusBadge.color, borderColor: statusBadge.borderColor + "30" }}
+                        >
+                          {statusBadge.prefix} {statusBadge.label}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{formatDate(blog.createdAt)}</span>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </div>
+
+                      {/* Title */}
+                      <Link href={`/blog/${blog.id}`} className="hover:underline">
+                        <p className="font-semibold text-foreground text-base">{blog.title}</p>
+                      </Link>
+
+                      {/* Tags */}
+                      {blog.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {blog.tags.slice(0, 4).map((tag) => (
+                            <span key={tag} className="text-xs px-2 py-0.5 border border-border text-muted-foreground">
+                              {tag}
+                            </span>
+                          ))}
+                          {blog.tags.length > 4 && (
+                            <span className="text-xs px-2 py-0.5 text-muted-foreground">+{blog.tags.length - 4}</span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Rejection Reason */}
+                      {blog.status === "REJECTED" && blog.rejectionReason && (
+                        <div className="text-sm border border-[#F85149]/30 p-2 mt-3">
+                          <span className="text-[#F85149] text-xs">[REJECTED]</span>{" "}
+                          <span className="text-muted-foreground text-xs">{blog.rejectionReason}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Link href={`/blog/${blog.id}`}>
+                        <button className="text-xs border border-border px-3 py-1 text-muted-foreground hover:text-foreground hover:border-foreground transition-colors">
+                          VIEW
+                        </button>
+                      </Link>
+                      {canEdit && (
+                        <Link href={`/blog/edit/${blog.id}`}>
+                          <button className="text-xs border border-border px-3 py-1 text-muted-foreground hover:text-foreground hover:border-foreground transition-colors">
+                            EDIT
+                          </button>
+                        </Link>
+                      )}
+                      <button
+                        onClick={() => handleDelete(blog.id)}
+                        className="text-xs border border-border px-3 py-1 text-muted-foreground hover:text-[#F85149] hover:border-[#F85149]/30 transition-colors"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </section>
+        )}
       </div>
     </DashboardLayout>
   );

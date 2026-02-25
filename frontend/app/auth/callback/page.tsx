@@ -1,130 +1,43 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
-import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
 
-function AuthCallbackContent() {
+function CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [status, setStatus] = useState<"loading" | "error">("loading");
   const login = useAuthStore((state) => state.login);
-  const setHasProfile = useAuthStore((state) => state.setHasProfile);
 
   useEffect(() => {
-    const processCallback = async () => {
-      try {
-        const token = searchParams.get("token");
-        const userId = searchParams.get("userId");
-        const email = searchParams.get("email") || "";
-        const role = searchParams.get("role") || "STUDENT";
+    const token = searchParams.get("token");
+    const userId = searchParams.get("userId");
 
-        if (!token || !userId) {
-          setStatus("error");
-          toast.error("Authentication failed: Missing token or user ID");
-          setTimeout(() => router.push("/login"), 2000);
-          return;
-        }
-
-        // Store user with info from URL params (email & role from backend)
-        const userData = {
-          id: userId,
-          email: email,
-          role: role,
-        };
-        login(userData, token);
-
-        // Fetch user profile to check if it exists and is complete
-        try {
-          const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/profile`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          const profileData = await response.json();
-          const profile = profileData?.data;
-          // Check that profile exists AND has required fields filled in
-          const isProfileComplete =
-            response.ok &&
-            profile &&
-            profile.name?.trim() &&
-            profile.branch?.trim() &&
-            profile.contact?.trim();
-
-          if (isProfileComplete) {
-            setHasProfile(true);
-
-            toast.success("Logged in successfully with Google");
-            router.push("/dashboard");
-          } else {
-            // Profile doesn't exist or is incomplete, redirect to complete it
-            setHasProfile(false);
-            toast.success(
-              "Logged in successfully with Google. Please complete your profile."
-            );
-            router.push("/profile");
-          }
-        } catch {
-          // If profile fetch fails, still allow login but redirect to profile
-          setHasProfile(false);
-          toast.success(
-            "Logged in successfully with Google. Please complete your profile."
-          );
-          router.push("/profile");
-        }
-      } catch (error) {
-        console.error("OAuth callback error:", error);
-        setStatus("error");
-        toast.error("Authentication failed");
-        setTimeout(() => router.push("/login"), 2000);
-      }
-    };
-
-    processCallback();
-  }, [searchParams, login, setHasProfile, router]);
+    if (token && userId) {
+      login({ id: userId, email: "", role: "STUDENT" }, token);
+      router.push(`/select-role?token=${token}&userId=${userId}`);
+    } else {
+      router.push("/login");
+    }
+  }, [searchParams, login, router]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-100">
-        <CardHeader>
-          <CardTitle className="text-center">
-            {status === "loading"
-              ? "Authenticating..."
-              : "Authentication Failed"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center space-y-4">
-            {status === "loading" ? (
-              <>
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground text-center">
-                  Please wait while we complete your Google sign-in...
-                </p>
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center">
-                Redirecting to login page...
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-muted-foreground font-mono">&gt; authenticating...</div>
     </div>
   );
 }
 
 export default function AuthCallbackPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <AuthCallbackContent />
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="text-muted-foreground font-mono">&gt; loading...</div>
+        </div>
+      }
+    >
+      <CallbackContent />
     </Suspense>
   );
 }

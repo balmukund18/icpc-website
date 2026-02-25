@@ -4,8 +4,8 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+
+
 import {
   Select,
   SelectContent,
@@ -25,10 +25,8 @@ function SelectRoleContent() {
 
   const token = searchParams.get("token");
   const userId = searchParams.get("userId");
-  const email = searchParams.get("email") || "";
 
   useEffect(() => {
-    // Verify we have the necessary parameters
     if (!token || !userId) {
       toast.error("Invalid session. Please try logging in again.");
       router.push("/login");
@@ -62,17 +60,13 @@ function SelectRoleContent() {
         throw new Error(data.error || "Failed to set role");
       }
 
-      // Login with the updated user data
       const userData = {
         id: data.data.user.id,
         email: data.data.user.email,
         role: data.data.user.role,
       };
-      
-      login(userData, data.data.token);
 
-      // Google OAuth auto-creates a profile with empty fields (branch, contact)
-      // so redirect to profile page to complete it
+      login(userData, data.data.token);
       setHasProfile(false);
 
       toast.success(`Role set to ${role}. Please complete your profile.`);
@@ -90,49 +84,50 @@ function SelectRoleContent() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl text-center">
+    <div className="flex min-h-screen items-center justify-center p-4 bg-background">
+      <div className="border border-border w-full max-w-md">
+        <div className="p-4">
+          <div className="text-sm text-muted-foreground">&gt; select-role:</div>
+          <p className="text-xl font-bold text-foreground">
             Select Your Role
-          </CardTitle>
-          <p className="text-sm text-muted-foreground text-center mt-2">
-            Welcome! Please select your role to continue.
           </p>
-        </CardHeader>
-        <CardContent className="space-y-6">
+          <p className="text-sm text-muted-foreground">
+            welcome! please select your role to continue.
+          </p>
+        </div>
+        <div className="p-4 pt-0">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Role</label>
+            <label className="text-sm font-medium">role:</label>
             <Select value={role} onValueChange={setRole}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a role" />
+                <SelectValue placeholder="select a role" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="STUDENT">Student</SelectItem>
-                <SelectItem value="ALUMNI">Alumni</SelectItem>
+                <SelectItem value="STUDENT">student</SelectItem>
+                <SelectItem value="ALUMNI">alumni</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground mt-2">
-              Choose your role. Note: Admin role requires approval and can only be assigned by existing admins.
+              &gt; admin role requires approval from existing admins
             </p>
           </div>
 
-          <Button
+          <button
+            className="w-full text-sm border border-foreground px-4 py-2 text-foreground hover:bg-muted transition-colors"
             onClick={handleSubmit}
             disabled={isLoading || !role}
-            className="w-full"
           >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Setting role...
+                setting role...
               </>
             ) : (
-              "Continue"
+              "[ CONTINUE ]"
             )}
-          </Button>
-        </CardContent>
-      </Card>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -141,8 +136,8 @@ export default function SelectRolePage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <div className="text-muted-foreground">&gt; loading...</div>
         </div>
       }
     >

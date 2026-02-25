@@ -2,6 +2,7 @@ import prisma from "../models/prismaClient";
 import { Prisma, SubmissionStatus } from "@prisma/client";
 import cache from "../utils/cache";
 import { sendTaskAssignedEmail } from "./emailService";
+import { trackActivity } from "./gamificationService";
 
 const MAX_SUBMISSIONS_PER_TASK = 2;
 
@@ -321,6 +322,11 @@ export const verifySubmission = async (
 
   // Invalidate leaderboard cache when points are awarded
   cache.invalidatePattern(/^leaderboard:/);
+
+  // Track activity for streak/heatmap
+  trackActivity(submission.userId, "submission").catch((err) =>
+    console.error("[Activity Tracking Error]:", err)
+  );
 
   return result;
 };

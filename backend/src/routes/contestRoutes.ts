@@ -20,6 +20,9 @@ router.get("/", ctrl.list);
 // User contest history
 router.get("/history/me", isAuthenticated, ctrl.history);
 
+// External platform contests (clist.by)
+router.get("/external", isAuthenticated, ctrl.externalContests);
+
 // Get single contest by ID
 router.get("/:id", ctrl.getById);
 

@@ -1,16 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-    MessageSquare,
     X,
-    Send,
     Loader2,
-    Bot,
-    User,
-    Sparkles,
     Maximize2,
     Minimize2,
     RotateCcw,
@@ -40,9 +34,7 @@ export function ChatWidget() {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
+    useEffect(() => { scrollToBottom(); }, [messages]);
 
     useEffect(() => {
         if (isOpen && inputRef.current) {
@@ -123,16 +115,13 @@ export function ChatWidget() {
         else setSize("default");
     };
 
-    const handleClearChat = () => {
-        setMessages([]);
-    };
+    const handleClearChat = () => { setMessages([]); };
 
-    // Size classes
+    // Size classes — sharp corners, terminal style
     const sizeClasses: Record<WidgetSize, string> = {
-        default: "left-3 right-3 bottom-3 sm:left-auto sm:w-[380px] max-h-[85vh] sm:max-h-[500px] sm:bottom-6 sm:right-6 rounded-2xl",
-        expanded: "left-3 right-3 bottom-3 sm:left-auto sm:w-[520px] max-h-[90vh] sm:max-h-[700px] sm:bottom-6 sm:right-6 rounded-2xl",
-        fullscreen:
-            "inset-2 sm:inset-4 md:inset-6 lg:inset-10 w-auto max-h-none rounded-2xl",
+        default: "left-3 right-3 bottom-3 sm:left-auto sm:w-[400px] max-h-[85vh] sm:max-h-[500px] sm:bottom-6 sm:right-6",
+        expanded: "left-3 right-3 bottom-3 sm:left-auto sm:w-[520px] max-h-[90vh] sm:max-h-[700px] sm:bottom-6 sm:right-6",
+        fullscreen: "inset-2 sm:inset-4 md:inset-6 lg:inset-10 w-auto max-h-none",
     };
 
     const messageAreaClasses: Record<WidgetSize, string> = {
@@ -141,16 +130,16 @@ export function ChatWidget() {
         fullscreen: "min-h-0 flex-1",
     };
 
-    // Floating button
+    // Floating terminal button
     if (!isOpen) {
         return (
             <button
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center group"
+                className="fixed bottom-6 right-6 z-50 h-12 w-12 border border-border bg-background text-foreground hover:bg-muted hover:border-foreground transition-all duration-200 flex items-center justify-center group shadow-lg"
                 aria-label="Open AI Chat"
             >
-                <MessageSquare className="h-6 w-6 group-hover:scale-110 transition-transform" />
-                <span className="absolute -top-1 -right-1 h-3 w-3 bg-green-400 rounded-full border-2 border-background animate-pulse" />
+                <span className="font-mono text-sm font-bold group-hover:text-[#3FB950] transition-colors">&gt;_</span>
+                <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-[#3FB950] border border-background animate-pulse" />
             </button>
         );
     }
@@ -160,90 +149,69 @@ export function ChatWidget() {
             {/* Backdrop for fullscreen */}
             {size === "fullscreen" && (
                 <div
-                    className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+                    className="fixed inset-0 z-40 bg-black/60"
                     onClick={() => setSize("expanded")}
                 />
             )}
 
             <div
-                className={`fixed z-50 flex flex-col border border-border bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden transition-all duration-300 ease-in-out ${sizeClasses[size]}`}
+                className={`fixed z-50 flex flex-col border border-border bg-background shadow-2xl overflow-hidden transition-all duration-200 ${sizeClasses[size]}`}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-600/20 to-indigo-600/20 border-b border-border shrink-0">
+                <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-muted/80 shrink-0">
                     <div className="flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center shrink-0">
-                            <Sparkles className="h-4 w-4 text-white" />
-                        </div>
+                        <span className="text-[#3FB950] font-mono text-sm font-bold">&gt;_</span>
                         <div className="min-w-0">
-                            <h3 className="text-sm font-semibold text-foreground truncate">
-                                ICPC AI Assistant
+                            <h3 className="text-sm font-semibold text-foreground truncate font-mono">
+                                ai_assistant
                             </h3>
-                            <p className="text-[10px] text-muted-foreground">Powered by Groq</p>
+                            <p className="text-[10px] text-muted-foreground font-mono">powered by groq</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-0.5 shrink-0">
+                    <div className="flex items-center gap-1 shrink-0">
                         {messages.length > 0 && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
+                            <button
                                 onClick={handleClearChat}
-                                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                className="h-7 w-7 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors"
                                 title="Clear chat"
                             >
                                 <RotateCcw className="h-3.5 w-3.5" />
-                            </Button>
+                            </button>
                         )}
-                        <Button
-                            variant="ghost"
-                            size="icon"
+                        <button
                             onClick={cycleSize}
-                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                            title={
-                                size === "fullscreen"
-                                    ? "Minimize"
-                                    : size === "expanded"
-                                        ? "Full screen"
-                                        : "Expand"
-                            }
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors"
+                            title={size === "fullscreen" ? "Minimize" : size === "expanded" ? "Full screen" : "Expand"}
                         >
                             {size === "fullscreen" ? (
                                 <Minimize2 className="h-3.5 w-3.5" />
                             ) : (
                                 <Maximize2 className="h-3.5 w-3.5" />
                             )}
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                                setIsOpen(false);
-                                setSize("default");
-                            }}
-                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                        </button>
+                        <button
+                            onClick={() => { setIsOpen(false); setSize("default"); }}
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors"
                             title="Close"
                         >
                             <X className="h-3.5 w-3.5" />
-                        </Button>
+                        </button>
                     </div>
                 </div>
 
                 {/* Messages */}
                 <div
-                    className={`flex-1 overflow-y-auto px-4 py-3 space-y-4 ${messageAreaClasses[size]}`}
-                    style={{
-                        scrollbarWidth: "thin",
-                    }}
+                    className={`flex-1 overflow-y-auto px-4 py-3 space-y-3 ${messageAreaClasses[size]}`}
+                    style={{ scrollbarWidth: "thin" }}
                 >
                     {messages.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-center py-8">
-                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20 flex items-center justify-center mb-4">
-                                <Bot className="h-7 w-7 text-purple-400" />
-                            </div>
-                            <p className="text-sm text-foreground font-medium mb-1">
-                                Hi! I&apos;m your ICPC AI assistant
+                            <div className="text-[#3FB950] font-mono text-2xl mb-3">&gt;_</div>
+                            <p className="text-sm text-foreground font-mono mb-1">
+                                icpc_ai_assistant
                             </p>
                             <p className="text-xs text-muted-foreground mb-5 max-w-[260px]">
-                                Ask me about algorithms, data structures, or contest prep
+                                ask about algorithms, data structures, or contest prep
                             </p>
                             <div
                                 className={`grid gap-2 w-full max-w-sm ${size === "fullscreen" ? "grid-cols-4" : "grid-cols-2"}`}
@@ -252,37 +220,28 @@ export function ChatWidget() {
                                     <button
                                         key={s}
                                         onClick={() => handleSend(s)}
-                                        className="text-left text-[11px] px-3 py-2.5 rounded-lg bg-muted text-muted-foreground hover:bg-accent hover:text-foreground border border-border transition-colors leading-tight"
+                                        className="text-left text-[11px] px-3 py-2.5 bg-muted/30 text-muted-foreground hover:text-foreground border border-border hover:border-foreground transition-colors leading-tight font-mono"
                                     >
-                                        {s}
+                                        &gt; {s.toLowerCase()}
                                     </button>
                                 ))}
                             </div>
                         </div>
                     ) : (
                         messages.map((msg) => (
-                            <div
-                                key={msg.id}
-                                className={`flex gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
-                            >
+                            <div key={msg.id} className="space-y-0.5">
+                                <p className="text-[10px] font-mono text-muted-foreground">
+                                    {msg.role === "user" ? "[user]" : "[ai]"}{" "}
+                                    {new Date(msg.timestamp).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                                </p>
                                 <div
-                                    className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${msg.role === "user" ? "bg-purple-500/20" : "bg-muted"
-                                        }`}
-                                >
-                                    {msg.role === "user" ? (
-                                        <User className="h-3.5 w-3.5 text-purple-400" />
-                                    ) : (
-                                        <Bot className="h-3.5 w-3.5 text-indigo-400" />
-                                    )}
-                                </div>
-                                <div
-                                    className={`rounded-xl px-3.5 py-2.5 text-sm leading-relaxed overflow-hidden ${msg.role === "user"
-                                        ? "bg-purple-600/30 text-foreground max-w-[75%]"
-                                        : "bg-muted text-foreground max-w-[85%]"
+                                    className={`text-sm leading-relaxed overflow-hidden ${msg.role === "user"
+                                        ? "text-foreground pl-3 border-l-2 border-l-[#58A6FF]"
+                                        : "text-foreground pl-3 border-l-2 border-l-[#3FB950]"
                                         }`}
                                 >
                                     {msg.role === "assistant" ? (
-                                        <div className="prose dark:prose-invert prose-sm max-w-none break-words [&>p]:my-1.5 [&>ul]:my-1.5 [&>ol]:my-1.5 [&>h1]:text-base [&>h2]:text-sm [&>h3]:text-sm [&>h1]:mt-3 [&>h2]:mt-2.5 [&>h3]:mt-2 [&>pre]:my-2 [&>pre]:bg-card [&>pre]:border [&>pre]:border-border [&>pre]:rounded-lg [&>pre]:p-3 [&>pre]:overflow-x-auto [&>pre]:text-xs [&_code]:text-purple-500 dark:[&_code]:text-purple-300 [&_code]:text-xs [&>p>code]:bg-muted [&>p>code]:px-1.5 [&>p>code]:py-0.5 [&>p>code]:rounded [&>p>code]:text-[11px] [&_pre_code]:bg-transparent [&_pre_code]:p-0">
+                                        <div className="prose dark:prose-invert prose-sm max-w-none break-words [&>p]:my-1.5 [&>ul]:my-1.5 [&>ol]:my-1.5 [&>h1]:text-base [&>h2]:text-sm [&>h3]:text-sm [&>h1]:mt-3 [&>h2]:mt-2.5 [&>h3]:mt-2 [&>pre]:my-2 [&>pre]:bg-muted [&>pre]:border [&>pre]:border-border [&>pre]:p-3 [&>pre]:overflow-x-auto [&>pre]:text-xs [&_code]:text-[#58A6FF] [&_code]:text-xs [&>p>code]:bg-muted [&>p>code]:px-1.5 [&>p>code]:py-0.5 [&>p>code]:text-[11px] [&_pre_code]:bg-transparent [&_pre_code]:p-0">
                                             <ReactMarkdown>{msg.content}</ReactMarkdown>
                                         </div>
                                     ) : (
@@ -293,15 +252,13 @@ export function ChatWidget() {
                         ))
                     )}
                     {loading && (
-                        <div className="flex gap-2.5">
-                            <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                                <Bot className="h-3.5 w-3.5 text-indigo-400" />
-                            </div>
-                            <div className="bg-muted rounded-xl px-4 py-3">
+                        <div className="space-y-0.5">
+                            <p className="text-[10px] font-mono text-muted-foreground">[ai] processing...</p>
+                            <div className="pl-3 border-l-2 border-l-[#3FB950] py-1">
                                 <div className="flex gap-1.5">
-                                    <span className="h-2 w-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:0ms]" />
-                                    <span className="h-2 w-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:150ms]" />
-                                    <span className="h-2 w-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:300ms]" />
+                                    <span className="h-1.5 w-1.5 bg-[#3FB950] animate-pulse [animation-delay:0ms]" />
+                                    <span className="h-1.5 w-1.5 bg-[#3FB950] animate-pulse [animation-delay:150ms]" />
+                                    <span className="h-1.5 w-1.5 bg-[#3FB950] animate-pulse [animation-delay:300ms]" />
                                 </div>
                             </div>
                         </div>
@@ -310,37 +267,37 @@ export function ChatWidget() {
                 </div>
 
                 {/* Input */}
-                <div className="px-3 py-3 border-t border-border bg-card shrink-0">
+                <div className="px-3 py-3 border-t border-border bg-muted/80 shrink-0">
                     <div className="flex gap-2">
-                        <Input
-                            ref={inputRef}
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Ask about algorithms, DSA..."
-                            className="bg-muted border-border text-sm placeholder:text-muted-foreground focus-visible:ring-purple-500/30"
-                            disabled={loading}
-                        />
-                        <Button
+                        <div className="flex-1 flex items-center gap-2">
+                            <span className="text-[#3FB950] font-mono text-sm shrink-0">&gt;</span>
+                            <Input
+                                ref={inputRef}
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                placeholder="ask about algorithms, DSA..."
+                                className="bg-transparent border-none text-sm placeholder:text-muted-foreground/50 focus-visible:ring-0 focus-visible:ring-offset-0 font-mono h-8 px-0"
+                                disabled={loading}
+                            />
+                        </div>
+                        <button
                             onClick={() => handleSend()}
                             disabled={!input.trim() || loading}
-                            size="icon"
-                            className="bg-purple-600 hover:bg-purple-700 text-white shrink-0 h-9 w-9"
+                            className="text-xs border border-border px-3 py-1.5 text-foreground hover:bg-muted hover:border-foreground transition-colors disabled:opacity-30 shrink-0 font-mono"
                         >
                             {loading ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
                             ) : (
-                                <Send className="h-4 w-4" />
+                                "SEND"
                             )}
-                        </Button>
+                        </button>
                     </div>
-                    <p className="text-[9px] text-muted-foreground text-center mt-1.5">
-                        Press Esc to {size === "fullscreen" ? "shrink" : "close"} · Click
-                        expand to resize
+                    <p className="text-[9px] text-muted-foreground/50 text-center mt-1.5 font-mono">
+                        esc {size === "fullscreen" ? "shrink" : "close"} · click expand to resize
                     </p>
                 </div>
             </div>
         </>
     );
 }
-

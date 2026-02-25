@@ -149,4 +149,14 @@ router.post('/:id/approve', isAuthenticated, isAdmin, ctrl.approve);
 // POST /blogs/:id/reject - Reject a blog with optional reason
 router.post('/:id/reject', isAuthenticated, isAdmin, rejectBlogValidation, validate, ctrl.reject);
 
+// =====================
+// UPVOTE ROUTES (Auth Required)
+// =====================
+
+// POST /blogs/:id/like - Toggle like on a blog
+router.post('/:id/like', isAuthenticated, ctrl.toggleLike);
+
+// GET /blogs/:id/like-status - Get like status
+router.get('/:id/like-status', isAuthenticated, ctrl.likeStatus);
+
 export default router;

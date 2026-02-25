@@ -76,7 +76,7 @@ const mainLinks: NavLink[] = [
     icon: <UserCog className="h-5 w-5 flex-shrink-0" />,
   },
   {
-    label: "Alumni Network",
+    label: "Alumni",
     href: "/alumni",
     icon: <GraduationCap className="h-5 w-5 flex-shrink-0" />,
   },
@@ -160,7 +160,7 @@ function SidebarContent({ userName }: { userName: string }) {
       <div className="border-t border-border pt-4 mt-4">
         {/* User Info */}
         <div className="flex items-center gap-3 px-3 py-2 mb-2 overflow-hidden">
-          <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+          <div className="h-6 w-6 rounded-sm bg-muted flex items-center justify-center flex-shrink-0">
             <User className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
           <motion.span
@@ -181,10 +181,10 @@ function SidebarContent({ userName }: { userName: string }) {
 
         {/* Logout Button */}
         <SidebarButton
-          icon={<LogOut className="h-5 w-5 flex-shrink-0 text-red-400" />}
-          label="Logout"
+          icon={<LogOut className="h-5 w-5 flex-shrink-0 text-[#FF4D4F]" />}
+          label="Log Out"
           onClick={handleLogout}
-          className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+          className="text-[#FF4D4F] hover:text-[#FF4D4F] hover:bg-[#FF4D4F]/10"
         />
       </div>
     </>

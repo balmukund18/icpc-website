@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as svc from "../services/contestService";
+import * as clistSvc from "../services/clistService";
 import { success, fail } from "../utils/response";
 
 export const create = async (req: Request, res: Response) => {
@@ -72,6 +73,15 @@ export const submissions = async (req: any, res: Response) => {
     const { id } = req.params;
     const list = await svc.getContestSubmissions(id);
     success(res, list);
+  } catch (err: any) {
+    fail(res, err.message);
+  }
+};
+
+export const externalContests = async (_req: Request, res: Response) => {
+  try {
+    const contests = await clistSvc.getExternalContests();
+    success(res, contests);
   } catch (err: any) {
     fail(res, err.message);
   }

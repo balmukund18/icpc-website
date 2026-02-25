@@ -43,3 +43,19 @@ export async function getContestHistory(): Promise<Contest[]> {
   const response = await api.get("/contests/history/me");
   return response.data.data || response.data;
 }
+
+// External platform contests (clist.by)
+export interface ExternalContest {
+  name: string;
+  url: string;
+  startTime: string;
+  endTime: string;
+  duration: number; // seconds
+  platform: string;
+  platformIcon: string;
+}
+
+export async function getExternalContests(): Promise<ExternalContest[]> {
+  const response = await api.get("/contests/external");
+  return response.data.data || response.data;
+}

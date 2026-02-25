@@ -6,27 +6,11 @@ import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useBlogStore } from "@/store/useBlogStore";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { BlogContent } from "@/components/rich-text-editor";
-import {
-  ArrowLeft,
-  User,
-  Clock,
-  Tag,
-  MessageCircle,
-  Send,
-  Pencil,
-  Trash2,
-  Loader2,
-  AlertCircle,
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { toggleBlogLike, getBlogLikeStatus } from "@/lib/blogService";
+import { motion } from "framer-motion";
 
 export default function BlogViewPage() {
   const router = useRouter();
@@ -54,8 +38,10 @@ export default function BlogViewPage() {
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentContent, setEditingCommentContent] = useState("");
   const [deletingBlog, setDeletingBlog] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [userHasLiked, setUserHasLiked] = useState(false);
+  const [likingInProgress, setLikingInProgress] = useState(false);
 
-  // Fetch blog on mount
   useEffect(() => {
     if (isAuthenticated && hasHydrated && blogId) {
       fetchBlog(blogId);
@@ -63,13 +49,22 @@ export default function BlogViewPage() {
     return () => clearCurrentBlog();
   }, [isAuthenticated, hasHydrated, blogId, fetchBlog, clearCurrentBlog]);
 
+  useEffect(() => {
+    if (isAuthenticated && hasHydrated && blogId) {
+      getBlogLikeStatus(blogId)
+        .then((status) => {
+          setLikeCount(status.count);
+          setUserHasLiked(status.userHasLiked);
+        })
+        .catch(() => { });
+    }
+  }, [isAuthenticated, hasHydrated, blogId]);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
-      month: "long",
+      month: "short",
       day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
     });
   };
 
@@ -79,7 +74,7 @@ export default function BlogViewPage() {
     try {
       await addComment(blogId, newComment.trim());
       setNewComment("");
-      toast.success("Comment added successfully");
+      toast.success("Comment added");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || "Failed to add comment");
@@ -94,7 +89,7 @@ export default function BlogViewPage() {
       await editComment(blogId, commentId, editingCommentContent.trim());
       setEditingCommentId(null);
       setEditingCommentContent("");
-      toast.success("Comment updated successfully");
+      toast.success("Comment updated");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || "Failed to update comment");
@@ -102,10 +97,10 @@ export default function BlogViewPage() {
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    if (!confirm("Are you sure you want to delete this comment?")) return;
+    if (!confirm("Delete this comment?")) return;
     try {
       await deleteComment(blogId, commentId);
-      toast.success("Comment deleted successfully");
+      toast.success("Comment deleted");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || "Failed to delete comment");
@@ -113,11 +108,11 @@ export default function BlogViewPage() {
   };
 
   const handleDeleteBlog = async () => {
-    if (!confirm("Are you sure you want to delete this blog? This action cannot be undone.")) return;
+    if (!confirm("Delete this blog? This cannot be undone.")) return;
     setDeletingBlog(true);
     try {
       await deleteBlog(blogId);
-      toast.success("Blog deleted successfully");
+      toast.success("Blog deleted");
       router.push("/blog");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
@@ -126,317 +121,290 @@ export default function BlogViewPage() {
     }
   };
 
+  const handleToggleLike = async () => {
+    if (likingInProgress) return;
+    setLikingInProgress(true);
+    try {
+      const result = await toggleBlogLike(blogId);
+      setLikeCount(result.count);
+      setUserHasLiked(result.userHasLiked);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to toggle like");
+    } finally {
+      setLikingInProgress(false);
+    }
+  };
+
   const isAuthor = currentBlog?.authorId === user?.id;
   const isAdmin = user?.role === "ADMIN";
   const canEdit = isAuthor && currentBlog?.status !== "APPROVED";
   const canDelete = isAuthor || isAdmin;
 
+  // Loading
   if (currentBlogLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       </DashboardLayout>
     );
   }
 
+  // Error
   if (currentBlogError) {
     return (
       <DashboardLayout>
-        <div className="p-4 sm:p-6 lg:p-8">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6">
-            <Card className="bg-red-500/10 border-red-500/30">
-              <CardContent className="py-12 text-center">
-                <AlertCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
-                <h2 className="text-xl font-semibold text-red-400 mb-2">
-                  {currentBlogError}
-                </h2>
-                <p className="text-muted-foreground mb-4">
-                  The blog you&apos;re looking for might not exist or you don&apos;t have permission to view it.
-                </p>
-                <Link href="/blog">
-                  <Button variant="outline">Back to Blogs</Button>
-                </Link>
-              </CardContent>
-            </Card>
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+          <div className="border border-[#F85149]/30 p-6">
+            <p className="text-sm text-[#F85149] mb-4">
+              &gt; error: {currentBlogError}
+            </p>
+            <p className="text-sm text-muted-foreground mb-4">
+              the blog you&apos;re looking for might not exist or you don&apos;t have permission to view it.
+            </p>
+            <Link href="/blog">
+              <button className="text-sm border border-border px-4 py-2 text-muted-foreground hover:text-foreground transition-colors">
+                [ BACK TO BLOGS ]
+              </button>
+            </Link>
           </div>
         </div>
       </DashboardLayout>
     );
   }
 
-  if (!currentBlog) {
-    return null;
-  }
+  if (!currentBlog) return null;
 
   return (
     <DashboardLayout>
-      <div className="p-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="sm"
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+
+          {/* ── Header ── */}
+          <div className="flex items-center justify-between mb-6">
+            <button
               onClick={() => router.push("/blog")}
-              className="gap-2"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Blogs
-            </Button>
+              ← back
+            </button>
             {(canEdit || canDelete) && (
               <div className="flex gap-2">
                 {canEdit && (
                   <Link href={`/blog/edit/${blogId}`}>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Pencil className="h-4 w-4" />
-                      Edit
-                    </Button>
+                    <button className="text-xs border border-border px-3 py-1 text-muted-foreground hover:text-foreground transition-colors">
+                      [ EDIT ]
+                    </button>
                   </Link>
                 )}
                 {canDelete && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="gap-2"
+                  <button
                     onClick={handleDeleteBlog}
                     disabled={deletingBlog}
+                    className="text-xs border border-[#F85149]/40 px-3 py-1 text-[#F85149] hover:bg-[#F85149]/10 transition-colors disabled:opacity-50"
                   >
-                    {deletingBlog ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-4 w-4" />
-                    )}
-                    Delete
-                  </Button>
+                    {deletingBlog ? "deleting..." : "[ DELETE ]"}
+                  </button>
                 )}
               </div>
             )}
           </div>
 
-          {/* Blog Content */}
-          <Card className="bg-white/5 backdrop-blur-xl border border-white/10">
-            <CardHeader className="space-y-4">
-              {/* Status Badge (for author viewing own blog) */}
-              {isAuthor && currentBlog.status !== "APPROVED" && (
-                <div
-                  className={`inline-flex items-center self-start px-3 py-1 rounded-full text-xs font-medium ${currentBlog.status === "PENDING"
-                    ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
-                    : "bg-red-500/20 text-red-400 border border-red-500/30"
-                    }`}
+          {/* ── Status Banners ── */}
+          {isAuthor && currentBlog.status === "PENDING" && (
+            <div className="border-l-2 border-[#D29922] pl-3 py-2 mb-4">
+              <p className="text-sm text-[#D29922]">[PENDING] awaiting admin approval</p>
+            </div>
+          )}
+
+          {isAuthor && currentBlog.status === "REJECTED" && (
+            <div className="border-l-2 border-[#F85149] pl-3 py-2 mb-4 space-y-1">
+              <p className="text-sm text-[#F85149]">[REJECTED] this blog was not approved</p>
+              {currentBlog.rejectionReason && (
+                <p className="text-xs text-muted-foreground">reason: {currentBlog.rejectionReason}</p>
+              )}
+              <p className="text-xs text-muted-foreground">you can edit and resubmit</p>
+            </div>
+          )}
+
+          {/* ── Title ── */}
+          <h1 className="text-2xl font-bold text-foreground leading-tight mb-3">
+            {currentBlog.title}
+          </h1>
+
+          {/* ── Meta ── */}
+          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mb-2">
+            <span>by <span className="text-foreground">{currentBlog.author.name}</span></span>
+            <span>·</span>
+            <span>{formatDate(currentBlog.createdAt)}</span>
+            <span>·</span>
+            <span className="text-xs px-1.5 py-0.5 border border-border">{currentBlog.author.role}</span>
+          </div>
+
+          {/* ── Tags ── */}
+          {currentBlog.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-4">
+              {currentBlog.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="text-xs px-2 py-0.5 border border-border text-muted-foreground"
                 >
-                  {currentBlog.status === "PENDING"
-                    ? "Pending Approval"
-                    : "Rejected"}
-                </div>
-              )}
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
 
-              {/* Rejection Reason */}
-              {isAuthor && currentBlog.status === "REJECTED" && currentBlog.rejectionReason && (
-                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-                  <p className="text-sm text-red-400">
-                    <strong>Rejection Reason:</strong> {currentBlog.rejectionReason}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    You can edit your blog and resubmit for approval.
-                  </p>
-                </div>
-              )}
+          <hr className="border-border mb-6" />
 
-              <CardTitle className="text-3xl font-bold leading-tight">
-                {currentBlog.title}
-              </CardTitle>
+          {/* ── Blog Content ── */}
+          <div className="prose prose-invert max-w-none mb-6">
+            <BlogContent content={currentBlog.content} />
+          </div>
 
-              {/* Author & Date */}
-              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                    <User className="h-4 w-4 text-primary" />
-                  </div>
-                  <span className="font-medium text-foreground">
-                    {currentBlog.author.name}
-                  </span>
-                  <span className="px-2 py-0.5 text-xs rounded-full bg-white/10">
-                    {currentBlog.author.role}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  <span>{formatDate(currentBlog.createdAt)}</span>
+          <hr className="border-border" />
+
+          {/* ── Upvote Bar ── */}
+          <div className="flex items-center gap-4 py-3">
+            <button
+              onClick={handleToggleLike}
+              disabled={likingInProgress}
+              className={`text-sm border px-4 py-1.5 transition-colors inline-flex items-center gap-2 ${userHasLiked
+                  ? "border-[#3FB950] text-[#3FB950] bg-[#3FB950]/10"
+                  : "border-border text-muted-foreground hover:text-foreground hover:border-foreground"
+                }`}
+            >
+              {userHasLiked ? "▼" : "▲"} {userHasLiked ? "UPVOTED" : "UPVOTE"}
+            </button>
+            <span className="text-sm text-muted-foreground">{likeCount} upvotes</span>
+          </div>
+
+          <hr className="border-border" />
+
+          {/* ── Comments ── */}
+          <section className="py-4">
+            <p className="text-sm font-semibold text-foreground mb-4">
+              &gt; comments ({currentBlog.comments.length})
+            </p>
+
+            {/* New Comment */}
+            <div className="flex gap-2 mb-6">
+              <span className="text-muted-foreground text-sm mt-2 select-none">&gt;</span>
+              <div className="flex-1 space-y-2">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="write a comment..."
+                  className="w-full px-3 py-2 bg-transparent border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-foreground resize-none"
+                  rows={3}
+                />
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleSubmitComment}
+                    disabled={!newComment.trim() || submittingComment}
+                    className="text-xs border border-border px-4 py-1.5 text-muted-foreground hover:text-foreground hover:border-foreground transition-colors disabled:opacity-40"
+                  >
+                    {submittingComment ? "posting..." : "[ POST ]"}
+                  </button>
                 </div>
               </div>
+            </div>
 
-              {/* Tags */}
-              {currentBlog.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {currentBlog.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1 px-3 py-1 text-xs rounded-full bg-white/10 text-white/80"
+            {/* Comments List */}
+            {currentBlog.comments.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4">no comments yet — be the first!</p>
+            ) : (
+              <div className="space-y-0">
+                {currentBlog.comments.map((comment, i) => {
+                  const isCommentOwner = comment.userId === user?.id;
+                  const canEditComment = isCommentOwner;
+                  const canDeleteComment = isCommentOwner || isAdmin;
+                  const isEditing = editingCommentId === comment.id;
+
+                  return (
+                    <motion.div
+                      key={comment.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(i * 0.03, 0.2), duration: 0.2 }}
+                      className="py-3 border-b border-border/50"
                     >
-                      <Tag className="h-3 w-3" />
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </CardHeader>
-
-            <CardContent>
-              <div className="border-t border-white/10 pt-6">
-                <BlogContent content={currentBlog.content} />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Comments Section */}
-          <Card className="bg-white/5 backdrop-blur-xl border border-white/10">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <MessageCircle className="h-5 w-5" />
-                Comments ({currentBlog.comments.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* New Comment Form */}
-              <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                  <User className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex-1 space-y-2">
-                  <textarea
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Write a comment..."
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none text-foreground placeholder:text-muted-foreground"
-                    rows={3}
-                  />
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={handleSubmitComment}
-                      disabled={!newComment.trim() || submittingComment}
-                      className="gap-2"
-                    >
-                      {submittingComment ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Send className="h-4 w-4" />
-                      )}
-                      Post Comment
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Comments List */}
-              {currentBlog.comments.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>No comments yet. Be the first to comment!</p>
-                </div>
-              ) : (
-                <div className="space-y-4 border-t border-white/10 pt-6">
-                  {currentBlog.comments.map((comment) => {
-                    const isCommentOwner = comment.userId === user?.id;
-                    const canEditComment = isCommentOwner;
-                    const canDeleteComment = isCommentOwner || isAdmin;
-                    const isEditing = editingCommentId === comment.id;
-
-                    return (
-                      <div
-                        key={comment.id}
-                        className="flex gap-3 p-4 bg-white/5 rounded-xl"
-                      >
-                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-sm">
-                              {comment.user.name}
-                            </span>
-                            {comment.isEdited && (
-                              <span className="px-2 py-0.5 text-xs rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                                edited
-                              </span>
-                            )}
-                            <span className="text-xs text-muted-foreground">
-                              {formatDate(comment.createdAt)}
-                            </span>
-                          </div>
-
-                          {isEditing ? (
-                            <div className="space-y-2">
-                              <textarea
-                                value={editingCommentContent}
-                                onChange={(e) =>
-                                  setEditingCommentContent(e.target.value)
-                                }
-                                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none text-sm"
-                                rows={2}
-                              />
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleEditComment(comment.id)}
-                                  disabled={!editingCommentContent.trim()}
-                                >
-                                  Save
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    setEditingCommentId(null);
-                                    setEditingCommentContent("");
-                                  }}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              <p className="text-sm text-foreground/90">
-                                {comment.content}
-                              </p>
-                              {(canEditComment || canDeleteComment) && (
-                                <div className="flex gap-2 mt-2">
-                                  {canEditComment && (
-                                    <button
-                                      onClick={() => {
-                                        setEditingCommentId(comment.id);
-                                        setEditingCommentContent(comment.content);
-                                      }}
-                                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                                    >
-                                      Edit
-                                    </button>
-                                  )}
-                                  {canDeleteComment && (
-                                    <button
-                                      onClick={() =>
-                                        handleDeleteComment(comment.id)
-                                      }
-                                      className="text-xs text-red-400 hover:text-red-300 transition-colors"
-                                    >
-                                      Delete
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
+                      <div className="flex items-center gap-2 mb-1 text-xs">
+                        <span className="text-foreground font-medium">{comment.user.name}</span>
+                        {comment.isEdited && (
+                          <span className="text-[#58A6FF]">(edited)</span>
+                        )}
+                        <span className="text-[#484F58] ml-auto">{formatDate(comment.createdAt)}</span>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+
+                      {isEditing ? (
+                        <div className="space-y-2 mt-1">
+                          <textarea
+                            value={editingCommentContent}
+                            onChange={(e) => setEditingCommentContent(e.target.value)}
+                            className="w-full px-3 py-2 bg-transparent border border-border text-sm text-foreground focus:outline-none focus:border-foreground resize-none"
+                            rows={2}
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleEditComment(comment.id)}
+                              disabled={!editingCommentContent.trim()}
+                              className="text-xs border border-border px-3 py-1 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+                            >
+                              [ SAVE ]
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingCommentId(null);
+                                setEditingCommentContent("");
+                              }}
+                              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-sm text-foreground/90 mt-1">{comment.content}</p>
+                          {(canEditComment || canDeleteComment) && (
+                            <div className="flex gap-3 mt-2">
+                              {canEditComment && (
+                                <button
+                                  onClick={() => {
+                                    setEditingCommentId(comment.id);
+                                    setEditingCommentContent(comment.content);
+                                  }}
+                                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                  edit
+                                </button>
+                              )}
+                              {canDeleteComment && (
+                                <button
+                                  onClick={() => handleDeleteComment(comment.id)}
+                                  className="text-xs text-[#F85149] hover:text-[#FF6B6B] transition-colors"
+                                >
+                                  delete
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+        </motion.div>
       </div>
     </DashboardLayout>
   );

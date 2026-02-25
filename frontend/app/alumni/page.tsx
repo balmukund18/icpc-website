@@ -1,32 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  GraduationCap,
   Search,
+  Loader2,
+  ChevronDown,
   Briefcase,
   MapPin,
-  Linkedin,
+  GraduationCap,
   Mail,
-  Phone,
+  Linkedin,
+  Github,
   ExternalLink,
-  Loader2,
-  Users,
-  Building2,
-  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getAlumniList, AlumniProfile } from "@/lib/alumniService";
 import { CP_PLATFORMS } from "@/lib/profileService";
+
+const fadeUp = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } };
+const stagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06 } },
+};
 
 export default function AlumniNetworkPage() {
   const isAuthenticated = useAuthStore((state) => !!state.token);
@@ -36,6 +36,8 @@ export default function AlumniNetworkPage() {
   const [alumni, setAlumni] = useState<AlumniProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (hasHydrated && !isAuthenticated) {
@@ -76,12 +78,20 @@ export default function AlumniNetworkPage() {
     );
   });
 
+  // Keyboard shortcut: / to focus search
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+    if (e.key === "/") { e.preventDefault(); searchRef.current?.focus(); }
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
+
   const getPlatformUrl = (platform: string, handle: string): string => {
-    // If the handle is already a full URL, return it directly
-    if (handle.startsWith("http://") || handle.startsWith("https://")) {
-      return handle;
-    }
-    // Strip any accidental domain prefix (e.g. "leetcode.com/username" -> "username")
+    if (handle.startsWith("http://") || handle.startsWith("https://")) return handle;
     const domainPatterns: Record<string, RegExp> = {
       leetcode: /^(?:www\.)?leetcode\.com\/(?:u\/)?/i,
       codeforces: /^(?:www\.)?codeforces\.com\/profile\//i,
@@ -91,10 +101,7 @@ export default function AlumniNetworkPage() {
       github: /^(?:www\.)?github\.com\//i,
     };
     let cleanHandle = handle.trim();
-    if (domainPatterns[platform]) {
-      cleanHandle = cleanHandle.replace(domainPatterns[platform], "");
-    }
-    // Remove trailing slashes
+    if (domainPatterns[platform]) cleanHandle = cleanHandle.replace(domainPatterns[platform], "");
     cleanHandle = cleanHandle.replace(/\/+$/, "");
     const urls: Record<string, string> = {
       leetcode: `https://leetcode.com/${cleanHandle}`,
@@ -107,6 +114,32 @@ export default function AlumniNetworkPage() {
     return urls[platform] || "#";
   };
 
+  const getInitials = (name: string) => {
+    const parts = name.split(/[\s_]+/).filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  };
+
+  const getAvatarColor = (name: string) => {
+    const colors = [
+      "from-[#58A6FF] to-[#388BFD]",
+      "from-[#3FB950] to-[#238636]",
+      "from-[#D29922] to-[#BB8009]",
+      "from-[#F85149] to-[#DA3633]",
+      "from-[#BC8CFF] to-[#8B5CF6]",
+      "from-[#79C0FF] to-[#58A6FF]",
+      "from-[#56D364] to-[#3FB950]",
+      "from-[#E3B341] to-[#D29922]",
+    ];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+  };
+
+  // Stats
+  const uniqueCompanies = new Set(alumni.map((a) => a.profile?.company).filter(Boolean));
+  const linkedInCount = alumni.filter((a) => a.profile?.linkedIn).length;
+
   if (!hasHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -117,243 +150,249 @@ export default function AlumniNetworkPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
-              <GraduationCap className="h-7 w-7 sm:h-8 sm:w-8 text-purple-400" />
-              Alumni Network
-            </h1>
-            <p className="text-sm sm:text-base text-muted-foreground mt-1">
-              Connect with alumni for mentorship, guidance, and career advice
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchAlumni}
-            className="gap-2 self-start sm:self-auto"
-            disabled={loading}
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-        </div>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-2">
 
-        {/* Stats */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
-          <Card className="bg-card border-border">
-            <CardContent className="pt-5 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-purple-500/20 rounded-lg">
-                  <Users className="h-5 w-5 text-purple-400" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Total Alumni</p>
-                  <p className="text-xl font-bold">{alumni.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card border-border">
-            <CardContent className="pt-5 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-blue-500/20 rounded-lg">
-                  <Building2 className="h-5 w-5 text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Companies</p>
-                  <p className="text-xl font-bold">
-                    {new Set(alumni.map((a) => a.profile?.company).filter(Boolean)).size}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card border-border col-span-2 lg:col-span-1">
-            <CardContent className="pt-5 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-green-500/20 rounded-lg">
-                  <Linkedin className="h-5 w-5 text-green-400" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">On LinkedIn</p>
-                  <p className="text-xl font-bold">
-                    {alumni.filter((a) => a.profile?.linkedIn).length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Header */}
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="py-4"
+        >
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+            &gt; <span className="font-bold">alumni</span>{" "}
+            <span className="font-normal text-muted-foreground">--network</span>
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            connect with alumni for mentorship, guidance, and career advice.
+          </p>
+        </motion.section>
+
+        <hr className="border-border" />
+
+        {/* Stats Cards */}
+        <motion.section
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="py-4"
+        >
+          <div className="grid grid-cols-3 gap-3">
+            <div className="border border-border p-4 text-center hover:border-[#58A6FF]/40 transition-colors">
+              <p className="text-2xl font-bold text-foreground">{alumni.length}</p>
+              <p className="text-xs text-muted-foreground mt-1">alumni</p>
+            </div>
+            <div className="border border-border p-4 text-center hover:border-[#3FB950]/40 transition-colors">
+              <p className="text-2xl font-bold text-foreground">{uniqueCompanies.size}</p>
+              <p className="text-xs text-muted-foreground mt-1">companies</p>
+            </div>
+            <div className="border border-border p-4 text-center hover:border-[#D29922]/40 transition-colors">
+              <p className="text-2xl font-bold text-foreground">{linkedInCount}</p>
+              <p className="text-xs text-muted-foreground mt-1">linkedin</p>
+            </div>
+          </div>
+        </motion.section>
 
         {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, company, position, or branch..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-card border-border pl-10"
-          />
-        </div>
+        <motion.section
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.15 }}
+          className="py-3"
+        >
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              ref={searchRef}
+              placeholder="search alumni: _ (press / to focus)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-10 bg-transparent border-border focus:border-[#58A6FF] transition-colors"
+            />
+            {searchQuery && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
+                {filteredAlumni.length} result{filteredAlumni.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+        </motion.section>
 
-        {/* Alumni Cards Grid */}
+        <hr className="border-border" />
+
+        {/* Alumni List */}
         {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <p className="text-xs text-muted-foreground">&gt; loading alumni data...</p>
           </div>
         ) : filteredAlumni.length === 0 ? (
-          <Card className="bg-card border-border">
-            <CardContent className="py-12 text-center">
-              <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground text-lg">
-                {searchQuery ? "No alumni match your search" : "No alumni profiles available yet"}
-              </p>
-              <p className="text-muted-foreground text-sm mt-1">
-                {searchQuery ? "Try a different search term" : "Check back later"}
-              </p>
-            </CardContent>
-          </Card>
+          <section className="py-12 text-center">
+            <p className="text-muted-foreground text-sm">
+              &gt; {searchQuery ? `no alumni matching "${searchQuery}"` : "no alumni data available"}
+            </p>
+          </section>
         ) : (
-          <>
-            <div className="grid gap-4 sm:gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-              {filteredAlumni.map((alumnus) => (
-                <Card
-                  key={alumnus.id}
-                  className="bg-card border-border hover:border-border transition-colors group"
-                >
-                  <CardContent className="p-5">
-                    {/* Name & Branch */}
-                    <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-foreground transition-colors">
-                        {alumnus.profile?.name || "Unknown"}
-                      </h3>
-                      <div className="flex flex-wrap items-center gap-2 mt-1">
-                        {alumnus.profile?.branch && (
-                          <span className="text-xs px-2 py-0.5 bg-muted text-muted-foreground rounded-full">
-                            {alumnus.profile.branch}
-                          </span>
-                        )}
-                        {alumnus.profile?.graduationYear && (
-                          <span className="text-xs px-2 py-0.5 bg-purple-500/15 text-purple-400 rounded-full">
-                            Class of {alumnus.profile.graduationYear}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+          <motion.section
+            className="py-2 space-y-3"
+            variants={stagger}
+            initial="hidden"
+            animate="show"
+          >
+            {filteredAlumni.map((alumnus) => {
+              const p = alumnus.profile;
+              const name = p?.name || alumnus.email.split("@")[0];
+              const handles = p?.handles as Record<string, string> | undefined;
+              const hasHandles = handles && Object.values(handles).some((v) => v);
+              const isExpanded = expandedId === alumnus.id;
+              const hasExtra = p?.location || hasHandles;
 
-                    {/* Professional Info */}
-                    {(alumnus.profile?.company || alumnus.profile?.position) && (
-                      <div className="flex items-start gap-2 mb-3">
-                        <Briefcase className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                        <div className="text-sm">
-                          {alumnus.profile?.position && (
-                            <span className="text-foreground">{alumnus.profile.position}</span>
-                          )}
-                          {alumnus.profile?.position && alumnus.profile?.company && (
-                            <span className="text-muted-foreground"> at </span>
-                          )}
-                          {alumnus.profile?.company && (
-                            <span className="text-blue-400 font-medium">{alumnus.profile.company}</span>
+              return (
+                <motion.div
+                  key={alumnus.id}
+                  variants={fadeUp}
+                  className={`border transition-all duration-200 ${isExpanded
+                      ? "border-[#58A6FF]/40 bg-[#58A6FF]/[0.02]"
+                      : "border-border hover:border-muted-foreground/30"
+                    }`}
+                >
+                  {/* Main card content */}
+                  <div
+                    className="p-4 cursor-pointer"
+                    onClick={() => setExpandedId(isExpanded ? null : alumnus.id)}
+                  >
+                    <div className="flex items-start gap-4">
+                      {/* Avatar */}
+                      <div
+                        className={`w-11 h-11 shrink-0 bg-gradient-to-br ${getAvatarColor(name)} flex items-center justify-center`}
+                      >
+                        <span className="text-white text-sm font-bold">{getInitials(name)}</span>
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-semibold text-foreground truncate">
+                            {name}
+                          </h3>
+                          {p?.graduationYear && (
+                            <span className="text-[10px] text-muted-foreground border border-border px-1.5 py-0.5 shrink-0">
+                              {p.graduationYear}
+                            </span>
                           )}
                         </div>
+
+                        {/* Role & Company */}
+                        {(p?.position || p?.company) && (
+                          <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+                            <Briefcase className="h-3 w-3 shrink-0" />
+                            <span className="truncate">
+                              {p?.position && p?.company
+                                ? `${p.position} @ ${p.company}`
+                                : p?.position || p?.company}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Branch */}
+                        {p?.branch && (
+                          <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
+                            <GraduationCap className="h-3 w-3 shrink-0" />
+                            <span>{p.branch}</span>
+                          </div>
+                        )}
                       </div>
-                    )}
 
-                    {/* Location */}
-                    {alumnus.profile?.location && (
-                      <div className="flex items-center gap-2 mb-3">
-                        <MapPin className="h-4 w-4 text-green-400 flex-shrink-0" />
-                        <span className="text-sm text-muted-foreground">{alumnus.profile.location}</span>
-                      </div>
-                    )}
-
-                    {/* Bio */}
-                    {alumnus.profile?.bio && (
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2 leading-relaxed">
-                        {alumnus.profile.bio}
-                      </p>
-                    )}
-
-                    {/* CP Handles */}
-                    {alumnus.profile?.handles && Object.keys(alumnus.profile.handles).length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-4">
-                        {CP_PLATFORMS.map((platform) => {
-                          const handle = alumnus.profile?.handles?.[platform.key];
-                          if (!handle) return null;
-                          return (
-                            <a
-                              key={platform.key}
-                              href={getPlatformUrl(platform.key, handle)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-muted hover:bg-muted rounded text-xs text-muted-foreground transition-colors"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {platform.label}
-                              <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                            </a>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* Divider */}
-                    <div className="border-t border-border pt-3 mt-auto">
-                      {/* Contact Actions */}
-                      <div className="flex flex-wrap gap-2">
-                        {alumnus.profile?.linkedIn && (
+                      {/* Action buttons + expand */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {p?.linkedIn && (
                           <a
-                            href={alumnus.profile.linkedIn.startsWith("http") ? alumnus.profile.linkedIn : `https://${alumnus.profile.linkedIn}`}
+                            href={p.linkedIn}
                             target="_blank"
                             rel="noopener noreferrer"
+                            className="h-8 w-8 border border-border flex items-center justify-center text-muted-foreground hover:text-[#0A66C2] hover:border-[#0A66C2]/40 transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                            title="LinkedIn"
                           >
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="gap-1.5 text-xs h-8 bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300"
-                            >
-                              <Linkedin className="h-3.5 w-3.5" />
-                              LinkedIn
-                            </Button>
+                            <Linkedin className="h-3.5 w-3.5" />
                           </a>
                         )}
-                        <a href={`mailto:${alumnus.email}`}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-1.5 text-xs h-8 bg-muted border-border hover:bg-muted"
-                          >
-                            <Mail className="h-3.5 w-3.5" />
-                            Email
-                          </Button>
+                        <a
+                          href={`mailto:${alumnus.email}`}
+                          className="h-8 w-8 border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                          title="Email"
+                        >
+                          <Mail className="h-3.5 w-3.5" />
                         </a>
-                        {alumnus.profile?.contact && (
-                          <a href={`tel:${alumnus.profile.contact}`}>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="gap-1.5 text-xs h-8 bg-muted border-border hover:bg-muted"
-                            >
-                              <Phone className="h-3.5 w-3.5" />
-                              Call
-                            </Button>
-                          </a>
+                        {hasExtra && (
+                          <motion.div
+                            animate={{ rotate: isExpanded ? 180 : 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          </motion.div>
                         )}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  </div>
 
-            {/* Results count */}
-            <p className="text-sm text-muted-foreground">
-              Showing {filteredAlumni.length} of {alumni.length} alumni
-            </p>
-          </>
+                  {/* Expandable details */}
+                  <AnimatePresence>
+                    {isExpanded && hasExtra && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-4 pb-4 pt-0 border-t border-border/30 space-y-3">
+                          <div className="pt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            {p?.location && (
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <MapPin className="h-3 w-3 shrink-0" />
+                                <span>{p.location}</span>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Mail className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{alumnus.email}</span>
+                            </div>
+                          </div>
+
+                          {/* Platform handles */}
+                          {hasHandles && (
+                            <div className="flex flex-wrap gap-2">
+                              {Object.entries(handles!).map(([key, val]) => {
+                                if (!val) return null;
+                                const platformInfo = CP_PLATFORMS.find((p) => p.key === key);
+                                const isGithub = key === "github";
+                                return (
+                                  <a
+                                    key={key}
+                                    href={getPlatformUrl(key, val)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 text-[11px] border border-border px-2.5 py-1 text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-all"
+                                  >
+                                    {isGithub ? (
+                                      <Github className="h-3 w-3" />
+                                    ) : (
+                                      <ExternalLink className="h-3 w-3" />
+                                    )}
+                                    {platformInfo?.label || key}
+                                  </a>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              );
+            })}
+          </motion.section>
         )}
       </div>
     </DashboardLayout>

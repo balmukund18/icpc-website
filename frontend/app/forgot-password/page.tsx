@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { ArrowLeft, Mail, Loader2, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Vortex } from "@/components/ui/vortex";
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("");
@@ -48,68 +47,64 @@ export default function ForgotPasswordPage() {
     };
 
     return (
-        <Vortex
-            containerClassName="h-screen w-full overflow-hidden"
-            className="flex items-center justify-center h-full"
-            backgroundColor="black"
-        >
-            <Card className="w-87.5">
-                <CardHeader className="space-y-1 text-center">
-                    <CardTitle className="text-2xl font-bold">
-                        Forgot Password
-                    </CardTitle>
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+            <div className="border border-border w-full max-w-sm">
+                <div className="p-4">
+                    <div className="text-sm text-muted-foreground">&gt; forgot-password:</div>
+                    <p className="text-xl font-bold text-foreground">
+                        Reset Password
+                    </p>
                     <p className="text-sm text-muted-foreground">
                         {sent
-                            ? "Check your email for the reset link"
-                            : "Enter your email to receive a password reset link"}
+                            ? "check your email for the reset link"
+                            : "enter your email to receive a reset link"}
                     </p>
-                </CardHeader>
-                <CardContent>
+                </div>
+                <div className="p-4 pt-0">
                     {sent ? (
                         <div className="space-y-6 text-center">
                             <div className="flex justify-center">
-                                <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center">
-                                    <CheckCircle className="h-8 w-8 text-green-500" />
+                                <div className="h-12 w-12 border border-[#3FB950]/30 bg-[#3FB950]/10 flex items-center justify-center rounded-sm">
+                                    <CheckCircle className="h-6 w-6 text-[#3FB950]" />
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <p className="text-sm text-muted-foreground">
-                                    If an account exists for <strong className="text-foreground">{email}</strong>,
-                                    you&apos;ll receive a password reset link shortly.
+                                    if an account exists for <strong className="text-foreground">{email}</strong>,
+                                    you&apos;ll receive a reset link shortly.
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                    The link will expire in 1 hour. Check your spam folder if you don&apos;t see it.
+                                    link expires in 1 hour. check spam folder.
                                 </p>
                             </div>
                             <div className="flex flex-col gap-2">
-                                <Button
-                                    variant="outline"
+                                <button
+                                    className="w-full text-sm border border-border px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
                                     onClick={() => {
                                         setSent(false);
                                         setEmail("");
                                     }}
-                                    className="w-full"
                                 >
-                                    Try another email
-                                </Button>
+                                    try another email
+                                </button>
                                 <Link href="/login" className="w-full">
-                                    <Button variant="ghost" className="w-full gap-2">
+                                    <button className="inline-flex items-center gap-2 w-full text-sm px-4 py-2 text-muted-foreground hover:text-foreground transition-colors">
                                         <ArrowLeft className="h-4 w-4" />
-                                        Back to Login
-                                    </Button>
+                                        back to login
+                                    </button>
                                 </Link>
                             </div>
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="email">email:</Label>
                                 <div className="relative">
                                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         id="email"
                                         type="email"
-                                        placeholder="Enter your email"
+                                        placeholder="enter your email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         className="pl-10"
@@ -118,30 +113,30 @@ export default function ForgotPasswordPage() {
                                     />
                                 </div>
                             </div>
-                            <Button
+                            <button
+                                className="w-full text-sm border border-foreground px-4 py-2 text-foreground hover:bg-muted transition-colors"
                                 type="submit"
-                                className="w-full"
                                 disabled={loading}
                             >
                                 {loading ? (
                                     <>
                                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                        Sending...
+                                        sending...
                                     </>
                                 ) : (
-                                    "Send Reset Link"
+                                    "[ SEND RESET LINK ]"
                                 )}
-                            </Button>
+                            </button>
                             <Link href="/login" className="block">
-                                <Button variant="ghost" className="w-full gap-2">
+                                <button className="inline-flex items-center gap-2 w-full text-sm px-4 py-2 text-muted-foreground hover:text-foreground transition-colors">
                                     <ArrowLeft className="h-4 w-4" />
-                                    Back to Login
-                                </Button>
+                                    back to login
+                                </button>
                             </Link>
                         </form>
                     )}
-                </CardContent>
-            </Card>
-        </Vortex>
+                </div>
+            </div>
+        </div>
     );
 }

@@ -5,29 +5,13 @@ import { useRouter, useParams } from "next/navigation";
 import { useTaskStore } from "@/store/useTaskStore";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { TaskDetailSkeleton } from "@/components/ui/skeletons";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTask, invalidateTask } from "@/lib/hooks/useData";
 import { getTaskStatus } from "@/lib/taskService";
 import {
-  ArrowLeft,
-  Clock,
-  Trophy,
-  Send,
-  X,
-  AlertCircle,
-  CheckCircle,
-  XCircle,
   Loader2,
-  Link2,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,95 +19,47 @@ export default function TaskDetailPage() {
   const router = useRouter();
   const params = useParams();
   const taskId = params.id as string;
-
   const { submitSolution } = useTaskStore();
-
-  // Use SWR hook for task data
   const { task, isLoading, error } = useTask(taskId);
 
-  // Submit modal state
   const [submitModalOpen, setSubmitModalOpen] = useState(false);
   const [submissionLink, setSubmissionLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const handleOpenSubmitModal = () => {
-    setSubmissionLink("");
-    setSubmitModalOpen(true);
-  };
-
-  const handleCloseSubmitModal = () => {
-    setSubmitModalOpen(false);
-    setSubmissionLink("");
-  };
+  const handleOpenSubmitModal = () => { setSubmissionLink(""); setSubmitModalOpen(true); };
+  const handleCloseSubmitModal = () => { setSubmitModalOpen(false); setSubmissionLink(""); };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!task || !submissionLink.trim()) return;
-
-    // Validate URL
-    try {
-      new URL(submissionLink);
-    } catch {
-      toast.error("Please enter a valid URL");
-      return;
-    }
-
+    try { new URL(submissionLink); } catch { toast.error("Please enter a valid URL"); return; }
     setSubmitting(true);
     try {
       await submitSolution(task.id, submissionLink.trim());
-      // Invalidate cache to refresh data
       await invalidateTask(taskId);
       toast.success("Solution submitted successfully!");
       handleCloseSubmitModal();
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } }; message?: string };
-      toast.error(
-        err.response?.data?.error ||
-        err.message ||
-        "Failed to submit solution"
-      );
-    } finally {
-      setSubmitting(false);
-    }
+      toast.error(err.response?.data?.error || err.message || "Failed to submit solution");
+    } finally { setSubmitting(false); }
   };
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <TaskDetailSkeleton />
-      </DashboardLayout>
-    );
-  }
+  if (isLoading) return (<DashboardLayout><TaskDetailSkeleton /></DashboardLayout>);
 
-  // Error state
-  if (error) {
+  if (error || !task) {
     return (
       <DashboardLayout>
-        <div className="p-4 sm:p-6 lg:p-8">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6">
-            <Card className="bg-red-500/10 border-red-500/30">
-              <CardContent className="py-12 text-center">
-                <AlertCircle className="h-12 w-12 mx-auto text-red-400 mb-4" />
-                <h2 className="text-xl font-semibold text-red-400 mb-2">
-                  Task not found
-                </h2>
-                <p className="text-muted-foreground mb-4">
-                  The task you&apos;re looking for might not exist or you don&apos;t have permission to view it.
-                </p>
-                <Button variant="outline" onClick={() => router.push("/tasks")}>
-                  Back to Tasks
-                </Button>
-              </CardContent>
-            </Card>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+          <div className="text-sm text-[#FF4D4F] border border-[#FF4D4F]/30 p-4">
+            <p>&gt; error: task not found</p>
+            <button onClick={() => router.push("/tasks")} className="text-xs underline mt-2 text-muted-foreground">
+              ← back to tasks
+            </button>
           </div>
         </div>
       </DashboardLayout>
     );
-  }
-
-  if (!task) {
-    return null;
   }
 
   const status = getTaskStatus(task);
@@ -133,272 +69,132 @@ export default function TaskDetailPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8">
-          {/* Header with Back Button */}
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push("/tasks")}
-              className="gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Tasks
-            </Button>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-0">
+
+        {/* Back + Header */}
+        <section className="py-2">
+          <button onClick={() => router.push("/tasks")} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+            ← back to tasks
+          </button>
+        </section>
+
+        <section className="py-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+            &gt; <span className="font-bold">task</span>{" "}
+            <span className="font-normal text-muted-foreground">--detail</span>
+          </h1>
+        </section>
+
+        <hr className="border-border" />
+
+        {/* Task info */}
+        <section className="py-4 space-y-3">
+          <p className="text-lg font-semibold text-foreground">{task.title}</p>
+
+          <div className="space-y-1 text-sm">
+            <p><span className="text-muted-foreground">points: </span><span className="text-foreground font-semibold">{task.points} pts</span></p>
+            <p><span className="text-muted-foreground">status: </span><span className={`${status.label === "Completed" ? "text-[#3FB950]" : status.label === "Pending Verification" ? "text-[#FF9F1C]" : "text-foreground"}`}>{status.label}</span></p>
+            {task.dueDate && status.label !== "Completed" && (
+              <p><span className="text-muted-foreground">due: </span><span className={isOverdue ? "text-[#FF4D4F]" : "text-foreground"}>{new Date(task.dueDate).toLocaleString()}{isOverdue ? " (overdue)" : ""}</span></p>
+            )}
+            {submissionCount > 0 && (
+              <p><span className="text-muted-foreground">attempts: </span><span className="text-foreground">{submissionCount}/2 used</span></p>
+            )}
+            {task.leetcodeSlug && (
+              <p><span className="text-muted-foreground">leetcode: </span>
+                <a href={`https://leetcode.com/problems/${task.leetcodeSlug}/`} target="_blank" rel="noopener noreferrer" className="text-[#58A6FF] hover:underline">{task.leetcodeSlug}</a>
+              </p>
+            )}
           </div>
+        </section>
 
-          {/* Task Content */}
-          <Card className="bg-card border-border">
-            <CardHeader className="space-y-4">
-              {/* Points and Status Badges */}
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-sm font-semibold">
-                  <Trophy className="h-4 w-4 inline mr-1" />
-                  {task.points} pts
-                </span>
-                <span
-                  className={`px-3 py-1 rounded-full text-sm font-medium border ${status.color}`}
-                >
-                  {status.label}
-                </span>
-                {isOverdue && status.canSubmit && (
-                  <span className="px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-sm border border-red-500/30">
-                    Overdue
+        {/* Description */}
+        {task.description && (
+          <>
+            <hr className="border-border" />
+            <section className="py-4">
+              <p className="text-sm font-semibold text-foreground mb-2">&gt; description</p>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{task.description}</p>
+            </section>
+          </>
+        )}
+
+        {/* Latest Submission */}
+        {latestSubmission && (
+          <>
+            <hr className="border-border" />
+            <section className="py-4 border border-border p-4">
+              <p className="text-sm font-semibold text-foreground mb-3">&gt; latest submission</p>
+              <div className="space-y-1 text-sm">
+                <p>
+                  <span className="text-muted-foreground">status: </span>
+                  <span className={latestSubmission.status === "VERIFIED" ? "text-[#3FB950]" : latestSubmission.status === "PENDING" ? "text-[#FF9F1C]" : "text-[#FF4D4F]"}>
+                    {latestSubmission.status === "VERIFIED" ? `verified (+${latestSubmission.points} pts)` : latestSubmission.status === "PENDING" ? "awaiting verification" : "rejected"}
                   </span>
-                )}
+                </p>
+                <p>
+                  <span className="text-muted-foreground">link: </span>
+                  <a href={latestSubmission.link} target="_blank" rel="noopener noreferrer" className="text-[#58A6FF] hover:underline break-all">{latestSubmission.link}</a>
+                </p>
+                <p><span className="text-muted-foreground">submitted: </span><span className="text-foreground">{new Date(latestSubmission.createdAt).toLocaleString()}</span></p>
               </div>
+            </section>
+          </>
+        )}
 
-              {/* Title */}
-              <CardTitle className="text-3xl font-bold leading-tight text-foreground">
-                {task.title}
-              </CardTitle>
-
-              {/* Meta Info */}
-              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                {task.dueDate && status.label !== "Completed" && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    <span className={isOverdue ? "text-red-400" : ""}>
-                      Due: {new Date(task.dueDate).toLocaleString()}
-                    </span>
-                  </div>
-                )}
-                {submissionCount > 0 && (
-                  <div className="flex items-center gap-2">
-                    <Send className="h-4 w-4" />
-                    <span>
-                      {submissionCount}/2 attempt{submissionCount !== 1 ? "s" : ""} used
-                    </span>
-                  </div>
-                )}
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-6">
-              {/* Description Section */}
-              {task.description && (
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    Description
-                  </h3>
-                  <p className="text-muted-foreground whitespace-pre-wrap">
-                    {task.description}
-                  </p>
-                </div>
-              )}
-
-              {/* Latest Submission Info */}
-              {latestSubmission && (
-                <div className="p-4 bg-muted/50 rounded-lg border border-border">
-                  <h3 className="text-lg font-semibold text-foreground mb-3">
-                    Latest Submission
-                  </h3>
-                  <div className="flex items-center gap-2 mb-2">
-                    {latestSubmission.status === "VERIFIED" && (
-                      <CheckCircle className="h-5 w-5 text-green-400" />
-                    )}
-                    {latestSubmission.status === "PENDING" && (
-                      <Clock className="h-5 w-5 text-yellow-400" />
-                    )}
-                    {latestSubmission.status === "REJECTED" && (
-                      <XCircle className="h-5 w-5 text-red-400" />
-                    )}
-                    <span
-                      className={`text-sm font-medium ${latestSubmission.status === "VERIFIED"
-                        ? "text-green-400"
-                        : latestSubmission.status === "PENDING"
-                          ? "text-yellow-400"
-                          : "text-red-400"
-                        }`}
-                    >
-                      {latestSubmission.status === "VERIFIED"
-                        ? `Verified (+${latestSubmission.points} pts)`
-                        : latestSubmission.status === "PENDING"
-                          ? "Awaiting verification"
-                          : "Rejected"}
-                    </span>
-                  </div>
-                  <a
-                    href={latestSubmission.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-400 hover:underline break-all"
-                  >
-                    {latestSubmission.link}
-                  </a>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Submitted: {new Date(latestSubmission.createdAt).toLocaleString()}
-                  </p>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="pt-4 border-t border-border">
-                {status.canSubmit && (
-                  <Button
-                    onClick={handleOpenSubmitModal}
-                    size="lg"
-                    className="gap-2"
-                    variant={submissionCount > 0 ? "outline" : "default"}
-                  >
-                    <Send className="h-4 w-4" />
-                    {submissionCount > 0 ? "Resubmit Solution" : "Submit Solution"}
-                  </Button>
-                )}
-
-                {!status.canSubmit && status.label === "Completed" && (
-                  <p className="text-green-400 flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5" />
-                    You have completed this task!
-                  </p>
-                )}
-
-                {!status.canSubmit && status.label === "Pending Verification" && (
-                  <p className="text-yellow-400 flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    Your submission is awaiting verification.
-                  </p>
-                )}
-
-                {!status.canSubmit && status.label === "Max Attempts Reached" && (
-                  <p className="text-muted-foreground flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5" />
-                    Maximum submission attempts reached.
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Actions */}
+        <hr className="border-border" />
+        <section className="py-4">
+          {status.canSubmit && (
+            <button onClick={handleOpenSubmitModal} className="text-sm border border-foreground px-4 py-2 text-foreground hover:bg-muted transition-colors">
+              [ {submissionCount > 0 ? "RESUBMIT" : "SUBMIT"} SOLUTION ]
+            </button>
+          )}
+          {!status.canSubmit && status.label === "Completed" && (
+            <p className="text-[#3FB950] text-sm">[✓] you have completed this task!</p>
+          )}
+          {!status.canSubmit && status.label === "Pending Verification" && (
+            <p className="text-[#FF9F1C] text-sm">[…] your submission is awaiting verification</p>
+          )}
+          {!status.canSubmit && status.label === "Max Attempts Reached" && (
+            <p className="text-muted-foreground text-sm">[!] maximum submission attempts reached</p>
+          )}
+        </section>
       </div>
 
-      {/* Submit Solution Modal */}
+      {/* Submit Modal */}
       {submitModalOpen && task && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="bg-card border-border w-full max-w-lg">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-foreground">Submit Solution</CardTitle>
-                  <CardDescription className="mt-1">
-                    {task.title}
-                  </CardDescription>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleCloseSubmitModal}
-                  className="h-8 w-8"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border w-full max-w-lg p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="font-semibold text-foreground">&gt; submit solution</p>
+                <p className="text-sm text-muted-foreground mt-1">{task.title}</p>
               </div>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="p-3 bg-muted/50 rounded-lg text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Trophy className="h-4 w-4 text-purple-400" />
-                    <span>
-                      <strong>{task.points} points</strong> upon verification
-                    </span>
-                  </div>
-                  {task.dueDate && (
-                    <div className="flex items-center gap-2 text-muted-foreground mt-2">
-                      <Clock className="h-4 w-4" />
-                      <span>
-                        Due: {new Date(task.dueDate).toLocaleString()}
-                        {new Date(task.dueDate) < new Date() && (
-                          <span className="text-red-400 ml-2">(Late)</span>
-                        )}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="link">Solution Link *</Label>
-                  <div className="relative">
-                    <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="link"
-                      type="url"
-                      placeholder="https://github.com/user/repo or drive link"
-                      value={submissionLink}
-                      onChange={(e) => setSubmissionLink(e.target.value)}
-                      className="bg-muted border-border pl-10"
-                      required
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Provide a link to your solution (GitHub, Google Drive, etc.)
-                  </p>
-                </div>
-
-                {/* Attempt Warning */}
-                {submissionCount > 0 && (
-                  <div className="flex items-start gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                    <AlertCircle className="h-4 w-4 text-yellow-400 mt-0.5" />
-                    <div className="text-sm text-yellow-400">
-                      <p className="font-medium">This is your final attempt</p>
-                      <p className="text-yellow-400/80">
-                        You have already submitted once. You can only submit a
-                        maximum of 2 times per task.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    type="submit"
-                    disabled={submitting || !submissionLink.trim()}
-                    className="flex-1 gap-2"
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4" />
-                        Submit Solution
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleCloseSubmitModal}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+              <button onClick={handleCloseSubmitModal} className="text-muted-foreground hover:text-foreground p-1">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="text-sm text-muted-foreground mb-4 space-y-1">
+              <p>points: <span className="text-foreground">{task.points}</span></p>
+              {task.dueDate && <p>due: <span className={new Date(task.dueDate) < new Date() ? "text-[#FF4D4F]" : "text-foreground"}>{new Date(task.dueDate).toLocaleString()}</span></p>}
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="link" className="text-sm text-muted-foreground">solution_link:</Label>
+                <Input id="link" type="url" placeholder="https://github.com/user/repo" value={submissionLink} onChange={(e) => setSubmissionLink(e.target.value)} className="mt-1 bg-background border-border" required />
+              </div>
+              {submissionCount > 0 && (
+                <div className="text-xs text-[#FF9F1C] border border-[#FF9F1C]/30 p-2">! this is your final attempt (2/2 max)</div>
+              )}
+              <div className="flex gap-2">
+                <button type="submit" disabled={submitting || !submissionLink.trim()} className="flex-1 text-sm border border-foreground px-4 py-2 text-foreground hover:bg-muted transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-2">
+                  {submitting ? (<><Loader2 className="h-4 w-4 animate-spin" /> submitting...</>) : "[ SUBMIT ]"}
+                </button>
+                <button type="button" onClick={handleCloseSubmitModal} className="text-sm border border-border px-4 py-2 text-muted-foreground hover:text-foreground transition-colors">cancel</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </DashboardLayout>

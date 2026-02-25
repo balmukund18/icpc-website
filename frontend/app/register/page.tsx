@@ -5,8 +5,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { ModeToggle } from "@/components/mode-toggle";
 
-import { Button } from "@/components/ui/button";
+
 import {
   Form,
   FormControl,
@@ -16,7 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import {
   Select,
   SelectContent,
@@ -25,8 +26,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import api from "@/lib/axios";
-import { Vortex } from "@/components/ui/vortex";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import Link from "next/link";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -58,26 +60,27 @@ export default function RegisterPage() {
   }
 
   return (
-    <Vortex
-      containerClassName="h-screen w-full overflow-hidden"
-      className="flex items-center justify-center h-full"
-      backgroundColor="black"
-    >
-      <Card className="w-88">
-        <CardHeader>
-          <CardTitle>Register</CardTitle>
-        </CardHeader>
-        <CardContent>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative">
+      {/* Theme toggle — top right */}
+      <div className="absolute top-4 right-4">
+        <ModeToggle />
+      </div>
+      <div className="border border-border w-full max-w-sm">
+        <div className="p-4">
+          <div className="text-sm text-muted-foreground">&gt; register:</div>
+          <Link href="/" className="text-xl font-bold text-foreground hover:text-[#3FB950] transition-colors">ICPC USICT</Link>
+        </div>
+        <div className="p-4 pt-0">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>email:</FormLabel>
                     <FormControl>
-                      <Input placeholder="email@example.com" {...field} />
+                      <Input placeholder="user@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -88,11 +91,11 @@ export default function RegisterPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>password:</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
-                        placeholder="********"
+                        placeholder="min 8 characters"
                         {...field}
                       />
                     </FormControl>
@@ -105,45 +108,66 @@ export default function RegisterPage() {
                 name="role"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Role</FormLabel>
+                    <FormLabel>role:</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a role" />
+                          <SelectValue placeholder="select role" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="STUDENT">Student</SelectItem>
-                        <SelectItem value="ALUMNI">Alumni</SelectItem>
+                        <SelectItem value="STUDENT">student</SelectItem>
+                        <SelectItem value="ALUMNI">alumni</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                Register
-              </Button>
+              <button
+                className="w-full text-sm border border-foreground px-4 py-2 text-foreground hover:bg-muted transition-colors"
+                type="submit"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    creating account...
+                  </>
+                ) : (
+                  "[ REGISTER ]"
+                )}
+              </button>
             </form>
           </Form>
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+              <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
+              <span className="bg-card px-2 text-muted-foreground">
+                or
               </span>
             </div>
           </div>
 
-          <GoogleSignInButton text="Sign up with Google" />
-        </CardContent>
-      </Card>
-    </Vortex>
+          <GoogleSignInButton text="sign up with google" />
+
+          <p className="text-center text-xs text-muted-foreground mt-4">
+            already have an account?{" "}
+            <Link
+              href="/login"
+              className="text-[#58A6FF] hover:underline"
+            >
+              login
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }

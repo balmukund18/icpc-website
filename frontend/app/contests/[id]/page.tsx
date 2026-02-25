@@ -3,17 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { getContestById, Contest, ContestResult } from "@/lib/contestService";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Loader2,
-  Trophy,
-  Clock,
-  Calendar,
-  ExternalLink,
-  Medal,
-  ArrowLeft,
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import Link from "next/link";
 
@@ -25,39 +15,25 @@ export default function ContestDetailPage() {
 
   useEffect(() => {
     const fetchContest = async () => {
-      try {
-        const data = await getContestById(contestId);
-        setContest(data);
-      } catch {
-        console.error("Failed to fetch contest");
-      } finally {
-        setLoading(false);
-      }
+      try { const data = await getContestById(contestId); setContest(data); }
+      catch { console.error("Failed to fetch contest"); }
+      finally { setLoading(false); }
     };
     if (contestId) fetchContest();
   }, [contestId]);
 
   if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      </DashboardLayout>
-    );
+    return (<DashboardLayout><div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></DashboardLayout>);
   }
 
   if (!contest) {
     return (
       <DashboardLayout>
-        <div className="container mx-auto px-4 py-8 max-w-4xl text-center">
-          <h1 className="text-2xl font-bold mb-4">Contest Not Found</h1>
-          <Link href="/contests">
-            <Button variant="outline">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Contests
-            </Button>
-          </Link>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+          <div className="text-sm text-[#FF4D4F] border border-[#FF4D4F]/30 p-4">
+            <p>&gt; error: contest not found</p>
+            <Link href="/contests" className="text-xs underline mt-2 text-muted-foreground block">← back to contests</Link>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -69,240 +45,140 @@ export default function ContestDetailPage() {
   const isUpcoming = now < startTime;
   const isActive = now >= startTime && now <= endTime;
   const isEnded = now > endTime;
-  const hasResults =
-    Array.isArray(contest.results) && contest.results.length > 0;
-
-  const statusLabel = isUpcoming ? "Upcoming" : isActive ? "Active" : "Ended";
-  const statusColor = isActive
-    ? "bg-green-500/20 text-green-400"
-    : isUpcoming
-      ? "bg-yellow-500/20 text-yellow-400"
-      : "bg-gray-500/20 text-muted-foreground";
+  const hasResults = Array.isArray(contest.results) && contest.results.length > 0;
+  const statusLabel = isUpcoming ? "upcoming" : isActive ? "active" : "ended";
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Back link */}
-        <Link
-          href="/contests"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Contests
-        </Link>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-0">
 
-        {/* Contest Header */}
-        <Card className="bg-card border-border mb-6">
-          <CardContent className="py-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <Trophy className="h-6 w-6 text-yellow-500" />
-                  <h1 className="text-2xl font-bold">{contest.title}</h1>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor}`}
-                  >
-                    {statusLabel}
-                  </span>
-                </div>
+        {/* Back */}
+        <section className="py-2">
+          <Link href="/contests" className="text-xs text-muted-foreground hover:text-foreground transition-colors">← back to contests</Link>
+        </section>
 
-                <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1.5">
-                    <Calendar className="h-4 w-4" />
-                    {startTime.toLocaleDateString(undefined, {
-                      weekday: "long",
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <Clock className="h-4 w-4" />
-                    {startTime.toLocaleTimeString(undefined, {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}{" "}
-                    -{" "}
-                    {endTime.toLocaleTimeString(undefined, {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                  <span className="text-muted-foreground">
-                    Duration: {contest.timer} min
-                  </span>
-                </div>
-              </div>
+        <section className="py-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+            &gt; <span className="font-bold">contest</span>{" "}
+            <span className="font-normal text-muted-foreground">--detail</span>
+          </h1>
+        </section>
 
-              {contest.hackerRankUrl && (
-                <a
-                  href={contest.hackerRankUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button
-                    size="lg"
-                    className={
-                      isActive
-                        ? "bg-green-600 hover:bg-green-700"
-                        : ""
-                    }
-                    variant={isActive ? "default" : "outline"}
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    {isActive
-                      ? "Join on HackerRank"
-                      : "View on HackerRank"}
-                  </Button>
-                </a>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <hr className="border-border" />
 
-        {/* Countdown for upcoming */}
+        {/* Contest info */}
+        <section className="py-4 space-y-3">
+          <p className="text-lg font-semibold text-foreground">{contest.title}</p>
+          <div className="space-y-1 text-sm">
+            <p>
+              <span className="text-muted-foreground">status: </span>
+              <span className={isActive ? "text-[#3FB950]" : isUpcoming ? "text-[#FF9F1C]" : "text-muted-foreground"}>{statusLabel}</span>
+              {isActive && <span className="ml-2 inline-block w-2 h-2 bg-[#3FB950] rounded-full animate-pulse" />}
+            </p>
+            <p>
+              <span className="text-muted-foreground">date: </span>
+              <span className="text-foreground">
+                {startTime.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })}
+              </span>
+            </p>
+            <p>
+              <span className="text-muted-foreground">time: </span>
+              <span className="text-foreground">
+                {startTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })} – {endTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </p>
+            <p>
+              <span className="text-muted-foreground">duration: </span>
+              <span className="text-foreground">{contest.timer} min</span>
+            </p>
+            {contest.hackerRankUrl && (
+              <p>
+                <span className="text-muted-foreground">platform: </span>
+                <a href={contest.hackerRankUrl} target="_blank" rel="noopener noreferrer" className="text-[#58A6FF] hover:underline">HackerRank ↗</a>
+              </p>
+            )}
+          </div>
+        </section>
+
+        {/* Upcoming notice */}
         {isUpcoming && (
-          <Card className="bg-card border-border mb-6">
-            <CardContent className="py-8 text-center">
-              <Clock className="h-10 w-10 text-yellow-500 mx-auto mb-3" />
-              <h2 className="text-xl font-semibold mb-2">Contest Starts Soon</h2>
-              <p className="text-muted-foreground">
-                Starts on{" "}
-                {startTime.toLocaleDateString(undefined, {
-                  weekday: "long",
-                  month: "long",
-                  day: "numeric",
-                })}{" "}
-                at{" "}
-                {startTime.toLocaleTimeString(undefined, {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+          <>
+            <hr className="border-border" />
+            <section className="py-4 border border-border p-4">
+              <p className="text-sm text-[#FF9F1C]">&gt; contest starts soon</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                starts on {startTime.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} at {startTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
               </p>
               {contest.hackerRankUrl && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  The contest will be hosted on HackerRank. Click the button above
-                  to register.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Active contest info */}
-        {isActive && (
-          <Card className="bg-card border-green-800/50 mb-6">
-            <CardContent className="py-8 text-center">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-500/10 rounded-full mb-4">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-green-400 text-sm font-medium">
-                  Live Now
-                </span>
-              </div>
-              <h2 className="text-xl font-semibold mb-2">Contest is Active!</h2>
-              <p className="text-muted-foreground mb-4">
-                Head to HackerRank to participate in this contest.
-              </p>
-              {contest.hackerRankUrl && (
-                <a
-                  href={contest.hackerRankUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button size="lg" className="bg-green-600 hover:bg-green-700">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Join Contest on HackerRank
-                  </Button>
+                <a href={contest.hackerRankUrl} target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-xs border border-foreground px-4 py-2 text-foreground hover:bg-muted transition-colors">
+                  [ REGISTER ON HACKERRANK ]
                 </a>
               )}
-            </CardContent>
-          </Card>
+            </section>
+          </>
         )}
 
-        {/* Results for ended contests */}
+        {/* Active */}
+        {isActive && (
+          <>
+            <hr className="border-border" />
+            <section className="py-4 border border-[#3FB950]/30 p-4">
+              <p className="text-sm text-[#3FB950]">&gt; contest is live!</p>
+              <p className="text-sm text-muted-foreground mt-1">head to HackerRank to participate</p>
+              {contest.hackerRankUrl && (
+                <a href={contest.hackerRankUrl} target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-xs border border-[#3FB950] px-4 py-2 text-[#3FB950] hover:bg-[#3FB950]/10 transition-colors">
+                  [ JOIN CONTEST ]
+                </a>
+              )}
+            </section>
+          </>
+        )}
+
+        {/* Results */}
         {isEnded && hasResults && (
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Medal className="h-5 w-5 text-yellow-500" />
-                Leaderboard
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <>
+            <hr className="border-border" />
+            <section className="py-4">
+              <p className="text-sm font-semibold text-foreground mb-4">&gt; results</p>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 text-muted-foreground font-medium">
-                        Rank
-                      </th>
-                      <th className="text-left py-3 px-4 text-muted-foreground font-medium">
-                        Name
-                      </th>
-                      <th className="text-right py-3 px-4 text-muted-foreground font-medium">
-                        Score
-                      </th>
-                      <th className="text-right py-3 px-4 text-muted-foreground font-medium">
-                        Solved
-                      </th>
+                      <th className="text-left py-2 px-3 text-muted-foreground font-normal">#</th>
+                      <th className="text-left py-2 px-3 text-muted-foreground font-normal">name</th>
+                      <th className="text-right py-2 px-3 text-muted-foreground font-normal">score</th>
+                      <th className="text-right py-2 px-3 text-muted-foreground font-normal">solved</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {(contest.results as ContestResult[]).map(
-                      (result, idx) => (
-                        <tr
-                          key={idx}
-                          className="border-b border-border/50 hover:bg-muted/30 transition-colors"
-                        >
-                          <td className="py-3 px-4">
-                            {result.rank <= 3 ? (
-                              <span
-                                className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${result.rank === 1
-                                  ? "bg-yellow-500/20 text-yellow-400"
-                                  : result.rank === 2
-                                    ? "bg-gray-300/20 text-muted-foreground"
-                                    : "bg-orange-500/20 text-orange-400"
-                                  }`}
-                              >
-                                {result.rank}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground pl-2">
-                                {result.rank}
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 font-medium">
-                            {result.name}
-                          </td>
-                          <td className="py-3 px-4 text-right text-muted-foreground">
-                            {result.score ?? "-"}
-                          </td>
-                          <td className="py-3 px-4 text-right text-muted-foreground">
-                            {result.solved ?? "-"}
-                          </td>
-                        </tr>
-                      )
-                    )}
+                    {(contest.results as ContestResult[]).map((result, idx) => (
+                      <tr key={idx} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                        <td className="py-2.5 px-3">
+                          <span className={result.rank <= 3 ? (result.rank === 1 ? "text-[#FF9F1C] font-bold" : result.rank === 2 ? "text-muted-foreground font-bold" : "text-[#CD7F32] font-bold") : "text-muted-foreground"}>
+                            #{result.rank}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-foreground font-medium">{result.name}</td>
+                        <td className="py-2.5 px-3 text-right text-[#3FB950]">{result.score ?? "—"}</td>
+                        <td className="py-2.5 px-3 text-right text-muted-foreground">{result.solved ?? "—"}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
-            </CardContent>
-          </Card>
+            </section>
+          </>
         )}
 
-        {/* Ended without results */}
+        {/* Ended no results */}
         {isEnded && !hasResults && (
-          <Card className="bg-card border-border">
-            <CardContent className="py-8 text-center">
-              <Trophy className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-              <h2 className="text-xl font-semibold mb-2">Contest Has Ended</h2>
-              <p className="text-muted-foreground">
-                Results have not been posted yet. Check back later for the
-                leaderboard.
-              </p>
-            </CardContent>
-          </Card>
+          <>
+            <hr className="border-border" />
+            <section className="py-4 text-center border border-border p-6">
+              <p className="text-foreground font-semibold">&gt; contest has ended</p>
+              <p className="text-sm text-muted-foreground mt-1">results have not been posted yet</p>
+            </section>
+          </>
         )}
       </div>
     </DashboardLayout>

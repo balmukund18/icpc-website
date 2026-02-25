@@ -1,34 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTaskStore } from "@/store/useTaskStore";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { TasksPageSkeleton } from "@/components/ui/skeletons";
 import { useTasks, useUserPoints, invalidateTasks } from "@/lib/hooks/useData";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  CheckSquare,
-  Clock,
-  Trophy,
-  Link2,
-  Send,
-  X,
-  AlertCircle,
-  CheckCircle,
-  XCircle,
-  Loader2,
-  Eye,
   ExternalLink,
+  Loader2,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getTaskStatus, verifyLeetCode } from "@/lib/taskService";
@@ -36,12 +21,24 @@ import type { Task } from "@/lib/hooks/useData";
 
 type FilterType = "all" | "available" | "pending" | "completed";
 
+/* ── Difficulty from points ── */
+function getDifficulty(points: number) {
+  if (points >= 50) return { label: "hard", color: "#F85149" };
+  if (points >= 20) return { label: "medium", color: "#D29922" };
+  return { label: "easy", color: "#3FB950" };
+}
+
+/* ── Terminal verify animation lines ── */
+const VERIFY_LINES = [
+  "> verifying submission...",
+  "> running test cases...",
+  "> checking LeetCode profile...",
+];
+
 export default function TasksPage() {
-  // Use SWR hooks for tasks and points data
+  const router = useRouter();
   const { tasks, isLoading } = useTasks();
   const { points: userPoints } = useUserPoints();
-
-  // Keep mutation functions from Zustand store
   const { submitSolution } = useTaskStore();
 
   const [filter, setFilter] = useState<FilterType>("all");
@@ -50,6 +47,9 @@ export default function TasksPage() {
   const [submissionLink, setSubmissionLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [verifying, setVerifying] = useState<string | null>(null);
+  const [verifyLines, setVerifyLines] = useState<string[]>([]);
+  const [focusedIdx, setFocusedIdx] = useState(-1);
+  const taskRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const handleOpenSubmitModal = (task: Task) => {
     setSelectedTask(task);
@@ -66,424 +66,340 @@ export default function TasksPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTask || !submissionLink.trim()) return;
-
-    // Validate URL
-    try {
-      new URL(submissionLink);
-    } catch {
-      toast.error("Please enter a valid URL");
-      return;
-    }
-
+    try { new URL(submissionLink); } catch { toast.error("Please enter a valid URL"); return; }
     setSubmitting(true);
     try {
       await submitSolution(selectedTask.id, submissionLink.trim());
-      // Invalidate cache to refresh data
       await invalidateTasks();
       toast.success("Solution submitted successfully!");
       handleCloseSubmitModal();
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } }; message?: string };
-      toast.error(
-        err.response?.data?.error ||
-        err.message ||
-        "Failed to submit solution"
-      );
-    } finally {
-      setSubmitting(false);
-    }
+      toast.error(err.response?.data?.error || err.message || "Failed to submit solution");
+    } finally { setSubmitting(false); }
   };
 
   const handleVerifyLeetcode = async (task: Task) => {
     setVerifying(task.id);
+    setVerifyLines([]);
+    // Show animated terminal lines
+    for (let i = 0; i < VERIFY_LINES.length; i++) {
+      await new Promise((r) => setTimeout(r, 400));
+      setVerifyLines((prev) => [...prev, VERIFY_LINES[i]]);
+    }
     try {
       await verifyLeetCode(task.id);
       await invalidateTasks();
+      setVerifyLines((prev) => [...prev, "> ✓ accepted! points awarded."]);
       toast.success("LeetCode submission verified! Points awarded.");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } }; message?: string };
-      toast.error(
-        err.response?.data?.error ||
-        err.message ||
-        "Failed to verify LeetCode submission"
-      );
+      setVerifyLines((prev) => [...prev, `> ✗ ${err.response?.data?.error || "verification failed"}`]);
+      toast.error(err.response?.data?.error || err.message || "Failed to verify");
     } finally {
-      setVerifying(null);
+      setTimeout(() => { setVerifying(null); setVerifyLines([]); }, 2000);
     }
   };
 
-  // Filter tasks based on selected filter
   const filteredTasks = tasks.filter((task) => {
     const status = getTaskStatus(task);
-
     switch (filter) {
-      case "available":
-        return status.canSubmit && !task.userSubmissions?.length;
-      case "pending":
-        return task.userSubmissions?.some((s) => s.status === "PENDING");
-      case "completed":
-        return task.userSubmissions?.some((s) => s.status === "VERIFIED");
-      default:
-        return true;
+      case "available": return status.canSubmit && !task.userSubmissions?.length;
+      case "pending": return task.userSubmissions?.some((s) => s.status === "PENDING");
+      case "completed": return task.userSubmissions?.some((s) => s.status === "VERIFIED");
+      default: return true;
     }
   });
 
-  // Count tasks by category
-  const taskCounts = {
-    all: tasks.length,
-    available: tasks.filter((t) => {
-      const status = getTaskStatus(t);
-      return status.canSubmit && !t.userSubmissions?.length;
-    }).length,
-    pending: tasks.filter((t) =>
-      t.userSubmissions?.some((s) => s.status === "PENDING")
-    ).length,
-    completed: tasks.filter((t) =>
-      t.userSubmissions?.some((s) => s.status === "VERIFIED")
-    ).length,
-  };
+  /* ── Keyboard shortcuts ── */
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) return;
+    if (submitModalOpen) return;
+
+    const key = e.key.toLowerCase();
+    if (key === "arrowdown" || key === "j") {
+      e.preventDefault();
+      setFocusedIdx((prev) => Math.min(prev + 1, filteredTasks.length - 1));
+    } else if (key === "arrowup" || key === "k") {
+      e.preventDefault();
+      setFocusedIdx((prev) => Math.max(prev - 1, 0));
+    } else if (key === "o" || key === "enter") {
+      if (focusedIdx >= 0 && focusedIdx < filteredTasks.length) {
+        e.preventDefault();
+        router.push(`/tasks/${filteredTasks[focusedIdx].id}`);
+      }
+    } else if (key === "v") {
+      if (focusedIdx >= 0 && focusedIdx < filteredTasks.length) {
+        const task = filteredTasks[focusedIdx];
+        if (task.leetcodeSlug && getTaskStatus(task).canSubmit) {
+          e.preventDefault();
+          handleVerifyLeetcode(task);
+        }
+      }
+    }
+  }, [filteredTasks, focusedIdx, submitModalOpen, router]);
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
+
+  // Scroll focused into view
+  useEffect(() => {
+    if (focusedIdx >= 0 && taskRefs.current[focusedIdx]) {
+      taskRefs.current[focusedIdx]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }, [focusedIdx]);
 
   if (isLoading) {
-    return (
-      <DashboardLayout>
-        <TasksPageSkeleton />
-      </DashboardLayout>
-    );
+    return (<DashboardLayout><TasksPageSkeleton /></DashboardLayout>);
   }
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-0">
+
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
-              <CheckSquare className="h-7 w-7 sm:h-8 sm:w-8" />
-              Tasks
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Complete tasks to earn points
-            </p>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 rounded-lg border border-purple-500/30">
-            <Trophy className="h-5 w-5 text-purple-400" />
-            <span className="text-purple-400 font-semibold">
-              {userPoints} pts
-            </span>
-          </div>
-        </div>
+        <section className="py-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">
+            &gt; <span className="font-bold">tasks</span>{" "}
+            <span className="font-normal text-muted-foreground">--challenge-board</span>
+          </h1>
+        </section>
 
-        {/* Filter Bar */}
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-          <div className="flex gap-2 flex-wrap">
-            {(
-              [
-                { id: "all", label: "All Tasks" },
-                { id: "available", label: "Available" },
-                { id: "pending", label: "Pending" },
-                { id: "completed", label: "Completed" },
-              ] as const
-            ).map((f) => (
-              <Button
-                key={f.id}
-                variant={filter === f.id ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFilter(f.id)}
-                className="gap-1"
-              >
-                {f.label}
-                <span className="ml-1 px-1.5 py-0.5 bg-black/20 rounded text-xs">
-                  {taskCounts[f.id]}
-                </span>
-              </Button>
-            ))}
-          </div>
-        </div>
+        {/* Filter tabs */}
+        <section className="py-3 flex flex-wrap gap-2">
+          {([
+            { id: "all" as FilterType, label: "All Tasks" },
+            { id: "available" as FilterType, label: "Available" },
+            { id: "pending" as FilterType, label: "Pending" },
+            { id: "completed" as FilterType, label: "Completed" },
+          ]).map((f) => (
+            <button
+              key={f.id}
+              onClick={() => { setFilter(f.id); setFocusedIdx(-1); }}
+              className={`px-3 py-1 text-sm border transition-colors ${filter === f.id
+                ? "border-foreground text-foreground"
+                : "border-border text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              [ {f.label} ]
+            </button>
+          ))}
+          <span className="text-sm text-muted-foreground ml-auto self-center">{userPoints} pts</span>
+        </section>
 
-        {/* Tasks Grid */}
+        <hr className="border-border" />
+
+        {/* Verify terminal animation */}
+        <AnimatePresence>
+          {verifyLines.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="py-3 px-4 bg-[#161B22] border border-border my-2">
+                {verifyLines.map((line, i) => (
+                  <motion.p
+                    key={i}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className={`text-xs font-mono ${line.includes("✓") ? "text-[#3FB950]" : line.includes("✗") ? "text-[#F85149]" : "text-[#8B949E]"}`}
+                  >
+                    {line}
+                  </motion.p>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Tasks list */}
         {filteredTasks.length === 0 ? (
-          <div className="text-center py-12">
-            <CheckSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">
-              {filter === "all"
-                ? "No tasks available yet"
-                : `No ${filter} tasks`}
+          <section className="py-8 text-center">
+            <p className="text-muted-foreground text-sm">
+              &gt; {filter === "all" ? "no tasks available yet" : `no ${filter} tasks`}
             </p>
-          </div>
+          </section>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredTasks.map((task) => {
+          <section className="py-2">
+            {filteredTasks.map((task, i) => {
               const status = getTaskStatus(task);
-              const isOverdue =
-                task.dueDate && new Date(task.dueDate) < new Date();
-              const submissionCount = task.userSubmissions?.length || 0;
+              const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
               const latestSubmission = task.userSubmissions?.[0];
+              const isVerified = latestSubmission?.status === "VERIFIED";
+              const diff = getDifficulty(task.points);
+              const isFocused = focusedIdx === i;
 
               return (
-                <Card
+                <motion.div
                   key={task.id}
-                  className="bg-card border-border hover:border-border transition-colors"
+                  ref={(el) => { taskRefs.current[i] = el; }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(i * 0.04, 0.4), duration: 0.25 }}
+                  className={`py-4 border-b border-border/50 transition-colors ${isFocused ? "bg-[#58A6FF]/5 border-l-2 border-l-[#58A6FF] pl-3 -ml-[2px]" : ""}`}
                 >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-foreground text-lg line-clamp-1">
-                        {task.title}
-                      </CardTitle>
-                      <span className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-sm font-semibold whitespace-nowrap">
-                        {task.points} pts
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      <span
-                        className={`px-2 py-0.5 rounded text-xs font-medium ${status.color}`}
-                      >
-                        {status.label}
-                      </span>
-                      {isOverdue && status.canSubmit && (
-                        <span className="px-2 py-0.5 bg-red-500/20 text-red-400 rounded text-xs">
-                          Overdue
+                  <div className="flex items-start gap-3">
+                    {/* Checkbox */}
+                    <motion.span
+                      className="text-lg mt-0.5"
+                      animate={isVerified ? { scale: [1, 1.3, 1] } : {}}
+                      transition={{ duration: 0.3 }}
+                    >
+                      {isVerified ? (
+                        <span className="text-[#3FB950]">[✓]</span>
+                      ) : (
+                        <span className="text-muted-foreground">[ ]</span>
+                      )}
+                    </motion.span>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Link href={`/tasks/${task.id}`} className="hover:underline">
+                          <span className="font-semibold text-foreground text-base">{task.title}</span>
+                        </Link>
+                        {/* Difficulty badge */}
+                        <span className="text-[10px] px-1.5 py-0.5 border" style={{ color: diff.color, borderColor: diff.color + "30" }}>
+                          {diff.label}
                         </span>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {task.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-3">
-                        {task.description}
-                      </p>
-                    )}
-
-                    {/* LeetCode Badge */}
-                    {task.leetcodeSlug && (
-                      <a
-                        href={`https://leetcode.com/problems/${task.leetcodeSlug}/`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-orange-500/15 text-orange-400 border border-orange-500/30 rounded-md text-xs hover:bg-orange-500/25 transition-colors"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                        Solve on LeetCode
-                      </a>
-                    )}
-
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      {task.dueDate && status.label !== "Completed" && (
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          <span className={isOverdue ? "text-red-400" : ""}>
-                            Due: {new Date(task.dueDate).toLocaleString()}
-                          </span>
-                        </div>
-                      )}
-                      {submissionCount > 0 && (
-                        <div className="flex items-center gap-2">
-                          <Send className="h-4 w-4" />
-                          <span>
-                            {submissionCount}/2 attempt
-                            {submissionCount !== 1 ? "s" : ""} used
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Latest Submission Info */}
-                    {latestSubmission && (
-                      <div className="p-2 bg-muted/50 rounded text-sm">
-                        <div className="flex items-center gap-2 mb-1">
-                          {latestSubmission.status === "VERIFIED" && (
-                            <CheckCircle className="h-4 w-4 text-green-400" />
-                          )}
-                          {latestSubmission.status === "PENDING" && (
-                            <Clock className="h-4 w-4 text-yellow-400" />
-                          )}
-                          {latestSubmission.status === "REJECTED" && (
-                            <XCircle className="h-4 w-4 text-red-400" />
-                          )}
-                          <span
-                            className={`text-xs font-medium ${latestSubmission.status === "VERIFIED"
-                              ? "text-green-400"
-                              : latestSubmission.status === "PENDING"
-                                ? "text-yellow-400"
-                                : "text-red-400"
-                              }`}
-                          >
-                            {latestSubmission.status === "VERIFIED"
-                              ? `Verified (+${latestSubmission.points} pts)`
-                              : latestSubmission.status === "PENDING"
-                                ? "Awaiting verification"
-                                : "Rejected"}
-                          </span>
-                        </div>
-                        <a
-                          href={latestSubmission.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-400 hover:underline truncate block"
-                        >
-                          {latestSubmission.link}
-                        </a>
                       </div>
-                    )}
 
-                    {/* Action Buttons */}
-                    <div className="flex items-center justify-between gap-2 pt-2">
-                      <Link href={`/tasks/${task.id}`}>
-                        <Button variant="ghost" size="sm" className="gap-2">
-                          <Eye className="h-4 w-4" />
-                          View Details
-                        </Button>
-                      </Link>
+                      {/* Points & badges */}
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <span className="text-sm text-muted-foreground">{task.points} pts</span>
+                        {isVerified && (
+                          <span className="text-xs px-1.5 py-0.5 bg-[#3FB950]/10 text-[#3FB950] border border-[#3FB950]/30">
+                            ✓ completed
+                          </span>
+                        )}
+                        {latestSubmission?.status === "PENDING" && (
+                          <span className="text-xs px-1.5 py-0.5 bg-[#D29922]/10 text-[#D29922] border border-[#D29922]/30">
+                            pending
+                          </span>
+                        )}
+                        {isOverdue && status.canSubmit && (
+                          <span className="text-[#F85149] text-xs">overdue</span>
+                        )}
+                        {task.dueDate && !isOverdue && status.canSubmit && (
+                          <span className="text-xs text-muted-foreground">
+                            due: {new Date(task.dueDate).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
 
-                      {status.canSubmit && task.leetcodeSlug && (
-                        <Button
-                          onClick={() => handleVerifyLeetcode(task)}
-                          size="sm"
-                          disabled={verifying === task.id}
-                          className="gap-2 bg-orange-600 hover:bg-orange-700"
-                        >
-                          {verifying === task.id ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              Verifying...
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="h-4 w-4" />
-                              Verify
-                            </>
-                          )}
-                        </Button>
+                      {/* Description */}
+                      {task.description && (
+                        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{task.description}</p>
                       )}
-                      {status.canSubmit && !task.leetcodeSlug && (
-                        <Button
-                          onClick={() => handleOpenSubmitModal(task)}
-                          size="sm"
-                          className="gap-2"
-                          variant={submissionCount > 0 ? "outline" : "default"}
-                        >
-                          <Send className="h-4 w-4" />
-                          {submissionCount > 0 ? "Resubmit" : "Submit"}
-                        </Button>
-                      )}
+
+                      {/* Actions */}
+                      <div className="flex flex-wrap items-center gap-2 mt-3">
+                        {task.leetcodeSlug && (
+                          <a href={`https://leetcode.com/problems/${task.leetcodeSlug}/`} target="_blank" rel="noopener noreferrer"
+                            className="text-xs border border-border px-3 py-1.5 text-foreground hover:bg-muted transition-colors inline-flex items-center gap-1.5">
+                            <ExternalLink className="h-3 w-3" /> SOLVE ON LEETCODE
+                          </a>
+                        )}
+                        {status.canSubmit && task.leetcodeSlug && (
+                          <button
+                            onClick={() => handleVerifyLeetcode(task)}
+                            disabled={verifying === task.id}
+                            className="text-xs border border-border px-3 py-1.5 text-foreground hover:bg-muted transition-colors inline-flex items-center gap-1.5 disabled:opacity-50"
+                          >
+                            {verifying === task.id ? (
+                              <><Loader2 className="h-3 w-3 animate-spin" /> VERIFYING...</>
+                            ) : (
+                              "↓ VERIFY"
+                            )}
+                          </button>
+                        )}
+                        {status.canSubmit && !task.leetcodeSlug && (
+                          <button onClick={() => handleOpenSubmitModal(task)}
+                            className="text-xs border border-border px-3 py-1.5 text-foreground hover:bg-muted transition-colors">
+                            [ SUBMIT ]
+                          </button>
+                        )}
+                        {isFocused && (
+                          <span className="text-[10px] text-[#484F58] ml-auto">O open · V verify</span>
+                        )}
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </motion.div>
               );
             })}
-          </div>
+          </section>
         )}
+
+        {/* Keyboard hint */}
+        <div className="py-4 border-t border-border">
+          <p className="text-[10px] text-[#484F58] text-center">
+            ↑↓ navigate · O open task · V verify · keyboard shortcuts active
+          </p>
+        </div>
       </div>
 
       {/* Submit Solution Modal */}
-      {submitModalOpen && selectedTask && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="bg-card border-border w-full max-w-lg">
-            <CardHeader>
-              <div className="flex items-start justify-between">
+      <AnimatePresence>
+        {submitModalOpen && selectedTask && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="bg-card border border-border w-full max-w-lg p-6"
+            >
+              <div className="flex items-start justify-between mb-4">
                 <div>
-                  <CardTitle className="text-foreground">Submit Solution</CardTitle>
-                  <CardDescription className="mt-1">
-                    {selectedTask.title}
-                  </CardDescription>
+                  <p className="font-semibold text-foreground">&gt; submit solution</p>
+                  <p className="text-sm text-muted-foreground mt-1">{selectedTask.title}</p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleCloseSubmitModal}
-                  className="h-8 w-8"
-                >
+                <button onClick={handleCloseSubmitModal} className="text-muted-foreground hover:text-foreground p-1">
                   <X className="h-4 w-4" />
-                </Button>
+                </button>
               </div>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="p-3 bg-muted/50 rounded-lg text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Trophy className="h-4 w-4 text-purple-400" />
-                    <span>
-                      <strong>{selectedTask.points} points</strong> upon
-                      verification
-                    </span>
-                  </div>
-                  {selectedTask.dueDate && (
-                    <div className="flex items-center gap-2 text-muted-foreground mt-2">
-                      <Clock className="h-4 w-4" />
-                      <span>
-                        Due: {new Date(selectedTask.dueDate).toLocaleString()}
-                        {new Date(selectedTask.dueDate) < new Date() && (
-                          <span className="text-red-400 ml-2">(Late)</span>
-                        )}
-                      </span>
-                    </div>
-                  )}
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="link">Solution Link *</Label>
-                  <div className="relative">
-                    <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="link"
-                      type="url"
-                      placeholder="https://github.com/user/repo or drive link"
-                      value={submissionLink}
-                      onChange={(e) => setSubmissionLink(e.target.value)}
-                      className="bg-muted border-border pl-10"
-                      required
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Provide a link to your solution (GitHub, Google Drive, etc.)
-                  </p>
-                </div>
-
-                {/* Attempt Warning */}
-                {(selectedTask.userSubmissions?.length || 0) > 0 && (
-                  <div className="flex items-start gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                    <AlertCircle className="h-4 w-4 text-yellow-400 mt-0.5" />
-                    <div className="text-sm text-yellow-400">
-                      <p className="font-medium">This is your final attempt</p>
-                      <p className="text-yellow-400/80">
-                        You have already submitted once. You can only submit a
-                        maximum of 2 times per task.
-                      </p>
-                    </div>
-                  </div>
+              <div className="text-sm text-muted-foreground mb-4 space-y-1">
+                <p>points: <span className="text-foreground">{selectedTask.points}</span></p>
+                {selectedTask.dueDate && (
+                  <p>due: <span className={new Date(selectedTask.dueDate) < new Date() ? "text-[#F85149]" : "text-foreground"}>
+                    {new Date(selectedTask.dueDate).toLocaleString()}
+                  </span></p>
                 )}
+              </div>
 
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    type="submit"
-                    disabled={submitting || !submissionLink.trim()}
-                    className="flex-1 gap-2"
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4" />
-                        Submit Solution
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleCloseSubmitModal}
-                  >
-                    Cancel
-                  </Button>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="link" className="text-sm text-muted-foreground">solution_link:</Label>
+                  <Input id="link" type="url" placeholder="https://github.com/user/repo" value={submissionLink}
+                    onChange={(e) => setSubmissionLink(e.target.value)} className="mt-1 bg-background border-border" required />
+                </div>
+                {(selectedTask.userSubmissions?.length || 0) > 0 && (
+                  <div className="text-xs text-[#D29922] border border-[#D29922]/30 p-2">! this is your final attempt (2/2 max)</div>
+                )}
+                <div className="flex gap-2">
+                  <button type="submit" disabled={submitting || !submissionLink.trim()}
+                    className="flex-1 text-sm border border-foreground px-4 py-2 text-foreground hover:bg-muted transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-2">
+                    {submitting ? (<><Loader2 className="h-4 w-4 animate-spin" /> submitting...</>) : "[ SUBMIT ]"}
+                  </button>
+                  <button type="button" onClick={handleCloseSubmitModal}
+                    className="text-sm border border-border px-4 py-2 text-muted-foreground hover:text-foreground transition-colors">cancel</button>
                 </div>
               </form>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </DashboardLayout>
   );
 }

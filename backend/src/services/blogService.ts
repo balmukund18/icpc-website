@@ -144,7 +144,7 @@ export const getApprovedBlogs = async (
       include: {
         ...authorInclude,
         _count: {
-          select: { comments: true },
+          select: { comments: true, likes: true },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -184,7 +184,7 @@ export const getBlogById = async (
       ...authorInclude,
       ...commentsInclude,
       _count: {
-        select: { comments: true },
+        select: { comments: true, likes: true },
       },
     },
   });
@@ -561,4 +561,44 @@ export const rejectBlog = async (id: string, reason?: string) => {
   }
 
   return transformBlogResponse(blog);
+};
+
+// =====================
+// UPVOTE METHODS
+// =====================
+
+/**
+ * Toggle like on a blog (like/unlike)
+ */
+export const toggleLike = async (blogId: string, userId: string) => {
+  const blog = await prisma.blog.findUnique({ where: { id: blogId } });
+  if (!blog) throw new Error("Blog not found");
+  if (blog.status !== BlogStatus.APPROVED) throw new Error("Cannot like unapproved blogs");
+
+  const existing = await prisma.blogLike.findUnique({
+    where: { blogId_userId: { blogId, userId } },
+  });
+
+  if (existing) {
+    await prisma.blogLike.delete({ where: { id: existing.id } });
+    return { liked: false };
+  } else {
+    await prisma.blogLike.create({ data: { blogId, userId } });
+    return { liked: true };
+  }
+};
+
+/**
+ * Get like status for a blog
+ */
+export const getLikeStatus = async (blogId: string, userId?: string) => {
+  const count = await prisma.blogLike.count({ where: { blogId } });
+  let userHasLiked = false;
+  if (userId) {
+    const like = await prisma.blogLike.findUnique({
+      where: { blogId_userId: { blogId, userId } },
+    });
+    userHasLiked = !!like;
+  }
+  return { count, userHasLiked };
 };

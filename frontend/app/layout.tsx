@@ -1,18 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SWRProvider } from "@/lib/swr-config";
 import { ErrorBoundary } from "@/components/error-boundary";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
@@ -42,7 +37,8 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${jetbrainsMono.variable} antialiased`}
+        style={{ fontFamily: "var(--font-mono), 'Fira Code', monospace" }}
       >
         <ThemeProvider
           attribute="class"
@@ -59,4 +55,3 @@ export default function RootLayout({
     </html>
   );
 }
-

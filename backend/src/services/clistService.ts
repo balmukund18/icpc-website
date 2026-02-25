@@ -60,6 +60,8 @@ export async function getExternalContests(): Promise<ExternalContest[]> {
             resource_id__in: RESOURCE_IDS,
             start__gt: nowISO,
             limit: "50",
+            username,
+            api_key: apiKey,
         });
 
         const url = `https://clist.by/api/v4/contest/?${params.toString()}`;
@@ -67,6 +69,9 @@ export async function getExternalContests(): Promise<ExternalContest[]> {
         const response = await fetch(url, {
             headers: {
                 Authorization: `ApiKey ${username}:${apiKey}`,
+                "User-Agent": "Mozilla/5.0 (compatible; ICPC-USICT-Portal/1.0; +https://icpcusict.dev)",
+                "Accept": "application/json",
+                "Accept-Language": "en-US,en;q=0.9",
             },
         });
 

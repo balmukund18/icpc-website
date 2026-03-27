@@ -28,11 +28,15 @@ A full-stack web application for the ACM ICPC USICT Student Chapter. A comprehen
 
 ## 🌟 Overview
 
-ICPC Portal is designed to streamline competitive programming activities for student chapters. It provides:
+ICPC Portal is a full-stack platform built to streamline and enhance competitive programming activities within student chapters.
 
-- **For Students**: Practice contests, task assignments, point tracking, leaderboards
-- **For Admins**: User management, contest creation, session scheduling, content moderation
-- **For Alumni**: Network connection and mentorship opportunities
+It offers a unified ecosystem for learning, practice, and community engagement:
+
+- 🎓 **For Students**: Participate in contests, solve DSA tasks, track progress, and climb leaderboards  
+- 🛠️ **For Admins**: Manage users, create contests, assign tasks, and organize sessions efficiently  
+- 🤝 **For Alumni**: Connect with students, provide mentorship, and stay engaged with the community  
+
+Designed with scalability and user experience in mind, the platform integrates real-time coding, gamification, AI assistance, and automated notifications to create a complete competitive programming environment.
 
 ---
 

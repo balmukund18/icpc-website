@@ -19,4 +19,21 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      const { token, logout } = useAuthStore.getState();
+      // Only auto-logout if there was a token (i.e. it expired or became invalid)
+      if (token) {
+        logout();
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

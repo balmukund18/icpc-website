@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuthStore } from "@/store/useAuthStore";
 
 /* ─────────────────── Boot sequence lines ─────────────────── */
 const BOOT_LINES = [
@@ -58,6 +59,17 @@ const FEATURES = [
 export default function Home() {
   const router = useRouter();
   const featuresRef = useRef<HTMLDivElement>(null);
+  const isAuthenticated = useAuthStore((state) => !!state.token);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
+  const hasProfile = useAuthStore((state) => state.hasProfile);
+
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (isAuthenticated) {
+      router.push(hasProfile ? "/dashboard" : "/profile");
+    }
+  }, [hasHydrated, isAuthenticated, hasProfile, router]);
 
   /* ── Boot state ── */
   const [bootLines, setBootLines] = useState<string[]>([]);

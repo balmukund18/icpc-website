@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ModeToggle } from "@/components/mode-toggle";
 
 
@@ -36,6 +36,17 @@ export default function LoginPage() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
   const setHasProfile = useAuthStore((state) => state.setHasProfile);
+  const isAuthenticated = useAuthStore((state) => !!state.token);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
+  const hasProfile = useAuthStore((state) => state.hasProfile);
+
+  // Redirect already-authenticated users to dashboard
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (isAuthenticated) {
+      router.push(hasProfile ? "/dashboard" : "/profile");
+    }
+  }, [hasHydrated, isAuthenticated, hasProfile, router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useEffect } from "react";
 import { ModeToggle } from "@/components/mode-toggle";
 
 
@@ -26,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import api from "@/lib/axios";
+import { useAuthStore } from "@/store/useAuthStore";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
@@ -38,6 +40,17 @@ const formSchema = z.object({
 
 export default function RegisterPage() {
   const router = useRouter();
+  const isAuthenticated = useAuthStore((state) => !!state.token);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
+  const hasProfile = useAuthStore((state) => state.hasProfile);
+
+  // Redirect already-authenticated users to dashboard
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (isAuthenticated) {
+      router.push(hasProfile ? "/dashboard" : "/profile");
+    }
+  }, [hasHydrated, isAuthenticated, hasProfile, router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

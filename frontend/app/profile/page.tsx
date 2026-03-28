@@ -473,13 +473,15 @@ export default function ProfilePage() {
 
         {/* Submit */}
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="text-sm border border-border px-6 py-2 text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
-          >
-            [ CANCEL ]
-          </button>
+          {!isFirstTime && (
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="text-sm border border-border px-6 py-2 text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+            >
+              [ CANCEL ]
+            </button>
+          )}
           <button
             type="submit"
             disabled={saving || !name || !branch || (!isAlumni && !year) || (isAlumni && !graduationYear)}

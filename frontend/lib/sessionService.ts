@@ -27,14 +27,10 @@ export function getSessionStatus(session: Session): SessionStatus {
   // so shift current time to UTC to compare in the same frame.
   const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
   const nowUTC = Date.now() + new Date().getTimezoneOffset() * 60 * 1000 + IST_OFFSET_MS;
-  const fifteenMinBefore = sessionTime - 15 * 60 * 1000;
+  const sessionEnd = sessionTime + 60 * 60 * 1000; // 1 hour after session start
 
-  // End of session day (midnight UTC, representing midnight IST)
-  const endOfDay = new Date(session.date);
-  endOfDay.setUTCHours(23, 59, 59, 999);
-
-  if (nowUTC < fifteenMinBefore) return "upcoming";
-  if (nowUTC <= endOfDay.getTime()) return "live";
+  if (nowUTC < sessionTime) return "upcoming";
+  if (nowUTC <= sessionEnd) return "live";
   return "ended";
 }
 

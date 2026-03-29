@@ -23,6 +23,7 @@ export const createSession = async (data: any) => {
 					? new Date(cleanedData.date).toLocaleString('en-IN', {
 						dateStyle: 'full',
 						timeStyle: 'short',
+						timeZone: 'UTC',
 					})
 					: 'TBD';
 				sendSessionReminderEmail(

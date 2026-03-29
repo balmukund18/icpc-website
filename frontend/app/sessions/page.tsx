@@ -20,6 +20,7 @@ function formatDate(dateString: string | null): string {
   if (!dateString) return "TBA";
   return new Date(dateString).toLocaleDateString("en-US", {
     weekday: "short", day: "numeric", month: "short", year: "numeric",
+    timeZone: "UTC",
   });
 }
 
@@ -27,6 +28,7 @@ function formatTime(dateString: string | null): string {
   if (!dateString) return "";
   return new Date(dateString).toLocaleTimeString("en-US", {
     hour: "numeric", minute: "2-digit", hour12: true,
+    timeZone: "UTC",
   }) + " IST";
 }
 

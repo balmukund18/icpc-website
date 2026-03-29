@@ -12,11 +12,11 @@ import { toast } from "sonner";
 
 function formatDate(dateString: string | null): string {
   if (!dateString) return "TBA";
-  return new Date(dateString).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  return new Date(dateString).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 }
 function formatTime(dateString: string | null): string {
   if (!dateString) return "";
-  return new Date(dateString).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }) + " IST";
+  return new Date(dateString).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "UTC" }) + " IST";
 }
 
 export default function SessionDetailPage() {

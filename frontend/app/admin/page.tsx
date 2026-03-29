@@ -1808,7 +1808,7 @@ export default function AdminDashboardPage() {
                                 )}
                                 <p className="text-sm text-muted-foreground mt-1">
                                   {s.date
-                                    ? new Date(s.date).toLocaleString()
+                                    ? new Date(s.date).toLocaleString("en-US", { timeZone: "UTC" })
                                     : "No date set"}
                                 </p>
                                 <div className="flex items-center gap-1 mt-2 text-sm text-blue-400">

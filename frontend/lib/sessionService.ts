@@ -23,15 +23,18 @@ export function getSessionStatus(session: Session): SessionStatus {
   if (!session.date) return "upcoming"; // No date = treat as upcoming/TBA
 
   const sessionTime = new Date(session.date).getTime();
-  const now = Date.now();
+  // Session times are stored as UTC but represent IST values,
+  // so shift current time to UTC to compare in the same frame.
+  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+  const nowUTC = Date.now() + new Date().getTimezoneOffset() * 60 * 1000 + IST_OFFSET_MS;
   const fifteenMinBefore = sessionTime - 15 * 60 * 1000;
 
-  // End of session day (midnight)
+  // End of session day (midnight UTC, representing midnight IST)
   const endOfDay = new Date(session.date);
-  endOfDay.setHours(23, 59, 59, 999);
+  endOfDay.setUTCHours(23, 59, 59, 999);
 
-  if (now < fifteenMinBefore) return "upcoming";
-  if (now <= endOfDay.getTime()) return "live";
+  if (nowUTC < fifteenMinBefore) return "upcoming";
+  if (nowUTC <= endOfDay.getTime()) return "live";
   return "ended";
 }
 

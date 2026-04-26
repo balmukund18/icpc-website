@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100" fill="none">
+  <!-- Blue thought bubble box -->
+  <rect x="5" y="15" width="85" height="70" rx="12" fill="#6b9cc4"/>
+  <path d="M30 55 C30 40 55 35 60 45 C65 35 80 40 80 50 C80 60 65 68 55 72 C50 68 30 65 30 55Z" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="38" cy="78" r="4" fill="none" stroke="#6b9cc4" stroke-width="2.5"/>
+  <circle cx="30" cy="83" r="3" fill="none" stroke="#6b9cc4" stroke-width="2"/>
+  <circle cx="24" cy="87" r="2" fill="none" stroke="#6b9cc4" stroke-width="1.5"/>
+
+  <!-- Yellow lightbulb box -->
+  <rect x="100" y="15" width="85" height="70" rx="12" fill="#e8a820"/>
+  <!-- Lightbulb -->
+  <path d="M142 30 C130 30 122 40 122 50 C122 56 126 60 130 63 L130 68 L155 68 L155 63 C159 60 163 56 163 50 C163 40 155 30 142 30Z" fill="none" stroke="white" stroke-width="3"/>
+  <line x1="135" y1="68" x2="135" y2="72" stroke="white" stroke-width="2"/>
+  <line x1="142" y1="68" x2="142" y2="72" stroke="white" stroke-width="2"/>
+  <line x1="149" y1="68" x2="149" y2="72" stroke="white" stroke-width="2"/>
+  <!-- Rays -->
+  <line x1="142" y1="15" x2="142" y2="24" stroke="#e8a820" stroke-width="3" stroke-linecap="round"/>
+  <line x1="122" y1="22" x2="128" y2="28" stroke="#e8a820" stroke-width="3" stroke-linecap="round"/>
+  <line x1="162" y1="22" x2="156" y2="28" stroke="#e8a820" stroke-width="3" stroke-linecap="round"/>
+  <line x1="115" y1="35" x2="120" y2="38" stroke="#e8a820" stroke-width="3" stroke-linecap="round"/>
+  <line x1="169" y1="35" x2="164" y2="38" stroke="#e8a820" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Red balloon box -->
+  <rect x="195" y="15" width="85" height="70" rx="12" fill="#b5312c"/>
+  <!-- Balloon -->
+  <circle cx="240" cy="35" r="20" fill="none" stroke="#b5312c" stroke-width="4"/>
+  <path d="M240 55 L240 62 M236 62 L244 62" stroke="#b5312c" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M250 60 C260 65 265 75 255 78" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

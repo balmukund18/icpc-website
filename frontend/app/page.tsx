@@ -1,553 +1,360 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { motion, useInView } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useTheme } from "next-themes";
 
-/* ─────────────────── Boot sequence lines ─────────────────── */
-const BOOT_LINES = [
-  "> booting ICPC USICT...",
-  "> initializing competitive programming environment...",
-  "> loading leaderboard module...",
-  "> loading task engine...",
-  "> connecting alumni network...",
-  "> blog engine ready...",
-  "> contest scheduler online...",
-  "> session manager active...",
-  "> system.status: online",
+/* ═══════════════════════════════════════════════════════════════
+   DATA
+   ═══════════════════════════════════════════════════════════════ */
+
+const features = [
+  { cmd: "sessions", title: "Live Sessions", description: "Weekly workshops on DSA, system design, and competitive programming strategies." },
+  { cmd: "tasks", title: "Practice Tasks", description: "Curated problem sets from LeetCode, Codeforces, and CodeChef to sharpen your skills." },
+  { cmd: "contests", title: "Contests", description: "Regular competitive programming contests with leaderboard rankings and rewards." },
+  { cmd: "leaderboard", title: "Leaderboard", description: "Track your progress and compete with peers across multiple coding platforms." },
+  { cmd: "blogs", title: "Tech Blogs", description: "Read and write technical articles on algorithms, data structures, and interview prep." },
+  { cmd: "alumni", title: "Alumni Network", description: "Connect with past members now at Google, Amazon, Microsoft, and more." },
 ];
 
-/* ─────────────────── Features data ─────────────────── */
-const FEATURES = [
-  {
-    cmd: "leaderboard",
-    title: "Leaderboard",
-    desc: "Track rankings, compete for top positions, and monitor your progress against peers.",
-  },
-  {
-    cmd: "tasks",
-    title: "Tasks & Challenges",
-    desc: "Solve curated problems on LeetCode and earn points. Submit solutions, get verified.",
-  },
-  {
-    cmd: "contests",
-    title: "Live Contests",
-    desc: "Participate in timed contests hosted on HackerRank. Climb the contest leaderboard.",
-  },
-  {
-    cmd: "sessions",
-    title: "Learning Sessions",
-    desc: "Join live mentoring sessions, workshops, and study groups led by seniors and alumni.",
-  },
-  {
-    cmd: "blog",
-    title: "Community Blog",
-    desc: "Share knowledge, write editorials, and learn from articles by fellow members.",
-  },
-  {
-    cmd: "alumni",
-    title: "Alumni Network",
-    desc: "Connect with alumni for mentorship, career guidance, and professional networking.",
-  },
-];
+const COMMAND_STRING = "icpc --init chapter --mode=competitive";
 
-/* ═══════════════════════════════════════════════════════════ */
-/*                     MAIN COMPONENT                         */
-/* ═══════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+   SECTION WRAPPER
+   ═══════════════════════════════════════════════════════════════ */
 
-export default function Home() {
+function Section({
+  children,
+  className = "",
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  delay?: number;
+}) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-60px" });
+  return (
+    <motion.section
+      ref={ref}
+      initial={{ opacity: 0, y: 40 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.7, delay, ease: [0.25, 0.1, 0.25, 1] }}
+      className={className}
+    >
+      {children}
+    </motion.section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE
+   ═══════════════════════════════════════════════════════════════ */
+
+export default function LandingPage() {
   const router = useRouter();
-  const featuresRef = useRef<HTMLDivElement>(null);
-  const isAuthenticated = useAuthStore((state) => !!state.token);
-  const hasHydrated = useAuthStore((state) => state._hasHydrated);
-  const hasProfile = useAuthStore((state) => state.hasProfile);
+  const { theme } = useTheme();
 
-  // Redirect authenticated users to dashboard
+  // Typing effect
+  const [typed, setTyped] = useState("");
+  const [showCursor, setShowCursor] = useState(true);
+
   useEffect(() => {
-    if (!hasHydrated) return;
-    if (isAuthenticated) {
-      router.push(hasProfile ? "/dashboard" : "/profile");
-    }
-  }, [hasHydrated, isAuthenticated, hasProfile, router]);
-
-  /* ── Boot state ── */
-  const [bootLines, setBootLines] = useState<string[]>([]);
-  const [bootDone, setBootDone] = useState(false);
-  const [heroVisible, setHeroVisible] = useState(false);
-
-  /* ── Terminal input state ── */
-  const [terminalInput, setTerminalInput] = useState("");
-  const [terminalHistory, setTerminalHistory] = useState<
-    { cmd: string; response: string }[]
-  >([]);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  /* ── Glitch state ── */
-  const [glitchActive, setGlitchActive] = useState(false);
-
-  /* ── Boot sequence ── */
-  const bootIdxRef = useRef(0);
-  useEffect(() => {
-    bootIdxRef.current = 0;
-    setBootLines([]);
-    const timer = setInterval(() => {
-      const i = bootIdxRef.current;
-      if (i < BOOT_LINES.length) {
-        const line = BOOT_LINES[i];
-        setBootLines((prev) => [...prev, line]);
-        bootIdxRef.current = i + 1;
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < COMMAND_STRING.length) {
+        setTyped(COMMAND_STRING.slice(0, i + 1));
+        i++;
       } else {
-        clearInterval(timer);
-        setTimeout(() => {
-          setBootDone(true);
-          setTimeout(() => {
-            setHeroVisible(true);
-            setGlitchActive(true);
-            setTimeout(() => setGlitchActive(false), 500);
-          }, 300);
-        }, 600);
+        clearInterval(interval);
       }
-    }, 180);
-    return () => clearInterval(timer);
+    }, 60);
+    return () => clearInterval(interval);
   }, []);
 
-  /* ── Terminal command handler ── */
-  const handleCommand = useCallback(
-    (cmd: string) => {
-      const trimmed = cmd.trim().toLowerCase();
-      let response = "";
+  // Blinking cursor
+  useEffect(() => {
+    const blink = setInterval(() => setShowCursor((v) => !v), 530);
+    return () => clearInterval(blink);
+  }, []);
 
-      switch (trimmed) {
-        case "login":
-          response = "redirecting to /login...";
-          setTerminalHistory((h) => [...h, { cmd, response }]);
-          setTimeout(() => router.push("/login"), 600);
-          return;
-        case "register":
-          response = "redirecting to /register...";
-          setTerminalHistory((h) => [...h, { cmd, response }]);
-          setTimeout(() => router.push("/register"), 600);
-          return;
-        case "explore":
-          response = "scrolling to features...";
-          setTerminalHistory((h) => [...h, { cmd, response }]);
-          setTimeout(
-            () =>
-              featuresRef.current?.scrollIntoView({ behavior: "smooth" }),
-            300,
-          );
-          return;
-        case "help":
-          response =
-            "available commands: login, register, explore, help, clear";
-          break;
-        case "clear":
-          setTerminalHistory([]);
-          setTerminalInput("");
-          return;
-        default:
-          response = `command not found: ${trimmed}. type "help" for available commands.`;
+  // CTA hover states
+  const [hoverStart, setHoverStart] = useState(false);
+  const [hoverLogin, setHoverLogin] = useState(false);
+
+  // Command input
+  const [commandInput, setCommandInput] = useState("");
+
+  const handleCommand = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && commandInput.trim()) {
+      const cmd = commandInput.trim().toLowerCase();
+      const match = features.find((f) => f.cmd === cmd);
+      if (match) {
+        router.push(`/${match.cmd}`);
       }
-      setTerminalHistory((h) => [...h, { cmd, response }]);
-      setTerminalInput("");
-    },
-    [router],
-  );
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleCommand(terminalInput);
-      setTerminalInput("");
+      setCommandInput("");
     }
   };
 
-  /* ═════════════════════ RENDER ═════════════════════ */
   return (
-    <div className="min-h-screen bg-[#0D1117] text-[#E6EDF3] font-mono relative overflow-hidden">
-      {/* ── Animated Background Grid ── */}
-      <div className="fixed inset-0 pointer-events-none z-0">
+    <div className="min-h-screen bg-[#0D1117] text-[#E6EDF3] overflow-x-hidden">
+      {/* ── HERO ── */}
+      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden">
+        {/* Animated CSS grid background */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 z-0"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(88,166,255,0.03) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(88,166,255,0.03) 1px, transparent 1px)
+              linear-gradient(rgba(88,166,255,0.05) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(88,166,255,0.05) 1px, transparent 1px)
             `,
             backgroundSize: "60px 60px",
             animation: "gridMove 20s linear infinite",
           }}
         />
-        {/* Radial glow */}
+        {/* Radial gradient overlay */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 z-0"
           style={{
             background:
-              "radial-gradient(ellipse at 50% 30%, rgba(88,166,255,0.04) 0%, transparent 70%)",
+              "radial-gradient(ellipse 80% 60% at 50% 40%, rgba(88,166,255,0.08) 0%, transparent 70%)",
           }}
         />
-      </div>
 
-      {/* ── Scanline overlay ── */}
-      <div
-        className="fixed inset-0 pointer-events-none z-10 opacity-[0.015]"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)",
-        }}
-      />
-
-      {/* ═══════════════ BOOT SEQUENCE ═══════════════ */}
-      <AnimatePresence>
-        {!bootDone && (
+        <div className="relative z-10 max-w-3xl mx-auto text-center">
+          {/* Typing command */}
           <motion.div
-            className="fixed inset-0 z-50 bg-[#0D1117] flex items-start justify-center pt-[15vh]"
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.6 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="mb-8 font-mono text-sm text-[#8B949E]"
           >
-            <div className="max-w-xl w-full px-6">
-              <div className="space-y-1">
-                {bootLines.map((line, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.1 }}
-                    className={`text-sm ${line?.includes("online")
-                      ? "text-[#3FB950]"
-                      : "text-[#8B949E]"
-                      }`}
-                  >
-                    {line}
-                  </motion.div>
-                ))}
-              </div>
-              {/* Blinking cursor */}
-              <div className="mt-2 flex items-center gap-1 text-sm text-[#8B949E]">
-                <span>&gt;</span>
-                <span className="animate-pulse">▋</span>
-              </div>
+            <span className="text-[#3FB950]">$</span>{" "}
+            <span className="text-[#E6EDF3]">{typed}</span>
+            <span
+              className="inline-block w-[2px] h-[14px] bg-[#58A6FF] ml-[2px] align-middle"
+              style={{ opacity: showCursor ? 1 : 0 }}
+            />
+          </motion.div>
+
+          {/* Heading */}
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="text-[clamp(2.5rem,6vw,5rem)] font-bold leading-[1.1] tracking-tight mb-6"
+          >
+            <span className="text-[#3FB950] font-mono">&gt; </span>
+            <span className="text-[#E6EDF3]">ICPC USICT</span>
+            <br />
+            <span className="text-[#8B949E] text-[clamp(1.2rem,3vw,2.2rem)] font-normal">
+              Chapter
+            </span>
+          </motion.h1>
+
+          {/* Subtitle */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.8 }}
+            className="text-base sm:text-lg text-[#8B949E] leading-relaxed max-w-xl mx-auto mb-10"
+          >
+            Advancing competitive programming, algorithmic thinking, and
+            engineering excellence at USICT.
+          </motion.p>
+
+          {/* CTA Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 1.1 }}
+            className="flex items-center justify-center gap-4 mb-12"
+          >
+            <button
+              onClick={() => router.push("/register")}
+              onMouseEnter={() => setHoverStart(true)}
+              onMouseLeave={() => setHoverStart(false)}
+              className="font-mono text-sm border border-[#58A6FF] text-[#58A6FF] px-6 py-2.5 hover:bg-[#58A6FF]/10 transition-all duration-300"
+            >
+              {hoverStart ? "> register()" : "[ Get Started ]"}
+            </button>
+            <button
+              onClick={() => router.push("/login")}
+              onMouseEnter={() => setHoverLogin(true)}
+              onMouseLeave={() => setHoverLogin(false)}
+              className="font-mono text-sm border border-[#21262D] text-[#8B949E] px-6 py-2.5 hover:border-[#8B949E] hover:text-[#E6EDF3] transition-all duration-300"
+            >
+              {hoverLogin ? "> login()" : "[ Login ]"}
+            </button>
+          </motion.div>
+
+          {/* Command input */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 1.4 }}
+            className="max-w-md mx-auto"
+          >
+            <div className="flex items-center bg-[#161B22] border border-[#21262D] px-4 py-3 font-mono text-sm rounded">
+              <span className="text-[#3FB950] mr-2">&gt;</span>
+              <input
+                type="text"
+                value={commandInput}
+                onChange={(e) => setCommandInput(e.target.value)}
+                onKeyDown={handleCommand}
+                placeholder="type a command..."
+                className="bg-transparent flex-1 text-[#E6EDF3] placeholder:text-[#484F58] outline-none"
+              />
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* ═══════════════ MAIN CONTENT ═══════════════ */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: heroVisible ? 1 : 0 }}
-        transition={{ duration: 0.8 }}
-        className="relative z-20"
-      >
-        {/* ── HERO SECTION ── */}
-        <section className="min-h-screen flex flex-col items-center justify-center px-6">
-          <div className="max-w-2xl w-full text-center space-y-8">
-            {/* Glitch Title */}
-            <div className="relative">
-              <h1
-                className={`text-5xl sm:text-7xl font-bold tracking-tighter ${glitchActive ? "glitch-text" : ""
-                  }`}
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
-              >
-                ICPC USICT
-              </h1>
-              {/* Glitch layers */}
-              {glitchActive && (
-                <>
-                  <h1
-                    className="absolute inset-0 text-5xl sm:text-7xl font-bold tracking-tighter text-center"
-                    style={{
-                      fontFamily: "'JetBrains Mono', monospace",
-                      color: "#58A6FF",
-                      clipPath: "inset(10% 0 60% 0)",
-                      transform: "translateX(-3px)",
-                      opacity: 0.7,
-                    }}
-                  >
-                    ICPC USICT
-                  </h1>
-                  <h1
-                    className="absolute inset-0 text-5xl sm:text-7xl font-bold tracking-tighter text-center"
-                    style={{
-                      fontFamily: "'JetBrains Mono', monospace",
-                      color: "#F85149",
-                      clipPath: "inset(50% 0 10% 0)",
-                      transform: "translateX(3px)",
-                      opacity: 0.7,
-                    }}
-                  >
-                    ICPC USICT
-                  </h1>
-                </>
-              )}
-            </div>
-
-            {/* Subtitle */}
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: heroVisible ? 1 : 0, y: heroVisible ? 0 : 10 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-              className="text-[#8B949E] text-sm sm:text-base"
+          {/* Scroll hint */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 2 }}
+            className="mt-16 flex flex-col items-center gap-2 text-[#484F58] text-xs font-mono"
+          >
+            <span>scroll to explore</span>
+            <motion.span
+              animate={{ y: [0, 6, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              className="text-[#58A6FF]"
             >
-              USICT ACM Student Chapter — Competitive Programming Portal
-            </motion.p>
+              ↓
+            </motion.span>
+          </motion.div>
+        </div>
+      </section>
 
-            {/* ── Terminal-style Buttons ── */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: heroVisible ? 1 : 0, y: heroVisible ? 0 : 10 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
-              className="flex items-center justify-center gap-4"
-            >
-              <button
-                onClick={() => router.push("/login")}
-                className="group relative px-6 py-2.5 border border-[#30363D] text-[#E6EDF3] text-sm hover:border-[#58A6FF] transition-all duration-300"
+      {/* ── FEATURES ── */}
+      <Section className="py-24 px-6 border-t border-[#21262D]">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="font-mono text-sm text-[#3FB950] mb-12">
+            &gt; ls --features
+          </h2>
+
+          <div className="space-y-0">
+            {features.map((f, i) => (
+              <motion.div
+                key={f.cmd}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.08 }}
+                onClick={() => router.push(`/${f.cmd}`)}
+                className="group flex items-center justify-between py-5 border-b border-[#21262D] hover:bg-[#161B22] px-4 -mx-4 cursor-pointer transition-colors duration-300"
               >
-                <span className="group-hover:hidden">[ Login ]</span>
-                <span className="hidden group-hover:inline text-[#58A6FF]">
-                  &gt; login()
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-1">
+                    <span className="font-mono text-xs text-[#58A6FF]">
+                      ./{f.cmd}
+                    </span>
+                    <span className="text-[#21262D]">—</span>
+                    <span className="text-sm text-[#E6EDF3] font-medium">
+                      {f.title}
+                    </span>
+                  </div>
+                  <p className="text-sm text-[#8B949E] pl-0 sm:pl-[calc(3ch+0.75rem+1ch+0.75rem)]">
+                    {f.description}
+                  </p>
+                </div>
+                <span className="text-[#484F58] group-hover:text-[#58A6FF] group-hover:translate-x-1 transition-all duration-300 ml-4">
+                  →
                 </span>
-              </button>
-              <button
-                onClick={() => router.push("/register")}
-                className="group relative px-6 py-2.5 border border-[#30363D] text-[#E6EDF3] text-sm hover:border-[#3FB950] transition-all duration-300"
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </Section>
+
+      {/* ── STATS ── */}
+      <Section className="py-20 px-6 border-t border-[#21262D]" delay={0.1}>
+        <div className="max-w-3xl mx-auto">
+          <h2 className="font-mono text-sm text-[#3FB950] mb-10">
+            &gt; cat stats.json
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+            {[
+              { key: "active_members", value: "150+" },
+              { key: "contests_held", value: "25+" },
+              { key: "tasks_solved", value: "500+" },
+              { key: "alumni_connected", value: "50+" },
+            ].map((s, i) => (
+              <motion.div
+                key={s.key}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="bg-[#161B22] border border-[#21262D] p-5 font-mono group hover:border-[#58A6FF]/30 transition-colors duration-300"
               >
-                <span className="group-hover:hidden">[ Register ]</span>
-                <span className="hidden group-hover:inline text-[#3FB950]">
-                  &gt; register()
-                </span>
-              </button>
-            </motion.div>
-
-            {/* ── Interactive Terminal ── */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: heroVisible ? 1 : 0, y: heroVisible ? 0 : 10 }}
-              transition={{ delay: 0.7, duration: 0.5 }}
-              className="max-w-md mx-auto"
-            >
-              <div
-                className="bg-[#161B22] border border-[#30363D] p-4 text-left cursor-text"
-                onClick={() => inputRef.current?.focus()}
-              >
-                {/* Terminal header */}
-                <div className="flex items-center gap-1.5 mb-3 pb-2 border-b border-[#30363D]">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#F85149]" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#FF9F1C]" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#3FB950]" />
-                  <span className="ml-2 text-xs text-[#8B949E]">terminal</span>
-                </div>
-
-                {/* History */}
-                {terminalHistory.map((entry, i) => (
-                  <div key={i} className="mb-1">
-                    <div className="text-sm">
-                      <span className="text-[#3FB950]">$</span>{" "}
-                      <span className="text-[#E6EDF3]">{entry.cmd}</span>
-                    </div>
-                    <div className="text-xs text-[#8B949E] ml-3">
-                      {entry.response}
-                    </div>
-                  </div>
-                ))}
-
-                {/* Input line */}
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-[#3FB950]">$</span>
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={terminalInput}
-                    onChange={(e) => setTerminalInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    className="flex-1 bg-transparent outline-none text-[#E6EDF3] caret-[#58A6FF] placeholder:text-[#484F58]"
-                    placeholder='type "help" for commands...'
-                    spellCheck={false}
-                    autoComplete="off"
-                  />
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Scroll hint */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: heroVisible ? 1 : 0 }}
-              transition={{ delay: 1.2, duration: 0.5 }}
-              className="pt-8"
-            >
-              <button
-                onClick={() =>
-                  featuresRef.current?.scrollIntoView({ behavior: "smooth" })
-                }
-                className="text-[#484F58] text-xs hover:text-[#8B949E] transition-colors flex flex-col items-center gap-1"
-              >
-                <span>scroll to explore</span>
-                <motion.span
-                  animate={{ y: [0, 4, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                >
-                  ↓
-                </motion.span>
-              </button>
-            </motion.div>
+                <p className="text-xs text-[#484F58] mb-2">{s.key}:</p>
+                <p className="text-2xl font-bold text-[#E6EDF3] group-hover:text-[#58A6FF] transition-colors duration-300">
+                  {s.value}
+                </p>
+              </motion.div>
+            ))}
           </div>
-        </section>
+        </div>
+      </Section>
 
-        {/* ── FEATURES SECTION ── */}
-        <section ref={featuresRef} className="py-24 px-6">
-          <div className="max-w-4xl mx-auto">
-            {/* Section header */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.5 }}
-              className="mb-16"
+      {/* ── CTA ── */}
+      <Section className="py-28 px-6 border-t border-[#21262D]" delay={0.1}>
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="font-mono text-sm text-[#3FB950] mb-6">
+            &gt; ./join --chapter
+          </h2>
+          <p className="text-3xl sm:text-4xl font-bold text-[#E6EDF3] mb-4">
+            Join the Chapter
+          </p>
+          <p className="text-[#8B949E] mb-10 max-w-md mx-auto">
+            Start your competitive programming journey. Connect, learn, and
+            compete with the best.
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            <button
+              onClick={() => router.push("/register")}
+              className="font-mono text-sm bg-[#58A6FF] text-[#0D1117] px-6 py-2.5 hover:bg-[#79B8FF] transition-all duration-300 font-medium"
             >
-              <p className="text-sm text-[#8B949E] mb-2">
-                &gt; ls --features
-              </p>
-              <h2 className="text-2xl sm:text-3xl font-bold">
-                What&apos;s Inside
-              </h2>
-              <div className="w-16 h-px bg-[#58A6FF] mt-4" />
-            </motion.div>
-
-            {/* Features grid */}
-            <div className="grid gap-0">
-              {FEATURES.map((feature, i) => (
-                <motion.div
-                  key={feature.cmd}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.4, delay: i * 0.08 }}
-                  className="group py-6 border-b border-[#21262D] hover:bg-[#161B22]/50 transition-colors -mx-4 px-4"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="text-[#58A6FF] text-sm font-mono mt-1 flex-shrink-0 w-24">
-                      ./{feature.cmd}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-base font-semibold text-[#E6EDF3] mb-1">
-                        {feature.title}
-                      </h3>
-                      <p className="text-sm text-[#8B949E] leading-relaxed">
-                        {feature.desc}
-                      </p>
-                    </div>
-                    <div className="text-[#30363D] group-hover:text-[#484F58] transition-colors text-sm flex-shrink-0">
-                      →
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── STATS BAR ── */}
-        <section className="py-16 px-6 border-t border-[#21262D]">
-          <div className="max-w-4xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="grid grid-cols-2 sm:grid-cols-4 gap-8"
+              [ Register ]
+            </button>
+            <button
+              onClick={() => router.push("/login")}
+              className="font-mono text-sm border border-[#21262D] text-[#8B949E] px-6 py-2.5 hover:border-[#8B949E] hover:text-[#E6EDF3] transition-all duration-300"
             >
-              {[
-                { label: "active_members", value: "150+" },
-                { label: "contests_held", value: "25+" },
-                { label: "tasks_solved", value: "500+" },
-                { label: "alumni_connected", value: "50+" },
-              ].map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <div className="text-2xl sm:text-3xl font-bold text-[#E6EDF3]">
-                    {stat.value}
-                  </div>
-                  <div className="text-xs text-[#484F58] mt-1 font-mono">
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
-            </motion.div>
+              [ Login ]
+            </button>
           </div>
-        </section>
+        </div>
+      </Section>
 
-        {/* ── CTA SECTION ── */}
-        <section className="py-24 px-6">
-          <div className="max-w-2xl mx-auto text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="space-y-6"
-            >
-              <p className="text-sm text-[#8B949E]">
-                &gt; ready to begin?
-              </p>
-              <h2 className="text-2xl sm:text-3xl font-bold">
-                Join the Chapter
-              </h2>
-              <p className="text-[#8B949E] text-sm max-w-md mx-auto">
-                Register to access the competitive programming portal, track your
-                progress, and connect with the community.
-              </p>
-              <div className="flex items-center justify-center gap-4 pt-4">
-                <button
-                  onClick={() => router.push("/register")}
-                  className="group px-8 py-3 bg-[#58A6FF] text-[#0D1117] font-semibold text-sm hover:bg-[#79B8FF] transition-colors"
-                >
-                  <span className="group-hover:hidden">[ Get Started ]</span>
-                  <span className="hidden group-hover:inline">
-                    &gt; register()
-                  </span>
-                </button>
-                <button
-                  onClick={() => router.push("/login")}
-                  className="group px-8 py-3 border border-[#30363D] text-sm hover:border-[#58A6FF] transition-colors"
-                >
-                  <span className="group-hover:hidden">[ Login ]</span>
-                  <span className="hidden group-hover:inline text-[#58A6FF]">
-                    &gt; login()
-                  </span>
-                </button>
-              </div>
-            </motion.div>
+      {/* ── FOOTER ── */}
+      <footer className="border-t border-[#21262D] py-8 px-6">
+        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-[#484F58] font-mono">
+            &copy; 2026 ICPC USICT Chapter. All rights reserved.
+          </p>
+          <div className="flex items-center gap-2 font-mono text-xs">
+            <span className="w-2 h-2 rounded-full bg-[#3FB950] animate-pulse" />
+            <span className="text-[#3FB950]">system.status:</span>
+            <span className="text-[#8B949E]">online</span>
           </div>
-        </section>
+        </div>
+      </footer>
 
-        {/* ── FOOTER ── */}
-        <footer className="py-8 px-6 border-t border-[#21262D]">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <div className="text-xs text-[#484F58] font-mono">
-              © 2026 ICPC USICT. All rights reserved.
-            </div>
-            <div className="flex items-center gap-2 text-xs text-[#8B949E]">
-              <span className="inline-block w-2 h-2 rounded-full bg-[#3FB950] animate-pulse" />
-              <span>system.status: </span>
-              <span className="text-[#3FB950]">online</span>
-            </div>
-          </div>
-        </footer>
-      </motion.div>
-
-      {/* ── CSS Animations ── */}
+      {/* ── CSS-in-JS ── */}
       <style jsx>{`
         @keyframes gridMove {
           0% {
-            transform: translate(0, 0);
+            background-position: 0 0, 0 0;
           }
           100% {
-            transform: translate(60px, 60px);
+            background-position: 60px 60px, 60px 60px;
           }
         }
-        .glitch-text {
-          animation: glitchShake 0.4s ease-in-out;
-        }
+
         @keyframes glitchShake {
           0%,
           100% {
@@ -560,10 +367,10 @@ export default function Home() {
             transform: translate(2px, -1px);
           }
           60% {
-            transform: translate(-1px, 2px);
+            transform: translate(-1px, -1px);
           }
           80% {
-            transform: translate(1px, -2px);
+            transform: translate(1px, 2px);
           }
         }
       `}</style>

@@ -13,7 +13,7 @@ const SENDER = {
 
 // Startup validation
 if (process.env.BREVO_API_KEY && !process.env.BREVO_API_KEY.startsWith("xkeysib-")) {
-  console.error("[EmailService] ⚠️  BREVO_API_KEY looks wrong! It should start with 'xkeysib-' (API key), not 'xsmtpsib-' (SMTP key). Go to Brevo → Settings → SMTP & API → API Keys to get the correct key.");
+  console.error("[EmailService] WARNING: BREVO_API_KEY looks wrong! It should start with 'xkeysib-' (API key), not 'xsmtpsib-' (SMTP key). Go to Brevo > Settings > SMTP & API > API Keys to get the correct key.");
 }
 
 // ─── core sender ───────────────────────────────────────────────
@@ -31,9 +31,9 @@ async function sendEmail(to: string, subject: string, htmlContent: string) {
 
   try {
     const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
-    console.log("[EmailService] ✅ Email sent to", to, "| messageId:", (result as any)?.body?.messageId || "unknown");
+    console.log("[EmailService] Email sent to", to, "| messageId:", (result as any)?.body?.messageId || "unknown");
   } catch (err: any) {
-    console.error("[EmailService] ❌ Failed to send email to", to);
+    console.error("[EmailService] Failed to send email to", to);
     console.error("[EmailService] Error:", err?.body || err?.message || err);
   }
 }
@@ -101,13 +101,13 @@ export function sendAnnouncementEmail(
   content: string
 ) {
   const html = wrap(
-    `📢 ${title}`,
+    `${title}`,
     `<p style="color:#ccc;line-height:1.7;white-space:pre-wrap;">${content}</p>
      <div style="text-align:center;margin:24px 0;">
        <a href="${process.env.FRONTEND_URL || "http://localhost:3000"}/announcements" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:14px;display:inline-block;">View Announcements</a>
      </div>`
   );
-  return sendBulkEmail(recipients, `📢 ${title} — ICPC USICT`, html);
+  return sendBulkEmail(recipients, `${title} — ICPC USICT`, html);
 }
 
 export function sendBlogStatusEmail(
@@ -118,7 +118,7 @@ export function sendBlogStatusEmail(
   reason?: string
 ) {
   const isApproved = status === "APPROVED";
-  const statusText = isApproved ? "approved ✅" : "rejected ❌";
+  const statusText = isApproved ? "approved" : "rejected";
   const html = wrap(
     `Blog ${isApproved ? "Approved" : "Rejected"}`,
     `
@@ -140,7 +140,7 @@ export function sendTaskAssignedEmail(
   taskDescription: string
 ) {
   const html = wrap(
-    "📋 New Task Assigned",
+    "New Task Assigned",
     `
     <p style="color:#ccc;line-height:1.6;">Hi <strong style="color:#fff;">${userName || "there"}</strong>,</p>
     <p style="color:#ccc;line-height:1.6;">You've been assigned a new task: <strong style="color:#fff;">"${taskTitle}"</strong></p>
@@ -162,19 +162,19 @@ export function sendSessionReminderEmail(
   meetLink: string
 ) {
   const html = wrap(
-    "📅 New Session Scheduled",
+    "New Session Scheduled",
     `
     <p style="color:#ccc;line-height:1.6;">A new session has been scheduled:</p>
     <div style="background:#111;border-radius:8px;padding:20px;margin:16px 0;border-left:3px solid #667eea;">
       <p style="margin:0 0 8px;color:#fff;font-weight:600;font-size:16px;">${sessionTitle}</p>
-      <p style="margin:0 0 4px;color:#bbb;font-size:14px;">📅 ${date}</p>
-      <p style="margin:0;color:#bbb;font-size:14px;">🔗 <a href="${meetLink}" style="color:#667eea;text-decoration:none;">${meetLink}</a></p>
+      <p style="margin:0 0 4px;color:#bbb;font-size:14px;">${date}</p>
+      <p style="margin:0;color:#bbb;font-size:14px;"><a href="${meetLink}" style="color:#667eea;text-decoration:none;">${meetLink}</a></p>
     </div>
     <div style="text-align:center;margin:24px 0;">
       <a href="${process.env.FRONTEND_URL || "http://localhost:3000"}/sessions" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:14px;display:inline-block;">View Sessions</a>
     </div>
     `
   );
-  return sendBulkEmail(recipients, `📅 ${sessionTitle} — ICPC USICT`,
+  return sendBulkEmail(recipients, `${sessionTitle} — ICPC USICT`,
     html);
 }
